@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: umbra-api
+  profiles:
+    active: dev
+
+umbra:
+  jwt:
+    ttl-horas: 2

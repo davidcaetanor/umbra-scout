@@ -1,0 +1,4 @@
+umbra:
+  jwt:
+    secret: dev-secret
+

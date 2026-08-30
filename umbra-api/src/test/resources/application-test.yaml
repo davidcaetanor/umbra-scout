@@ -1,0 +1,4 @@
+umbra:
+  jwt:
+    ttl-horas: 1
+    secret: test-secret

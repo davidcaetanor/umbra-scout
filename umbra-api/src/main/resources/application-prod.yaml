@@ -1,0 +1,3 @@
+umbra:
+  jwt:
+    ttl-horas: ${UMBRA_JWT_TTL_HORAS:4}
