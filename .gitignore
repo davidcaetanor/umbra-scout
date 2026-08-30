@@ -1,0 +1,34 @@
+# --- Ambiente ---
+.env
+
+
+# --- umbra-api 
+umbra-api/target/
+umbra-api/.mvn/wrapper/maven-wrapper.jar
+umbra-api/.idea/
+umbra-api/*.iml
+umbra-api/.factorypath
+umbra-api/HELP.md
+
+# --- umbra-web 
+umbra-web/node_modules/
+umbra-web/dist/
+umbra-web/.angular/
+umbra-web/coverage/
+umbra-web/*.log
+umbra-web/npm-debug.log*
+
+# --- IDEs ---
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+
+# --- Sistema operacional ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Diversos ---
+*.log
+*.tmp
