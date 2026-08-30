@@ -4,6 +4,10 @@ spring:
   profiles:
     active: dev
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
 umbra:
   jwt:
     ttl-horas: 2
