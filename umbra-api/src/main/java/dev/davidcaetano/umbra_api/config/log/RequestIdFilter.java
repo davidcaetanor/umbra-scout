@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -16,6 +18,8 @@ import java.util.UUID;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestIdFilter extends OncePerRequestFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RequestIdFilter.class);
 
     public static final String MDC_KEY = "requestId";
     public static final String HEADER = "x-Request-Id";
@@ -34,6 +38,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             MDC.put(MDC_KEY, requestId);
             response.setHeader(HEADER, requestId);
+            LOGGER.info("Requisição recebida: {} {}", request.getMethod(), request.getRequestURI());
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(MDC_KEY);
