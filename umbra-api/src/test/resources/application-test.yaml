@@ -1,3 +1,6 @@
+spring:
+   main:
+     banner-mode: off
 umbra:
   jwt:
     ttl-horas: 1
