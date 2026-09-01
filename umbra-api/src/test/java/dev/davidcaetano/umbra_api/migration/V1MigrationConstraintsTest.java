@@ -1,17 +1,15 @@
 package dev.davidcaetano.umbra_api.migration;
 
 
+import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -22,11 +20,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 @JdbcTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 @Testcontainers
-public class V1MigrationConstraintsTest {
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
+public class V1MigrationConstraintsTest extends IntegrationTestBase{
 
     @Autowired
     private JdbcTemplate jdbc;

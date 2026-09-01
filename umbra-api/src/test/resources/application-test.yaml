@@ -1,6 +1,9 @@
 spring:
-   main:
-     banner-mode: off
+  main:
+    banner-mode: off
+  jpa:
+    hibernate:
+      ddl-auto: validate
 umbra:
   jwt:
     ttl-horas: 1
