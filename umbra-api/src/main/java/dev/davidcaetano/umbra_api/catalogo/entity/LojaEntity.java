@@ -33,7 +33,7 @@ public class LojaEntity {
 
     @Column(nullable = false)
     @ColumnDefault("true")
-    private boolean ativa;
+    private boolean ativa = true;
 
     @Column(nullable = false)
     private OffsetDateTime criadoEm;
