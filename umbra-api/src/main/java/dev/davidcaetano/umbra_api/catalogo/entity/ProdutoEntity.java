@@ -74,12 +74,16 @@ public class ProdutoEntity {
         Objects.requireNonNull(dados.nome(), "nome do Produto é obrigatório");
         Objects.requireNonNull(dados.url(), "url é obrigatória");
 
+        validarUrl(dados.url());
+        String nomeLimpo = strValidoSemEspacosLaterais(dados.nome())
+                .orElseThrow(() -> new IllegalArgumentException("nome não pode ser vazio"));
+
         ProdutoEntity produto = new ProdutoEntity();
 
         produto.loja = loja;
         produto.identificadorLoja = identificadorLoja;
         produto.tipo = tipo;
-        produto.nome = dados.nome();
+        produto.nome = nomeLimpo;
         produto.categoria = dados.categoria();
         produto.url = dados.url();
         produto.imagemUrl = dados.imagemUrl();
@@ -90,19 +94,30 @@ public class ProdutoEntity {
         return produto;
     }
 
-    private static Optional<String> valorValido(String valor) {
-        return Optional.ofNullable(valor).filter(v -> !v.isBlank());
+    private static Optional<String> strValidoSemEspacosLaterais(String valor) {
+        return Optional.ofNullable(valor)
+                .map(String::trim)
+                .filter(v -> !v.isEmpty());
+    }
+
+    private static void validarUrl(String url) {
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            throw new IllegalArgumentException("A URL precisa começar com http:// ou https://");
+        }
     }
 
     public void atualizarDados(DadosProduto dados, OffsetDateTime dataHoraAgora) {
 
         Objects.requireNonNull(dados, "dados é obrigatório");
 
-        valorValido(dados.nome()).ifPresent(v -> this.nome = v);
-        valorValido(dados.categoria()).ifPresent(v -> this.categoria = v);
-        valorValido(dados.url()).ifPresent(v -> this.url = v);
-        valorValido(dados.imagemUrl()).ifPresent(v -> this.imagemUrl = v);
-        valorValido(dados.chaveItad()).ifPresent(v -> this.chaveItad = v);
+        strValidoSemEspacosLaterais(dados.nome()).ifPresent(v -> this.nome = v);
+        strValidoSemEspacosLaterais(dados.categoria()).ifPresent(v -> this.categoria = v);
+        strValidoSemEspacosLaterais(dados.url()).ifPresent(v -> {
+            validarUrl(v);
+            this.url = v;
+        });
+        strValidoSemEspacosLaterais(dados.imagemUrl()).ifPresent(v -> this.imagemUrl = v);
+        strValidoSemEspacosLaterais(dados.chaveItad()).ifPresent(v -> this.chaveItad = v);
 
         this.atualizadoEm = dataHoraAgora;
     }
