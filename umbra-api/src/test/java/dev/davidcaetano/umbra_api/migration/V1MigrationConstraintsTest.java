@@ -9,7 +9,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -19,7 +18,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @JdbcTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-@Testcontainers
 public class V1MigrationConstraintsTest extends IntegrationTestBase{
 
     @Autowired
@@ -148,6 +146,38 @@ public class V1MigrationConstraintsTest extends IntegrationTestBase{
         assertThatThrownBy(() -> jdbc.update("DELETE FROM produto WHERE id = ?", produtoId))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("fk_preco_produto");
+    }
+
+    @Test
+    void deveFalharQuandoUrlDoProdutoForRelativa() {
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO produto (loja_id, identificador_loja, nome, tipo, url)
+                VALUES (?, 'app-555', 'URL Relativa', 'JOGO', '/app/555')
+                """, lojaIdSteam()))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_produto_url");
+    }
+
+    @Test
+    void deveFalharQuandoNomeDoProdutoForSoEspacos() {
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO produto (loja_id, identificador_loja, nome, tipo, url)
+                VALUES (?, 'app-556', '   ', 'JOGO', 'https://store.steampowered.com/app/556')
+                """, lojaIdSteam()))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_produto_nome");
+    }
+
+    @Test
+    void deveFalharQuandoValorDoPrecoForNegativo() {
+        Long produtoId = inserirProdutoValido();
+
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO preco (produto_id, valor_centavos, origem_coleta)
+                VALUES (?, -1, 'STEAM_API')
+                """, produtoId))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_preco_valor");
     }
 
 }
