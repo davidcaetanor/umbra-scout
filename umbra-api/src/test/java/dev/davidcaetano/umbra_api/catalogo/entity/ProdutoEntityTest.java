@@ -77,4 +77,64 @@ class ProdutoEntityTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("URL");
     }
+
+    @Test
+    void deveNascerAtivoQuandoCriarProduto() {
+        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
+                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+
+        assertThat(produto.isAtivo()).isTrue();
+    }
+
+    @Test
+    void deveDesativarProdutoQuandoSairDoCatalogoDaLoja() {
+        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
+                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+        OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
+
+        produto.desativar(segundaColeta);
+
+        assertThat(produto.isAtivo()).isFalse();
+        assertThat(produto.getAtualizadoEm()).isEqualTo(segundaColeta);
+        assertThat(produto.getCriadoEm()).isEqualTo(PRIMEIRA_COLETA);
+    }
+
+    @Test
+    void deveReativarProdutoQuandoVoltarAoCatalogoDaLoja() {
+        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
+                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+        produto.desativar(PRIMEIRA_COLETA.plusHours(6));
+        OffsetDateTime terceiraColeta = PRIMEIRA_COLETA.plusHours(12);
+
+        produto.reativar(terceiraColeta);
+
+        assertThat(produto.isAtivo()).isTrue();
+        assertThat(produto.getAtualizadoEm()).isEqualTo(terceiraColeta);
+    }
+
+    @Test
+    void deveManterDesativadoQuandoDesativarProdutoJaDesativado() {
+        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
+                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+        produto.desativar(PRIMEIRA_COLETA.plusHours(6));
+        OffsetDateTime terceiraColeta = PRIMEIRA_COLETA.plusHours(12);
+
+        produto.desativar(terceiraColeta);
+
+        assertThat(produto.isAtivo()).isFalse();
+        assertThat(produto.getAtualizadoEm()).isEqualTo(terceiraColeta);
+    }
+
+    @Test
+    void devePreservarDadosDoProdutoQuandoDesativar() {
+        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
+                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+
+        produto.desativar(PRIMEIRA_COLETA.plusHours(6));
+
+        assertThat(produto.getNome()).isEqualTo("Counter-Strike 2");
+        assertThat(produto.getUrl()).isEqualTo(URL_VALIDA);
+        assertThat(produto.getCategoria()).isEqualTo("Acao");
+    }
+
 }

@@ -155,4 +155,56 @@ class ProdutoRepositoryTest extends IntegrationTestBase {
         assertThat(produtoRepository.findByLojaIdAndIdentificadorLoja(steam.getId(), "app-000"))
                 .isEmpty();
     }
+
+    @Test
+    void deveManterLinhaNoBancoQuandoDesativarProduto() {
+        Long id = produtoRepository.saveAndFlush(produtoDaSteam("Counter-Strike 2")).getId();
+        em.clear();
+
+        produtoRepository.findById(id).orElseThrow().desativar(SEGUNDA_COLETA);
+        em.flush();
+        em.clear();
+
+        assertThat(produtoRepository.count()).isEqualTo(1);
+
+        ProdutoEntity relido = produtoRepository.findById(id).orElseThrow();
+        assertThat(relido.isAtivo()).isFalse();
+        assertThat(relido.getAtualizadoEm().toInstant()).isEqualTo(SEGUNDA_COLETA.toInstant());
+    }
+
+    @Test
+    void deveVoltarAAtivoQuandoReativarProdutoDesativado() {
+        Long id = produtoRepository.saveAndFlush(produtoDaSteam("Counter-Strike 2")).getId();
+        em.clear();
+
+        produtoRepository.findById(id).orElseThrow().desativar(SEGUNDA_COLETA);
+        em.flush();
+        em.clear();
+
+        OffsetDateTime terceiraColeta = SEGUNDA_COLETA.plusHours(6);
+        produtoRepository.findById(id).orElseThrow().reativar(terceiraColeta);
+        em.flush();
+        em.clear();
+
+        ProdutoEntity relido = produtoRepository.findById(id).orElseThrow();
+        assertThat(relido.isAtivo()).isTrue();
+        assertThat(relido.getAtualizadoEm().toInstant()).isEqualTo(terceiraColeta.toInstant());
+    }
+
+    @Test
+    void deveEncontrarProdutoDesativadoQuandoRecoletarMesmoIdentificador() {
+        Long id = produtoRepository.saveAndFlush(produtoDaSteam("Counter-Strike 2")).getId();
+        em.clear();
+
+        produtoRepository.findById(id).orElseThrow().desativar(SEGUNDA_COLETA);
+        em.flush();
+        em.clear();
+
+        assertThat(produtoRepository.findByLojaIdAndIdentificadorLoja(steam.getId(), IDENTIFICADOR))
+                .isPresent()
+                .get()
+                .extracting(ProdutoEntity::getId)
+                .isEqualTo(id);
+    }
+
 }
