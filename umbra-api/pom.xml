@@ -15,8 +15,6 @@
 	<properties>
 		<java.version>25</java.version>
         <testcontainers.version>2.0.5</testcontainers.version>
-        <!-- MapStruct nao e gerenciado pelo BOM do Spring Boot: versao fixada aqui.
-             Lombok e gerenciado (${lombok.version} = 1.18.46 no Boot 4.1.1). -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
 	</properties>
@@ -29,6 +27,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-bom</artifactId>
+				<version>12.0.30</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
         </dependencies>
     </dependencyManagement>
 	<dependencies>
@@ -125,6 +130,56 @@
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
 			<version>${mapstruct.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot4</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aspectj</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock</artifactId>
+			<version>3.13.2</version>
+			<scope>test</scope>
+			<exclusions>
+				<!-- Jetty 11 (javax.servlet) puxado por padrão pelo wiremock colide com o jetty-bom 12.0.30
+				     fixado acima (jakarta.servlet) e nunca é substituído por ele, porque jetty-servlet/-servlets/-webapp
+				     não existem sob esse nome na série 12 (viraram jetty-ee10-*). Sem excluir, o HttpServerFactoryLoader
+				     do WireMock detecta jetty-server 12 + jetty-servlet 11 juntos, não reconhece nenhum dos dois como
+				     "Jetty 11 completo" e falha na subida com FatalStartupException. wiremock-jetty12 (abaixo) traz
+				     o substituto compatível (jetty-ee10-servlet etc.). -->
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlet</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-servlets</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.eclipse.jetty</groupId>
+					<artifactId>jetty-webapp</artifactId>
+				</exclusion>
+				<!-- Mesmo problema, mesma solução: http2-server (nome antigo, ainda em 11.0.26) fica sem
+				     equivalente na bom pelo nome — a versão 12 mudou de artifactId para jetty-http2-server,
+				     já trazida pelo wiremock-jetty12 abaixo. -->
+				<exclusion>
+					<groupId>org.eclipse.jetty.http2</groupId>
+					<artifactId>http2-server</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<!-- Extensão oficial do WireMock com HttpServerFactory para Jetty 12/EE10 (jakarta.servlet),
+			     compatível com o jetty-bom 12.0.30 já fixado no dependencyManagement. -->
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock-jetty12</artifactId>
+			<version>3.13.2</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
