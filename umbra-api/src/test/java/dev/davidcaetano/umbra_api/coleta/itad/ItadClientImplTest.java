@@ -113,6 +113,41 @@ class ItadClientImplTest extends IntegrationTestBase {
     private static final String FIXTURE_ERRO =
             "{\"status_code\":400,\"reason_phrase\":\"country: Missing data for 'country'\"}";
 
+    // Fixture 3b — corpo de erro plausível pra 429 (rate limit), formato ItadErroResponse
+    private static final String FIXTURE_ERRO_429 =
+            "{\"status_code\":429,\"reason_phrase\":\"Too Many Requests\"}";
+
+    // Fixture 1b — GET /deals/v2?shops=61 (Steam), item único pra checar o lado Steam
+    private static final String FIXTURE_DESCOBERTA_STEAM = """
+            {
+              "nextOffset": 1,
+              "hasMore": false,
+              "list": [
+                {
+                  "id": "018d937e-aaaa-7123-9942-85ddaff9efee",
+                  "slug": "some-steam-game",
+                  "title": "Some Steam Game",
+                  "type": "game",
+                  "mature": false,
+                  "assets": { "boxart": "https://assets.isthereanydeal.com/018d937e-aaaa-7123-9942-85ddaff9efee/boxart.jpg" },
+                  "deal": {
+                    "shop": { "id": 61, "name": "Steam" },
+                    "price": { "amount": 19.99, "amountInt": 1999, "currency": "BRL" },
+                    "regular": { "amount": 39.99, "amountInt": 3999, "currency": "BRL" },
+                    "cut": 50, "voucher": null,
+                    "storeLow": { "amount": 19.99, "amountInt": 1999, "currency": "BRL" },
+                    "flag": "H",
+                    "drm": [{ "id": 61, "name": "Steam" }],
+                    "platforms": [{ "id": 1, "name": "Windows" }],
+                    "timestamp": "2026-08-26T05:47:57+02:00",
+                    "expiry": null,
+                    "url": "https://itad.link/018d9386-aaaa-719f-8647-a30948d8ab01/?app=tqtwff"
+                  }
+                }
+              ]
+            }
+            """;
+
     // Fixture 4 — POST /games/prices/v3
     private static final String FIXTURE_PRECOS = """
             [
@@ -226,5 +261,47 @@ class ItadClientImplTest extends IntegrationTestBase {
                     ItadApiException itadEx = (ItadApiException) ex;
                     assertThat(itadEx.statusCode()).isEqualTo(502);
                 });
+    }
+
+    @Test
+    void erroHttp_429_deveLancarItadApiExceptionComStatus429() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(429)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_ERRO_429)));
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(List.of(50), 0))
+                .isInstanceOf(ItadApiException.class)
+                .satisfies(ex -> {
+                    ItadApiException itadEx = (ItadApiException) ex;
+                    assertThat(itadEx.statusCode()).isEqualTo(429);
+                    assertThat(itadEx.reasonPhrase()).isEqualTo("Too Many Requests");
+                });
+    }
+
+    @Test
+    void buscarDescoberta_deveDesserializarLadoSteam() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_DESCOBERTA_STEAM)));
+
+        ItadDescobertaResponse resposta = itadClient.buscarDescoberta(List.of(61), 0);
+
+        assertThat(resposta.nextOffset()).isEqualTo(1);
+        assertThat(resposta.hasMore()).isFalse();
+        assertThat(resposta.list()).hasSize(1);
+
+        ItadJogoDescobertoResponse jogo = resposta.list().get(0);
+        assertThat(jogo.type()).isEqualTo("game");
+        assertThat(jogo.title()).isEqualTo("Some Steam Game");
+        assertThat(jogo.deal().shop().id()).isEqualTo(61);
+        assertThat(jogo.deal().shop().name()).isEqualTo("Steam");
+        assertThat(jogo.deal().price().amountInt()).isEqualTo(1999);
+        assertThat(jogo.deal().regular().amountInt()).isEqualTo(3999);
+        assertThat(jogo.deal().cut()).isEqualTo(50);
+        assertThat(jogo.deal().expiry()).isNull();
     }
 }
