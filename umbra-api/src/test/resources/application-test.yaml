@@ -8,3 +8,8 @@ umbra:
   jwt:
     ttl-horas: 1
     secret: test-secret
+
+itad:
+  itad-api:
+    api-key: chave-fake-de-teste-nunca-usada-de-verdade
+    base-url: http://localhost:0

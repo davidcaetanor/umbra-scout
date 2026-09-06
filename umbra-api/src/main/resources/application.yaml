@@ -26,3 +26,16 @@ logging:
 umbra:
   jwt:
     ttl-horas: 2
+
+itad:
+  itad-api:
+    api-key: ${ITAD_API_KEY}
+    base-url: https://api.isthereanydeal.com
+
+resilience4j:
+  ratelimiter:
+    instances:
+      itad:
+        limit-for-period: 1000
+        limit-refresh-period: 5m
+        timeout-duration: 2s
