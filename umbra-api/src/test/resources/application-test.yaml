@@ -13,3 +13,7 @@ itad:
   itad-api:
     api-key: chave-fake-de-teste-nunca-usada-de-verdade
     base-url: http://localhost:0
+
+steam:
+  steam-api:
+    base-url: http://localhost:0

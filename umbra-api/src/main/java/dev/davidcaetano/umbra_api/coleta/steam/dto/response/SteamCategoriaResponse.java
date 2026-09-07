@@ -6,7 +6,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SteamCategoriaResponse(
-        int id,
+        String id,
         String name,
         List<SteamJogoDescobertoResponse> items
 ) {
