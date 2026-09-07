@@ -32,10 +32,18 @@ itad:
     api-key: ${ITAD_API_KEY}
     base-url: https://api.isthereanydeal.com
 
+steam:
+  steam-api:
+    base-url: https://store.steampowered.com/api
+
 resilience4j:
   ratelimiter:
     instances:
       itad:
         limit-for-period: 1000
+        limit-refresh-period: 5m
+        timeout-duration: 2s
+      steam:
+        limit-for-period: 180
         limit-refresh-period: 5m
         timeout-duration: 2s
