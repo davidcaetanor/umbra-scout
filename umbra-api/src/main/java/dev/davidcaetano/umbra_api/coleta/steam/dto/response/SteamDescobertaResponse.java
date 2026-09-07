@@ -1,4 +1,4 @@
-package dev.davidcaetano.umbra_api.coleta.steam.dto;
+package dev.davidcaetano.umbra_api.coleta.steam.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
