@@ -1,0 +1,65 @@
+name: "T1.6 — Teste manual: exposição da Terabyte ao Cloudflare"
+
+# Só roda quando você clicar em "Run workflow" na aba Actions — nunca em push/PR.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  teste-terabyte:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bater nas rotas da Terabyte a partir do runner (IP de datacenter)
+        run: |
+          UA="UmbraScoutBot/0.1 (+contato: davidcaetanoribeiro@gmail.com)"
+          mkdir -p resultado
+
+          bater() {
+            nome="$1"
+            url="$2"
+            echo "== $nome -> $url =="
+            status=$(curl -sS -D "resultado/${nome}.headers.txt" -o "resultado/${nome}.body" \
+              -A "$UA" --max-time 20 -w "%{http_code}" "$url" || echo "ERRO_CURL")
+            echo "$status" > "resultado/${nome}.status.txt"
+            echo "status: $status"
+            sleep 2
+          }
+
+          # Mesmo espaçamento de 2s que o UMBRA_SCRAPER_DELAY_MS planeja em produção.
+          bater "robots"               "https://www.terabyteshop.com.br/robots.txt"
+          bater "sitemap-raiz"         "https://www.terabyteshop.com.br/sitemap.xml"
+          bater "sitemap-hardware"     "https://www.terabyteshop.com.br/hardware/sitemap.xml"
+          bater "produto-em-estoque"   "https://www.terabyteshop.com.br/produto/34851/placa-de-video-asus-prime-amd-radeon-rx-9070-xt-oc-edition-16gb-gddr6-fsr-ray-tracing-prime-rx9070xt-o16g"
+          bater "produto-indisponivel" "https://www.terabyteshop.com.br/produto/39649/hd-externo-adata-hm800-4tb-usb-32-preto-ahm800-4tu32g1-cusbk"
+
+      - name: Resumo — status, Cloudflare e JSON-LD
+        if: always()
+        run: |
+          {
+            echo "## Resultado do teste T1.6 (runner GitHub Actions = IP de datacenter)"
+            echo
+            for f in resultado/*.status.txt; do
+              nome=$(basename "$f" .status.txt)
+              status=$(cat "$f")
+              headers="resultado/${nome}.headers.txt"
+              body="resultado/${nome}.body"
+              server=$(grep -i '^Server:' "$headers" 2>/dev/null | head -1 | tr -d '\r')
+              cfray=$(grep -i '^CF-RAY:' "$headers" 2>/dev/null | head -1 | tr -d '\r')
+              desafio=$(grep -aio 'cf-chl\|just a moment\|checking your browser\|attention required\|captcha' "$body" 2>/dev/null | sort -u | tr '\n' ',' )
+              ldjson=$(grep -ac 'application/ld+json' "$body" 2>/dev/null || echo 0)
+              echo "### $nome"
+              echo "- status HTTP: \`$status\`"
+              echo "- ${server:-sem header Server}"
+              echo "- ${cfray:-sem header CF-RAY}"
+              echo "- blocos ld+json encontrados: $ldjson"
+              echo "- sinais de desafio: ${desafio:-nenhum}"
+              echo
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar HTML e headers crus como artefato (viram fixture de teste da T2.4)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terabyte-t1.6-${{ github.run_id }}
+          path: resultado/
+          retention-days: 14
