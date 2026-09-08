@@ -102,6 +102,23 @@ class ItadScraperTest extends IntegrationTestBase {
                 """.formatted(shopId, shopName, precoAtual, precoOriginal, desconto, expiryJson, dealUrl);
     }
 
+    private static String dealJsonComMoedas(int shopId, String shopName, int precoAtual, String precoCurrency,
+                                             int precoOriginal, String regularCurrency, int desconto,
+                                             String dealUrl, String expiryJson) {
+        return """
+                {
+                  "shop": { "id": %d, "name": "%s" },
+                  "price": { "amountInt": %d, "currency": "%s" },
+                  "regular": { "amountInt": %d, "currency": "%s" },
+                  "cut": %d,
+                  "timestamp": "2026-09-01T00:00:00Z",
+                  "expiry": %s,
+                  "url": "%s"
+                }
+                """.formatted(shopId, shopName, precoAtual, precoCurrency, precoOriginal, regularCurrency,
+                desconto, expiryJson, dealUrl);
+    }
+
     private static String precoJogoJson(UUID gid, String... deals) {
         return """
                 {
@@ -278,5 +295,31 @@ class ItadScraperTest extends IntegrationTestBase {
         assertThat(resultado).hasSize(2);
         assertThat(resultado).extracting(ProdutoColetado::identificadorLoja)
                 .containsExactlyInAnyOrder("111", "222");
+    }
+
+    @Test
+    void coletar_deveDescartarOfertaForaDaMoedaEsperada() {
+        UUID gidBrl = UUID.fromString("018d0000-0000-7000-8000-000000000009");
+        UUID gidUsd = UUID.fromString("018d0000-0000-7000-8000-00000000000a");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gidBrl, "Jogo BRL", "game", "https://img/brl.jpg",
+                        50, "Nuuvem", 1000, 2000, 50, EXPIRY_NULO, "https://itad.link/brl"),
+                jogoDescoberta(gidUsd, "Jogo USD", "game", "https://img/usd.jpg",
+                        61, "Steam", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/usd")));
+
+        stubLookup(50, lookupComEntrada(gidBrl, "800"));
+        stubLookup(61, lookupComEntrada(gidUsd, "900"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gidBrl, dealJson(50, "Nuuvem", 1000, 2000, 50,
+                        "https://itad.link/brl", EXPIRY_NULO)),
+                precoJogoJson(gidUsd, dealJsonComMoedas(61, "Steam", 1500, "USD", 3000, "USD", 50,
+                        "https://itad.link/usd", EXPIRY_NULO))));
+
+        List<ProdutoColetado> resultado = itadScraper.coletar();
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).chaveItad()).isEqualTo(gidBrl.toString());
     }
 }

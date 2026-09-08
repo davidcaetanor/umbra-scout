@@ -30,6 +30,7 @@ public class ItadScraper implements Scraper {
     private static final List<Integer> SHOPS = List.of(61, 50);
     private static final int MAX_PAGINAS_DESCOBERTA = 50;
     private static final int TAMANHO_LOTE_PRECOS = 200;
+    private static final String MOEDA_ESPERADA = "BRL";
 
     private final ItadClient itadClient;
 
@@ -85,6 +86,12 @@ public class ItadScraper implements Scraper {
                 if (identificadorLoja == null || info == null) {
                     log.warn("Descartando oferta ITAD com dado inconsistente entre chamadas: gid={} shopId={} " +
                             "identificadorNativo={} tituloImagem={}", gid, shopId, identificadorLoja, info);
+                    continue;
+                }
+
+                if (!MOEDA_ESPERADA.equals(deal.price().currency()) || !MOEDA_ESPERADA.equals(deal.regular().currency())) {
+                    log.warn("Descartando oferta ITAD fora da moeda esperada: gid={} shopId={} precoCurrency={} " +
+                            "regularCurrency={}", gid, shopId, deal.price().currency(), deal.regular().currency());
                     continue;
                 }
 
