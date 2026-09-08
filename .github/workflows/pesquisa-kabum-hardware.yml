@@ -1,0 +1,95 @@
+name: "Pesquisa de campo — filtro de categoria e árvore de hardware da Kabum"
+
+# Só roda quando você clicar em "Run workflow" na aba Actions.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  pesquisa-kabum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descobrir o filtro de categoria certo, depois puxar uma amostra grande de Hardware
+        run: |
+          UA="UmbraScoutBot/0.1 (+contato: davidcaetanoribeiro@gmail.com)"
+          BASE="https://servicespub.prod.api.aws.grupokabum.com.br/catalog/v2/products"
+          mkdir -p resultado
+
+          echo "== baseline, sem filtro nenhum (referência: sabemos que dá 10000) =="
+          curl -sS -A "$UA" --max-time 20 "$BASE?page_number=1&page_size=1" -o resultado/baseline.json
+          echo "total_items_count baseline: $(jq -r '.meta.total_items_count // "erro"' resultado/baseline.json)"
+          sleep 2
+
+          # Sintaxes candidatas pro parâmetro de filtro de categoria, em ordem de probabilidade
+          CANDIDATOS=(
+            "category=Hardware"
+            "category[]=Hardware"
+            "filter[category]=Hardware"
+            "categories=Hardware"
+            "category_name=Hardware"
+            "menu=Hardware"
+            "category=hardware"
+          )
+
+          VENCEDOR=""
+          for c in "${CANDIDATOS[@]}"; do
+            nome=$(echo "$c" | tr -c 'a-zA-Z0-9' '_')
+            echo "== testando: $c =="
+            curl -sS -A "$UA" --max-time 20 "${BASE}?${c}&page_number=1&page_size=5" -o "resultado/cand_${nome}.json"
+            total=$(jq -r '.meta.total_items_count // "erro"' "resultado/cand_${nome}.json" 2>/dev/null || echo "erro")
+            primeiro_menu=$(jq -r '.data[0].attributes.menu // "sem-item"' "resultado/cand_${nome}.json" 2>/dev/null || echo "erro")
+            echo "  total_items_count=$total | primeiro menu=$primeiro_menu"
+            if [ "$total" != "10000" ] && [ "$total" != "erro" ] && [ "$total" != "0" ] && [ "$total" != "null" ] && [ -z "$VENCEDOR" ]; then
+              VENCEDOR="$c"
+              echo "  >>> candidato promissor: $c"
+            fi
+            sleep 2
+          done
+
+          echo "$VENCEDOR" > resultado/vencedor.txt
+          echo "Vencedor: ${VENCEDOR:-NENHUM CANDIDATO FUNCIONOU}"
+
+          if [ -n "$VENCEDOR" ]; then
+            echo "== filtro encontrado — puxando 5 páginas grandes (page_size=100) pra mapear a árvore de menu =="
+            for pn in 1 2 3 4 5; do
+              curl -sS -A "$UA" --max-time 20 "${BASE}?${VENCEDOR}&page_number=${pn}&page_size=100" -o "resultado/hardware_pagina_${pn}.json"
+              sleep 2
+            done
+          else
+            echo "== nenhum filtro server-side funcionou — puxando páginas SEM filtro em page_size grande, pra filtrar 'menu' no lado de cá =="
+            for pn in 1 2 3 4 5; do
+              curl -sS -A "$UA" --max-time 20 "${BASE}?page_number=${pn}&page_size=100" -o "resultado/catalogo_geral_pagina_${pn}.json"
+              sleep 2
+            done
+          fi
+
+      - name: Resumo — filtro vencedor e árvore de categorias (menu) encontrada
+        if: always()
+        run: |
+          {
+            echo "## Pesquisa de campo — categoria de hardware na Kabum"
+            echo
+            echo "**Filtro vencedor:** \`$(cat resultado/vencedor.txt 2>/dev/null || echo 'nenhum')\`"
+            echo
+            echo "### Lista completa de categorias que a API conhece (meta.filters.string_filters)"
+            jq -r '.meta.filters.string_filters[] | select(.name=="category") | .values[]' resultado/baseline.json 2>/dev/null | sed 's/^/- /' || echo "(baseline não trouxe a lista de filtros — normal com page_size=1, ignorar)"
+            echo
+            echo "### Valores de 'menu' encontrados na amostra puxada (contagem)"
+            for f in resultado/hardware_pagina_*.json resultado/catalogo_geral_pagina_*.json; do
+              [ -f "$f" ] || continue
+              jq -r '.data[].attributes.menu' "$f" 2>/dev/null
+            done | sort | uniq -c | sort -rn | sed 's/^/    /'
+            echo
+            echo "### Primeiros 10 itens (id, título, menu, preço, disponível)"
+            for f in resultado/hardware_pagina_1.json resultado/catalogo_geral_pagina_1.json; do
+              [ -f "$f" ] || continue
+              jq -r '.data[] | "- \(.id) | \(.attributes.title) | \(.attributes.menu) | R$\(.attributes.price_with_discount) | disponivel=\(.attributes.available and (.attributes.stock > 0) and (.attributes.price_with_discount > 0))"' "$f" 2>/dev/null | head -10
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar todo o JSON cru como artefato
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kabum-pesquisa-hardware-${{ github.run_id }}
+          path: resultado/
+          retention-days: 14
