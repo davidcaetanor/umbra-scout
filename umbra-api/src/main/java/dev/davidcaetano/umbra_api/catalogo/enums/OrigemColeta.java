@@ -4,5 +4,6 @@ public enum OrigemColeta {
     ITAD_API,
     NUUVEM_API,
     STEAM_API,
-    TERABYTE_HTML
+    TERABYTE_HTML,
+    KABUM_API
 }
