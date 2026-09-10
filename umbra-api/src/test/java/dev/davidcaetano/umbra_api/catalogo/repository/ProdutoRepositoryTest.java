@@ -65,7 +65,7 @@ class ProdutoRepositoryTest extends IntegrationTestBase {
         assertThat(lojaRepository.findAll())
                 .extracting(LojaEntity::getCodigo)
                 .containsExactlyInAnyOrder(CodigoLoja.STEAM, CodigoLoja.NUUVEM,
-                        CodigoLoja.TERABYTE, CodigoLoja.EPIC);
+                        CodigoLoja.TERABYTE, CodigoLoja.EPIC, CodigoLoja.KABUM);
     }
 
     @Test

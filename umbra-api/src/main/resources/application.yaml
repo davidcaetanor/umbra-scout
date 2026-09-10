@@ -36,6 +36,10 @@ steam:
   steam-api:
     base-url: https://store.steampowered.com/api
 
+kabum:
+  kabum-api:
+    base-url: https://servicespub.prod.api.aws.grupokabum.com.br
+
 resilience4j:
   ratelimiter:
     instances:
@@ -44,6 +48,10 @@ resilience4j:
         limit-refresh-period: 5m
         timeout-duration: 2s
       steam:
+        limit-for-period: 180
+        limit-refresh-period: 5m
+        timeout-duration: 2s
+      kabum:
         limit-for-period: 180
         limit-refresh-period: 5m
         timeout-duration: 2s

@@ -17,3 +17,7 @@ itad:
 steam:
   steam-api:
     base-url: http://localhost:0
+
+kabum:
+  kabum-api:
+    base-url: http://localhost:0

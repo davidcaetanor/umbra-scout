@@ -4,5 +4,6 @@ public enum CodigoLoja {
     STEAM,
     NUUVEM,
     EPIC,
-    TERABYTE
+    TERABYTE,
+    KABUM
 }
