@@ -180,4 +180,27 @@ public class V1MigrationConstraintsTest extends IntegrationTestBase{
                 .hasMessageContaining("ck_preco_valor");
     }
 
+    @Test
+    void deveExistirLinhaDaKabumEmLoja() {
+        Integer total = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM loja
+                WHERE codigo = 'KABUM' AND nome = 'KaBuM!' AND url_base = 'https://www.kabum.com.br' AND ativa
+                """, Integer.class);
+
+        assertThat(total).isEqualTo(1);
+    }
+
+    @Test
+    void deveAceitarOrigemKabumApi() {
+        Long produtoId = inserirProdutoValido();
+
+        Long precoId = jdbc.queryForObject("""
+                INSERT INTO preco (produto_id, valor_centavos, origem_coleta)
+                VALUES (?, 10000, 'KABUM_API')
+                RETURNING id
+                """, Long.class, produtoId);
+
+        assertThat(precoId).isNotNull();
+    }
+
 }
