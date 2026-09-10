@@ -14,6 +14,9 @@ public record KabumAtributosResponse(
         @JsonProperty("price_with_discount")
         BigDecimal priceWithDiscount,
 
+        @JsonProperty("discount_percentage")
+        int discountPercentage,
+
         boolean available,
         int stock,
 
