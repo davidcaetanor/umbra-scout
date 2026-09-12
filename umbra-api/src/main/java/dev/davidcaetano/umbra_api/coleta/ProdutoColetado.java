@@ -20,7 +20,6 @@ public record ProdutoColetado(
         Short descontoPct,
         boolean disponivel,
         OrigemColeta origemColeta,
-        OffsetDateTime coletadoEm,
         OffsetDateTime expiry
 ) {
 }
