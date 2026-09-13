@@ -89,12 +89,6 @@ public class SteamScraper implements Scraper {
         );
     }
 
-    private enum TriagemItem {
-        ACEITO,
-        FORA_ESCOPO,
-        SEM_PRECO
-    }
-
     private static TriagemItem triar(SteamJogoDescobertoResponse item,
                                      SteamAppDetalhesResponse detalhes,
                                      FiltroMoeda filtroMoeda) {
@@ -125,4 +119,9 @@ public class SteamScraper implements Scraper {
         return TriagemItem.ACEITO;
     }
 
+    private enum TriagemItem {
+        ACEITO,
+        FORA_ESCOPO,
+        SEM_PRECO
+    }
 }

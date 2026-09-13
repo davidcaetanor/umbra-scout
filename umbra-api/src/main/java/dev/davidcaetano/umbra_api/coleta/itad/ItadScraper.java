@@ -137,7 +137,6 @@ public class ItadScraper implements Scraper {
         filtroMoeda.logarResumo(fonte());
 
         return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
-
     }
 
     private List<ItadJogoDescobertoResponse> buscarTodaDescoberta() {

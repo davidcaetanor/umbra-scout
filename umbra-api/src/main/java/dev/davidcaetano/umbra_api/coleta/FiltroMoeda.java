@@ -8,6 +8,7 @@ import java.util.TreeSet;
 
 @Slf4j
 public class FiltroMoeda {
+
     private static final String MOEDA_ACEITA = "BRL";
     private static final String MOEDA_AUSENTE = "ausente";
 
