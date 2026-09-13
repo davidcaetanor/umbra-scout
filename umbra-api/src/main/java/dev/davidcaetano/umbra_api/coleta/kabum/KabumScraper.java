@@ -58,18 +58,19 @@ public class KabumScraper implements Scraper {
         int totalSemPreco = 0;
 
         for (KabumProdutoResponse produto : produtos) {
-            String categoria = mapearCategoria(produto.attributes().menu());
+            KabumAtributosResponse atributos = produto.attributes();
+
+            String categoria = mapearCategoria(atributos.menu());
 
             if (categoria == null) {
-                log.debug("Item fora do escopo: id={} menu={}", produto.id(), produto.attributes().menu());
+                log.debug("Item Kabum fora do escopo: id={} menu={}", produto.id(), atributos.menu());
                 continue;
             }
 
             totalElegivel++;
 
-            if (produto.attributes().priceWithDiscount() == null) {
-                log.warn("Produto elegivel pela categoria mas com valor inválido: id={} menu={}",
-                        produto.id(), produto.attributes().menu());
+            if (atributos.priceWithDiscount() == null || atributos.price() == null) {
+                log.warn("Item Kabum elegivel sem preco: id={} menu={}", produto.id(), atributos.menu());
                 totalSemPreco++;
                 continue;
             }
