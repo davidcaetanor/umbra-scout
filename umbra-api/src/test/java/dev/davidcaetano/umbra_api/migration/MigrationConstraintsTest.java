@@ -18,7 +18,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @JdbcTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-public class V1MigrationConstraintsTest extends IntegrationTestBase{
+public class MigrationConstraintsTest extends IntegrationTestBase {
 
     @Autowired
     private JdbcTemplate jdbc;

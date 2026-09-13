@@ -55,9 +55,9 @@ class PrecoRepositoryTest extends IntegrationTestBase {
     @Test
     void deveGerarDuasLinhasQuandoColetarOMesmoProdutoDuasVezes() {
         precoRepository.save(PrecoEntity.novo(produto, 8990L, 12990L, (short) 30, true,
-                OrigemColeta.STEAM_API, PRIMEIRA_COLETA));
+                OrigemColeta.STEAM_API, null, PRIMEIRA_COLETA));
         precoRepository.save(PrecoEntity.novo(produto, 7490L, 12990L, (short) 42, true,
-                OrigemColeta.STEAM_API, SEGUNDA_COLETA));
+                OrigemColeta.STEAM_API, null, SEGUNDA_COLETA));
         em.flush();
 
         assertThat(precoRepository.count()).isEqualTo(2);
@@ -68,9 +68,9 @@ class PrecoRepositoryTest extends IntegrationTestBase {
         OffsetDateTime mesmoInstante = OffsetDateTime.parse("2026-09-01T12:00:00Z");
 
         PrecoEntity primeiro = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 9000L, null, null,
-                true, OrigemColeta.STEAM_API, mesmoInstante));
+                true, OrigemColeta.STEAM_API, null, mesmoInstante));
         PrecoEntity segundo = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 8000L, null, null,
-                true, OrigemColeta.STEAM_API, mesmoInstante));
+                true, OrigemColeta.STEAM_API, null, mesmoInstante));
 
         assertThat(segundo.getId()).isGreaterThan(primeiro.getId());
 
@@ -85,9 +85,9 @@ class PrecoRepositoryTest extends IntegrationTestBase {
     @Test
     void deveDevolverColetaMaisRecenteQuandoConsultarPrecoAtual() {
         precoRepository.saveAndFlush(PrecoEntity.novo(produto, 9000L, null, null, true,
-                OrigemColeta.STEAM_API, PRIMEIRA_COLETA));
+                OrigemColeta.STEAM_API, null, PRIMEIRA_COLETA));
         PrecoEntity maisRecente = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 7490L, 12990L,
-                (short) 42, true, OrigemColeta.STEAM_API, SEGUNDA_COLETA));
+                (short) 42, true, OrigemColeta.STEAM_API, null, SEGUNDA_COLETA));
 
         Object valorNaView = em.createNativeQuery(
                         "SELECT valor_centavos FROM vw_preco_atual WHERE produto_id = :produtoId")
@@ -100,7 +100,7 @@ class PrecoRepositoryTest extends IntegrationTestBase {
     @Test
     void deveGravarOrigemColetaComoTextoQuandoPersistirPreco() {
         Long id = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 8990L, null, null, true,
-                OrigemColeta.STEAM_API, PRIMEIRA_COLETA)).getId();
+                OrigemColeta.STEAM_API, null, PRIMEIRA_COLETA)).getId();
 
         Object origemNaColuna = em.createNativeQuery("SELECT origem_coleta FROM preco WHERE id = :id")
                 .setParameter("id", id)
@@ -112,7 +112,7 @@ class PrecoRepositoryTest extends IntegrationTestBase {
     @Test
     void devePreservarDadosDaColetaQuandoPersistirPreco() {
         Long id = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 8990L, 12990L, (short) 30, true,
-                OrigemColeta.STEAM_API, PRIMEIRA_COLETA)).getId();
+                OrigemColeta.STEAM_API, null, PRIMEIRA_COLETA)).getId();
         em.clear();
 
         PrecoEntity relido = precoRepository.findById(id).orElseThrow();
@@ -127,7 +127,7 @@ class PrecoRepositoryTest extends IntegrationTestBase {
     @Test
     void deveGravarPrecoIndisponivelQuandoItemEstiverEsgotado() {
         Long id = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 8990L, null, null, false,
-                OrigemColeta.STEAM_API, PRIMEIRA_COLETA)).getId();
+                OrigemColeta.STEAM_API, null, PRIMEIRA_COLETA)).getId();
         em.clear();
 
         assertThat(precoRepository.findById(id).orElseThrow().isDisponivel()).isFalse();
@@ -136,12 +136,25 @@ class PrecoRepositoryTest extends IntegrationTestBase {
     @Test
     void deveGravarSemDescontoQuandoColetaNaoTrouxerValorOriginal() {
         Long id = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 8990L, null, null, true,
-                OrigemColeta.STEAM_API, PRIMEIRA_COLETA)).getId();
+                OrigemColeta.STEAM_API, null, PRIMEIRA_COLETA)).getId();
         em.clear();
 
         PrecoEntity relido = precoRepository.findById(id).orElseThrow();
 
         assertThat(relido.getValorOriginalCentavos()).isNull();
         assertThat(relido.getDescontoPct()).isNull();
+    }
+
+    @Test
+    void devePreservarInstanteDeExpiraEmQuandoPersistirComOffsetNaoUtc() {
+        OffsetDateTime expiraEm = OffsetDateTime.parse("2026-09-05T09:00:00-03:00");
+
+        Long id = precoRepository.saveAndFlush(PrecoEntity.novo(produto, 8990L, null, null, true,
+                OrigemColeta.STEAM_API, expiraEm, PRIMEIRA_COLETA)).getId();
+        em.clear();
+
+        PrecoEntity relido = precoRepository.findById(id).orElseThrow();
+
+        assertThat(relido.getExpiraEm().toInstant()).isEqualTo(expiraEm.toInstant());
     }
 }

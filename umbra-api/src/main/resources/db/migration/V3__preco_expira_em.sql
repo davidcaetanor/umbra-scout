@@ -1,0 +1,1 @@
+ALTER TABLE preco ADD COLUMN expira_em TIMESTAMPTZ;

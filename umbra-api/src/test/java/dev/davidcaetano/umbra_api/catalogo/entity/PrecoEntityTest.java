@@ -17,7 +17,7 @@ class PrecoEntityTest {
     @Test
     void deveFalharQuandoValorForNegativo() {
         assertThatThrownBy(() -> PrecoEntity.novo(produto, -1L, null, null, true,
-                OrigemColeta.STEAM_API, COLETADO_EM))
+                OrigemColeta.STEAM_API, null, COLETADO_EM))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("valorCentavos");
     }
@@ -25,7 +25,7 @@ class PrecoEntityTest {
     @Test
     void deveFalharQuandoValorOriginalMenorQueAtual() {
         assertThatThrownBy(() -> PrecoEntity.novo(produto, 10000L, 5000L, null, true,
-                OrigemColeta.STEAM_API, COLETADO_EM))
+                OrigemColeta.STEAM_API, null, COLETADO_EM))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("valorOriginalCentavos");
     }
@@ -33,7 +33,7 @@ class PrecoEntityTest {
     @Test
     void deveFalharQuandoDescontoForaDaFaixaPermitida() {
         assertThatThrownBy(() -> PrecoEntity.novo(produto, 10000L, null, (short) 101, true,
-                OrigemColeta.STEAM_API, COLETADO_EM))
+                OrigemColeta.STEAM_API, null, COLETADO_EM))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("descontoPct");
     }
@@ -41,7 +41,7 @@ class PrecoEntityTest {
     @Test
     void deveFalharQuandoOrigemColetaForNula() {
         assertThatThrownBy(() -> PrecoEntity.novo(produto, 10000L, null, null, true,
-                null, COLETADO_EM))
+                null, null, COLETADO_EM))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("origem");
     }
@@ -49,7 +49,7 @@ class PrecoEntityTest {
     @Test
     void deveFalharQuandoProdutoForNulo() {
         assertThatThrownBy(() -> PrecoEntity.novo(null, 10000L, null, null, true,
-                OrigemColeta.STEAM_API, COLETADO_EM))
+                OrigemColeta.STEAM_API, null, COLETADO_EM))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("produto");
     }
@@ -57,7 +57,7 @@ class PrecoEntityTest {
     @Test
     void deveCriarPrecoIndisponivelQuandoItemEstiverEsgotado() {
         PrecoEntity preco = PrecoEntity.novo(produto, 10000L, null, null, false,
-                OrigemColeta.STEAM_API, COLETADO_EM);
+                OrigemColeta.STEAM_API, null, COLETADO_EM);
 
         assertThat(preco.isDisponivel()).isFalse();
     }
@@ -65,7 +65,7 @@ class PrecoEntityTest {
     @Test
     void deveAceitarValorZeroQuandoProdutoForGratuito() {
         PrecoEntity preco = PrecoEntity.novo(produto, 0L, null, null, true,
-                OrigemColeta.STEAM_API, COLETADO_EM);
+                OrigemColeta.STEAM_API, null, COLETADO_EM);
 
         assertThat(preco.getValorCentavos()).isZero();
     }
@@ -73,8 +73,23 @@ class PrecoEntityTest {
     @Test
     void deveAceitarValorOriginalIgualAoAtualQuandoNaoHouverDesconto() {
         PrecoEntity preco = PrecoEntity.novo(produto, 10000L, 10000L, (short) 0, true,
-                OrigemColeta.STEAM_API, COLETADO_EM);
+                OrigemColeta.STEAM_API, null, COLETADO_EM);
 
         assertThat(preco.getValorOriginalCentavos()).isEqualTo(preco.getValorCentavos());
+    }
+
+    @Test
+    void devePreservarExpiraEmQuandoInformado() {
+        OffsetDateTime expiraEm = OffsetDateTime.parse("2026-09-10T00:00:00Z");
+
+        PrecoEntity preco = PrecoEntity.novo(produto, 10000L, null, null, true,
+                OrigemColeta.STEAM_API, expiraEm, COLETADO_EM);
+
+        assertThat(preco.getExpiraEm()).isEqualTo(expiraEm);
+
+        PrecoEntity semExpiracao = PrecoEntity.novo(produto, 10000L, null, null, true,
+                OrigemColeta.STEAM_API, null, COLETADO_EM);
+
+        assertThat(semExpiracao.getExpiraEm()).isNull();
     }
 }

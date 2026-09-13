@@ -40,12 +40,15 @@ public class PrecoEntity {
     @Column(nullable = false)
     private OffsetDateTime coletadoEm;
 
+    private OffsetDateTime expiraEm;
+
     public static PrecoEntity novo(ProdutoEntity produto,
                                    long valorCentavos,
                                    Long valorOriginalCentavos,
                                    Short descontoPct,
                                    boolean disponivel,
                                    OrigemColeta origemColeta,
+                                   OffsetDateTime expiraEm,
                                    OffsetDateTime dataHoraAgora) {
 
         Objects.requireNonNull(produto, "produto é obrigatório");
@@ -71,6 +74,7 @@ public class PrecoEntity {
         preco.descontoPct = descontoPct;
         preco.disponivel = disponivel;
         preco.origemColeta = origemColeta;
+        preco.expiraEm = expiraEm;
         preco.coletadoEm = dataHoraAgora;
 
         return preco;
