@@ -6,6 +6,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -17,7 +18,6 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -101,6 +101,19 @@ class SteamScraperTest extends IntegrationTestBase {
                 """.formatted(appid);
     }
 
+    private static String detalhesResponseSemBlocoDePreco(int appid, String tipo) {
+        return """
+                {
+                  "%d": {
+                    "success": true,
+                    "data": {
+                      "type": "%s"
+                    }
+                  }
+                }
+                """.formatted(appid, tipo);
+    }
+
     private void stubDescoberta(String corpo) {
         WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
                 .willReturn(aResponse()
@@ -133,11 +146,13 @@ class SteamScraperTest extends IntegrationTestBase {
         stubDetalhes(idDlc, detalhesResponse(idDlc, "dlc", "BRL", 1990, 995, 50));
         stubDetalhes(idGame, detalhesResponse(idGame, "game", "BRL", 9990, 4995, 50));
 
-        List<ProdutoColetado> resultado = steamScraper.coletar();
+        ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado).hasSize(1);
+        assertThat(resultado.produtos()).hasSize(1);
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
 
-        ProdutoColetado produto = resultado.getFirst();
+        ProdutoColetado produto = resultado.produtos().getFirst();
         assertThat(produto.loja()).isEqualTo(CodigoLoja.STEAM);
         assertThat(produto.identificadorLoja()).isEqualTo(String.valueOf(idGame));
         assertThat(produto.tipo()).isEqualTo(TipoProduto.JOGO);
@@ -151,7 +166,6 @@ class SteamScraperTest extends IntegrationTestBase {
         assertThat(produto.descontoPct()).isEqualTo((short) 50);
         assertThat(produto.disponivel()).isTrue();
         assertThat(produto.origemColeta()).isEqualTo(OrigemColeta.STEAM_API);
-        assertThat(produto.coletadoEm()).isNotNull();
         assertThat(produto.expiry()).isEqualTo(Instant.ofEpochSecond(discountExpiration).atOffset(ZoneOffset.UTC));
 
         WIREMOCK.verify(0, getRequestedFor(urlPathEqualTo("/appdetails"))
@@ -165,9 +179,11 @@ class SteamScraperTest extends IntegrationTestBase {
         stubDescoberta(descobertaResponse(
                 itemDescoberta(idSemDesconto, "Sem Desconto", false, 0L, "https://img/sem-desconto.jpg")));
 
-        List<ProdutoColetado> resultado = steamScraper.coletar();
+        ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(0);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
         WIREMOCK.verify(0, getRequestedFor(urlPathEqualTo("/appdetails"))
                 .withQueryParam("appids", equalTo(String.valueOf(idSemDesconto))));
     }
@@ -180,9 +196,11 @@ class SteamScraperTest extends IntegrationTestBase {
                 itemDescoberta(id, "Oferta Invalida", true, 1788886800L, "https://img/invalido.jpg")));
         stubDetalhes(id, detalhesResponseSemSucesso(id));
 
-        List<ProdutoColetado> resultado = steamScraper.coletar();
+        ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
 
     @Test
@@ -193,9 +211,11 @@ class SteamScraperTest extends IntegrationTestBase {
                 itemDescoberta(id, "Sumiu Entre As Duas Chamadas", true, 1788886800L, "https://img/sumido.jpg")));
         stubDetalhes(id, "{}");
 
-        List<ProdutoColetado> resultado = steamScraper.coletar();
+        ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
 
     @Test
@@ -206,9 +226,26 @@ class SteamScraperTest extends IntegrationTestBase {
                 itemDescoberta(id, "Oferta Fora Da Moeda", true, 1788886800L, "https://img/usd.jpg")));
         stubDetalhes(id, detalhesResponse(id, "game", "USD", 9990, 4995, 50));
 
-        List<ProdutoColetado> resultado = steamScraper.coletar();
+        ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(0);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
+    }
+
+    @Test
+    void coletar_deveDescartarItemSemBlocoDePrecoSemLancarErro() {
+        int id = 800;
+
+        stubDescoberta(descobertaResponse(
+                itemDescoberta(id, "Sem Bloco De Preco", true, 1788886800L, "https://img/sem-preco.jpg")));
+        stubDetalhes(id, detalhesResponseSemBlocoDePreco(id, "game"));
+
+        ResultadoColeta resultado = steamScraper.coletar();
+
+        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
 
     @Test
