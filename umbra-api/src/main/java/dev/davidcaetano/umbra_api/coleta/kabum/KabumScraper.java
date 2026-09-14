@@ -3,7 +3,8 @@ package dev.davidcaetano.umbra_api.coleta.kabum;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumAtributosResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,38 +50,49 @@ public class KabumScraper implements Scraper {
     }
 
     @Override
-    public List<ProdutoColetado> coletar() {
-        List<KabumProdutoResponse> itens = buscarCatalogoCompleto();
+    public ResultadoColeta coletar() {
+        List<KabumProdutoResponse> produtos = buscarCatalogoCompleto();
 
-        List<ProdutoColetado> resultado = new ArrayList<>();
+        List<OfertaColetada> resultado = new ArrayList<>();
+        int totalElegivel = 0;
+        int totalSemPreco = 0;
 
-        for (KabumProdutoResponse item : itens) {
-            String categoria = mapearCategoria(item.attributes().menu());
+        for (KabumProdutoResponse produto : produtos) {
+            KabumAtributosResponse atributos = produto.attributes();
+
+            String categoria = mapearCategoria(atributos.menu());
 
             if (categoria == null) {
-                log.warn("Descartando item Kabum com menu fora do escopo mapeado: id={} menu={}",
-                        item.id(), item.attributes().menu());
+                log.debug("Item Kabum fora do escopo: id={} menu={}", produto.id(), atributos.menu());
                 continue;
             }
 
-            resultado.add(toProdutoColetado(item, categoria));
+            totalElegivel++;
+
+            if (atributos.priceWithDiscount() == null || atributos.price() == null) {
+                log.warn("Item Kabum elegivel sem preco: id={} menu={}", produto.id(), atributos.menu());
+                totalSemPreco++;
+                continue;
+            }
+
+            resultado.add(toOfertaColetada(produto, categoria));
         }
 
-        return resultado;
+        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
     }
 
     private List<KabumProdutoResponse> buscarCatalogoCompleto() {
         KabumCatalogoResponse primeiraPagina = kabumClient.buscarPaginaHardware(1, PAGE_SIZE);
 
-        List<KabumProdutoResponse> itens = new ArrayList<>(primeiraPagina.data());
+        List<KabumProdutoResponse> produtos = new ArrayList<>(primeiraPagina.data());
 
         int totalPaginas = primeiraPagina.meta().totalPagesCount();
         for (int pagina = 2; pagina <= totalPaginas; pagina++) {
             KabumCatalogoResponse proximaPagina = kabumClient.buscarPaginaHardware(pagina, PAGE_SIZE);
-            itens.addAll(proximaPagina.data());
+            produtos.addAll(proximaPagina.data());
         }
 
-        return itens;
+        return produtos;
     }
 
     private static String mapearCategoria(String menu) {
@@ -98,7 +109,7 @@ public class KabumScraper implements Scraper {
         return null;
     }
 
-    private static ProdutoColetado toProdutoColetado(KabumProdutoResponse item, String categoria) {
+    private static OfertaColetada toOfertaColetada(KabumProdutoResponse item, String categoria) {
         KabumAtributosResponse atributos = item.attributes();
 
         boolean temDesconto = atributos.discountPercentage() != 0;
@@ -107,7 +118,7 @@ public class KabumScraper implements Scraper {
                 && atributos.stock() > 0
                 && atributos.priceWithDiscount().compareTo(BigDecimal.ZERO) > 0;
 
-        return new ProdutoColetado(
+        return new OfertaColetada(
                 CodigoLoja.KABUM,
                 String.valueOf(item.id()),
                 TipoProduto.HARDWARE,
@@ -121,7 +132,6 @@ public class KabumScraper implements Scraper {
                 temDesconto ? (short) atributos.discountPercentage() : null,
                 disponivel,
                 OrigemColeta.KABUM_API,
-                OffsetDateTime.now(),
                 null
         );
     }

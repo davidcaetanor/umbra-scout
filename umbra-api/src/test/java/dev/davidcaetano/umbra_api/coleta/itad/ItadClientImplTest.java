@@ -19,8 +19,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -181,7 +183,7 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withHeader("Content-Type", "application/json")
                         .withBody(FIXTURE_DESCOBERTA)));
 
-        ItadDescobertaResponse resposta = itadClient.buscarDescoberta(List.of(50), 0);
+        ItadDescobertaResponse resposta = itadClient.buscarDescoberta(0);
 
         assertThat(resposta.nextOffset()).isEqualTo(5);
         assertThat(resposta.hasMore()).isTrue();
@@ -238,7 +240,7 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withHeader("Content-Type", "application/json")
                         .withBody(FIXTURE_ERRO)));
 
-        assertThatThrownBy(() -> itadClient.buscarDescoberta(List.of(50), 0))
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
                 .isInstanceOf(ItadApiException.class)
                 .satisfies(ex -> {
                     ItadApiException itadEx = (ItadApiException) ex;
@@ -255,7 +257,7 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withHeader("Content-Type", "text/html")
                         .withBody("<html><body>Bad Gateway</body></html>")));
 
-        assertThatThrownBy(() -> itadClient.buscarDescoberta(List.of(50), 0))
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
                 .isInstanceOf(ItadApiException.class)
                 .satisfies(ex -> {
                     ItadApiException itadEx = (ItadApiException) ex;
@@ -271,7 +273,7 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withHeader("Content-Type", "application/json")
                         .withBody(FIXTURE_ERRO_429)));
 
-        assertThatThrownBy(() -> itadClient.buscarDescoberta(List.of(50), 0))
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
                 .isInstanceOf(ItadApiException.class)
                 .satisfies(ex -> {
                     ItadApiException itadEx = (ItadApiException) ex;
@@ -288,7 +290,7 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withHeader("Content-Type", "application/json")
                         .withBody(FIXTURE_DESCOBERTA_STEAM)));
 
-        ItadDescobertaResponse resposta = itadClient.buscarDescoberta(List.of(61), 0);
+        ItadDescobertaResponse resposta = itadClient.buscarDescoberta(0);
 
         assertThat(resposta.nextOffset()).isEqualTo(1);
         assertThat(resposta.hasMore()).isFalse();
@@ -303,5 +305,21 @@ class ItadClientImplTest extends IntegrationTestBase {
         assertThat(jogo.deal().regular().amountInt()).isEqualTo(3999);
         assertThat(jogo.deal().cut()).isEqualTo(50);
         assertThat(jogo.deal().expiry()).isNull();
+    }
+
+    @Test
+    void buscarDescoberta_deveEnviarLimiteMaximoESortPorTrending() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_DESCOBERTA_STEAM)));
+
+        itadClient.buscarDescoberta(0);
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/deals/v2"))
+                .withQueryParam("limit", equalTo("200"))
+                .withQueryParam("sort", equalTo("-trending"))
+                .withQueryParam("shops", equalTo("61,50,35,16,36")));
     }
 }

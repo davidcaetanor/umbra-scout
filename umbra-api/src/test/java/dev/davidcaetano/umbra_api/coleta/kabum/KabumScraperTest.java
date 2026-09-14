@@ -5,7 +5,8 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -14,8 +15,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-
-import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -64,6 +63,27 @@ class KabumScraperTest extends IntegrationTestBase {
                 }
                 """.formatted(id, menu, title, price, priceWithDiscount, discountPercentage, available, stock,
                 productLink, primeBlock);
+    }
+
+    private static String itemSemPrecoComDesconto(long id, String menu, String title, String price,
+                                                    boolean available, int stock, String productLink) {
+        return """
+                {
+                  "type": "product",
+                  "id": %d,
+                  "attributes": {
+                    "menu": "%s",
+                    "title": "%s",
+                    "price": %s,
+                    "discount_percentage": 0,
+                    "available": %b,
+                    "stock": %d,
+                    "is_marketplace": false,
+                    "product_link": "%s",
+                    "prime": null
+                  }
+                }
+                """.formatted(id, menu, title, price, available, stock, productLink);
     }
 
     private static String catalogoResponse(int pageNumber, int totalPagesCount, String... itens) {
@@ -159,11 +179,13 @@ class KabumScraperTest extends IntegrationTestBase {
     void coletar_deveMapearOsTresItensDoFixtureReal() {
         stubPagina(1, FIXTURE_PAGINA_UNICA);
 
-        List<ProdutoColetado> resultado = kabumScraper.coletar();
+        ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado).hasSize(3);
+        assertThat(resultado.ofertas()).hasSize(3);
+        assertThat(resultado.totalElegivel()).isEqualTo(3);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
 
-        ProdutoColetado descontoSimples = resultado.get(0);
+        OfertaColetada descontoSimples = resultado.ofertas().get(0);
         assertThat(descontoSimples.loja()).isEqualTo(CodigoLoja.KABUM);
         assertThat(descontoSimples.identificadorLoja()).isEqualTo("883976");
         assertThat(descontoSimples.tipo()).isEqualTo(TipoProduto.HARDWARE);
@@ -177,10 +199,9 @@ class KabumScraperTest extends IntegrationTestBase {
         assertThat(descontoSimples.descontoPct()).isEqualTo((short) 10);
         assertThat(descontoSimples.disponivel()).isTrue();
         assertThat(descontoSimples.origemColeta()).isEqualTo(OrigemColeta.KABUM_API);
-        assertThat(descontoSimples.coletadoEm()).isNotNull();
         assertThat(descontoSimples.expiry()).isNull();
 
-        ProdutoColetado marketplace = resultado.get(1);
+        OfertaColetada marketplace = resultado.ofertas().get(1);
         assertThat(marketplace.identificadorLoja()).isEqualTo("161693");
         assertThat(marketplace.categoria()).isEqualTo("GPU");
         assertThat(marketplace.url())
@@ -189,7 +210,7 @@ class KabumScraperTest extends IntegrationTestBase {
         assertThat(marketplace.valorOriginalCentavos()).isNull();
         assertThat(marketplace.descontoPct()).isNull();
 
-        ProdutoColetado comPrime = resultado.get(2);
+        OfertaColetada comPrime = resultado.ofertas().get(2);
         assertThat(comPrime.identificadorLoja()).isEqualTo("1059765");
         assertThat(comPrime.categoria()).isEqualTo("HD");
         // Usa a price_with_discount publica (10199.99)
@@ -205,9 +226,11 @@ class KabumScraperTest extends IntegrationTestBase {
 
         stubPagina(1, catalogoResponse(1, 1, itemForaDoEscopo));
 
-        List<ProdutoColetado> resultado = kabumScraper.coletar();
+        ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(0);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
     }
 
     @Test
@@ -217,11 +240,13 @@ class KabumScraperTest extends IntegrationTestBase {
 
         stubPagina(1, catalogoResponse(1, 1, itemAvailableMentindo));
 
-        List<ProdutoColetado> resultado = kabumScraper.coletar();
+        ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.getFirst().disponivel()).isFalse();
-        assertThat(resultado.getFirst().categoria()).isEqualTo("SSD");
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
+        assertThat(resultado.ofertas().getFirst().disponivel()).isFalse();
+        assertThat(resultado.ofertas().getFirst().categoria()).isEqualTo("SSD");
     }
 
     @Test
@@ -234,16 +259,32 @@ class KabumScraperTest extends IntegrationTestBase {
         stubPagina(1, catalogoResponse(1, 2, itemPagina1));
         stubPagina(2, catalogoResponse(2, 2, itemPagina2));
 
-        List<ProdutoColetado> resultado = kabumScraper.coletar();
+        ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado).hasSize(2);
-        assertThat(resultado).extracting(ProdutoColetado::identificadorLoja)
+        assertThat(resultado.ofertas()).hasSize(2);
+        assertThat(resultado.ofertas()).extracting(OfertaColetada::identificadorLoja)
                 .containsExactlyInAnyOrder("1001", "1002");
+        assertThat(resultado.totalElegivel()).isEqualTo(2);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
 
         WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/catalog/v2/products"))
                 .withQueryParam("page_number", equalTo("1")));
         WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/catalog/v2/products"))
                 .withQueryParam("page_number", equalTo("2")));
+    }
+
+    @Test
+    void coletar_deveDescartarItemElegivelSemPrecoSemLancarErro() {
+        String itemSemPreco = itemSemPrecoComDesconto(999003, "Hardware/Memória RAM/DDR5", "Memoria Sem Preco",
+                "500.00", true, 5, "memoria-sem-preco");
+
+        stubPagina(1, catalogoResponse(1, 1, itemSemPreco));
+
+        ResultadoColeta resultado = kabumScraper.coletar();
+
+        assertThat(resultado.ofertas()).isEmpty();
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
 
     @Test

@@ -5,5 +5,7 @@ public enum CodigoLoja {
     NUUVEM,
     EPIC,
     TERABYTE,
-    KABUM
+    KABUM,
+    GOG,
+    GREEN_MAN_GAMING
 }

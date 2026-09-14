@@ -3,11 +3,13 @@ package dev.davidcaetano.umbra_api.coleta.itad;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoDescobertoResponse;
-import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadOfertaDescobertaResponse;
+import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadLojaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadOfertaPrecoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,10 +30,8 @@ import java.util.UUID;
 @Slf4j
 public class ItadScraper implements Scraper {
 
-    private static final List<Integer> SHOPS = List.of(61, 50);
-    private static final int MAX_PAGINAS_DESCOBERTA = 50;
-    private static final int TAMANHO_LOTE_PRECOS = 200;
-    private static final String MOEDA_ESPERADA = "BRL";
+    private static final int PAGINAS_POR_RODADA = 30;
+    private static final int TAMANHO_LOTE = 200;
 
     private final ItadClient itadClient;
 
@@ -40,7 +41,7 @@ public class ItadScraper implements Scraper {
     }
 
     @Override
-    public List<ProdutoColetado> coletar() {
+    public ResultadoColeta coletar() {
         List<ItadJogoDescobertoResponse> descobertos = buscarTodaDescoberta();
 
         List<ItadJogoDescobertoResponse> jogos = descobertos.stream()
@@ -48,20 +49,10 @@ public class ItadScraper implements Scraper {
                 .toList();
 
         Map<UUID, TituloImagem> tituloImagemPorGid = new HashMap<>();
-        Map<Integer, Set<UUID>> gidsPorShop = new HashMap<>();
-
         for (ItadJogoDescobertoResponse jogo : jogos) {
             tituloImagemPorGid.putIfAbsent(jogo.id(),
                     new TituloImagem(jogo.title(), jogo.assets() == null ? null : jogo.assets().boxart()));
-
-            ItadOfertaDescobertaResponse deal = jogo.deal();
-            if (deal == null || deal.shop() == null) {
-                continue;
-            }
-            gidsPorShop.computeIfAbsent(deal.shop().id(), k -> new LinkedHashSet<>()).add(jogo.id());
         }
-
-        Map<Integer, Map<UUID, String>> identificadorPorShop = resolverIdentificadoresNativos(gidsPorShop);
 
         List<UUID> gidsDistintos = jogos.stream()
                 .map(ItadJogoDescobertoResponse::id)
@@ -70,33 +61,53 @@ public class ItadScraper implements Scraper {
 
         List<ItadPrecoJogoResponse> precos = buscarTodosPrecos(gidsDistintos);
 
-        List<ProdutoColetado> resultado = new ArrayList<>();
+        Map<Integer, Set<UUID>> gidsPorShop = montarGidsPorShop(precos);
+        Map<Integer, Map<UUID, String>> identificadorPorShop = resolverIdentificadoresNativos(gidsPorShop);
+
+        List<OfertaColetada> resultado = new ArrayList<>();
+        FiltroMoeda filtroMoeda = new FiltroMoeda();
+
+        int totalElegivel = 0;
+        int totalSemPreco = 0;
 
         for (ItadPrecoJogoResponse precoJogo : precos) {
             UUID gid = precoJogo.id();
             TituloImagem info = tituloImagemPorGid.get(gid);
 
             for (ItadOfertaPrecoResponse deal : precoJogo.deals()) {
-                int shopId = deal.shop().id();
-                CodigoLoja loja = resolverLoja(shopId);
+                String moedaPreco = deal.price() == null ? null : deal.price().currency();
+                String moedaRegular = deal.regular() == null ? null : deal.regular().currency();
 
-                Map<UUID, String> identificadoresDoShop = identificadorPorShop.get(shopId);
-                String identificadorLoja = identificadoresDoShop == null ? null : identificadoresDoShop.get(gid);
+                if (!filtroMoeda.aceita(moedaPreco, moedaRegular)) {
+                    log.debug("Oferta ITAD fora da moeda esperada: gid={} shop={} precoCurrency={} regularCurrency={}",
+                            gid, deal.shop(), moedaPreco, moedaRegular);
+                    filtroMoeda.registrarDescarte(moedaPreco, moedaRegular);
+                    continue;
+                }
+
+                totalElegivel++;
+
+                Optional<CodigoLoja> loja = resolverLoja(deal.shop());
+
+                if (loja.isEmpty()) {
+                    log.warn("Oferta ITAD com shop ausente ou nao esperado na resposta de precos: gid={} shop={}",
+                            gid, deal.shop());
+                    totalSemPreco++;
+                    continue;
+                }
+
+                Map<UUID, String> identificadoresShop = identificadorPorShop.get(deal.shop().id());
+                String identificadorLoja = identificadoresShop == null ? null : identificadoresShop.get(gid);
 
                 if (identificadorLoja == null || info == null) {
-                    log.warn("Descartando oferta ITAD com dado inconsistente entre chamadas: gid={} shopId={} " +
-                            "identificadorNativo={} tituloImagem={}", gid, shopId, identificadorLoja, info);
+                    log.warn("Oferta ITAD com dado inconsistente entre chamadas: gid={} shopId={} identificadorNativo={} tituloImagem={}",
+                            gid, deal.shop().id(), identificadorLoja, info);
+                    totalSemPreco++;
                     continue;
                 }
 
-                if (!MOEDA_ESPERADA.equals(deal.price().currency()) || !MOEDA_ESPERADA.equals(deal.regular().currency())) {
-                    log.warn("Descartando oferta ITAD fora da moeda esperada: gid={} shopId={} precoCurrency={} " +
-                            "regularCurrency={}", gid, shopId, deal.price().currency(), deal.regular().currency());
-                    continue;
-                }
-
-                resultado.add(new ProdutoColetado(
-                        loja,
+                resultado.add(new OfertaColetada(
+                        loja.get(),
                         identificadorLoja,
                         TipoProduto.JOGO,
                         info.titulo(),
@@ -109,13 +120,14 @@ public class ItadScraper implements Scraper {
                         (short) deal.cut(),
                         true,
                         OrigemColeta.ITAD_API,
-                        deal.timestamp(),
                         deal.expiry()
                 ));
             }
         }
 
-        return resultado;
+        filtroMoeda.logarResumo(fonte());
+
+        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
     }
 
     private List<ItadJogoDescobertoResponse> buscarTodaDescoberta() {
@@ -125,13 +137,13 @@ public class ItadScraper implements Scraper {
         int pagina = 0;
 
         while (true) {
-            if (pagina >= MAX_PAGINAS_DESCOBERTA) {
-                log.warn("Descoberta ITAD atingiu o limite de seguranca de {} paginas, parando com hasMore ainda " +
-                        "verdadeiro (offset={})", MAX_PAGINAS_DESCOBERTA, offset);
+            if (pagina >= PAGINAS_POR_RODADA) {
+                log.warn("Descoberta ITAD atingiu o orcamento de {} paginas da rodada, parando com hasMore ainda verdadeiro (offset={})",
+                        PAGINAS_POR_RODADA, offset);
                 break;
             }
 
-            ItadDescobertaResponse resposta = itadClient.buscarDescoberta(SHOPS, offset);
+            ItadDescobertaResponse resposta = itadClient.buscarDescoberta(offset);
             todos.addAll(resposta.list());
             pagina++;
 
@@ -144,6 +156,22 @@ public class ItadScraper implements Scraper {
         return todos;
     }
 
+    private static Map<Integer, Set<UUID>> montarGidsPorShop(List<ItadPrecoJogoResponse> precos) {
+        Map<Integer, Set<UUID>> gidsPorShop = new HashMap<>();
+
+        for (ItadPrecoJogoResponse precoJogo : precos) {
+            for (ItadOfertaPrecoResponse deal : precoJogo.deals()) {
+                ItadLojaResponse shop = deal.shop();
+                if (shop == null || LojaItad.codigoLojaPorShopId(shop.id()).isEmpty()) {
+                    continue;
+                }
+                gidsPorShop.computeIfAbsent(shop.id(), k -> new LinkedHashSet<>()).add(precoJogo.id());
+            }
+        }
+
+        return gidsPorShop;
+    }
+
     private Map<Integer, Map<UUID, String>> resolverIdentificadoresNativos(Map<Integer, Set<UUID>> gidsPorShop) {
         Map<Integer, Map<UUID, String>> identificadorPorShop = new HashMap<>();
 
@@ -151,21 +179,16 @@ public class ItadScraper implements Scraper {
             int shopId = entry.getKey();
             List<UUID> gids = List.copyOf(entry.getValue());
 
-            if (gids.isEmpty()) {
-                continue;
-            }
-
-            Map<UUID, List<String>> resolvido = itadClient.resolverIdentificadorNativo(shopId, gids);
             Map<UUID, String> primeiroIdentificador = new HashMap<>();
 
-            resolvido.forEach((gid, identificadores) -> {
-                if (identificadores != null && !identificadores.isEmpty()) {
-                    // Escolha pragmática: quando há mais de um identificador nativo pro mesmo
-                    // gid+shop (bundle com dois SKUs, ARCHITECTURE.md §4.8), pegamos o primeiro.
-                    // Não é regra de negócio fechada — ponto em aberto aceito por ora.
-                    primeiroIdentificador.put(gid, identificadores.getFirst());
-                }
-            });
+            for (List<UUID> lote : particionar(gids, TAMANHO_LOTE)) {
+                Map<UUID, List<String>> resolvido = itadClient.resolverIdentificadorNativo(shopId, lote);
+                resolvido.forEach((gid, identificadores) -> {
+                    if (identificadores != null && !identificadores.isEmpty()) {
+                        primeiroIdentificador.put(gid, primeiroIdentificadorOrdenado(identificadores));
+                    }
+                });
+            }
 
             identificadorPorShop.put(shopId, primeiroIdentificador);
         }
@@ -173,10 +196,14 @@ public class ItadScraper implements Scraper {
         return identificadorPorShop;
     }
 
+    private static String primeiroIdentificadorOrdenado(List<String> identificadores) {
+        return identificadores.stream().sorted().findFirst().orElseThrow();
+    }
+
     private List<ItadPrecoJogoResponse> buscarTodosPrecos(List<UUID> gidsDistintos) {
         List<ItadPrecoJogoResponse> precos = new ArrayList<>();
 
-        for (List<UUID> lote : particionar(gidsDistintos, TAMANHO_LOTE_PRECOS)) {
+        for (List<UUID> lote : particionar(gidsDistintos, TAMANHO_LOTE)) {
             precos.addAll(itadClient.buscarPrecos(lote));
         }
 
@@ -191,13 +218,12 @@ public class ItadScraper implements Scraper {
         return lotes;
     }
 
-    private static CodigoLoja resolverLoja(int shopId) {
-        return switch (shopId) {
-            case 61 -> CodigoLoja.STEAM;
-            case 50 -> CodigoLoja.NUUVEM;
-            default -> throw new IllegalStateException(
-                    "Shop id desconhecido vindo do ITAD (esperado 61=Steam ou 50=Nuuvem): " + shopId);
-        };
+    private static Optional<CodigoLoja> resolverLoja(ItadLojaResponse shop) {
+        if (shop == null) {
+            return Optional.empty();
+        }
+
+        return LojaItad.codigoLojaPorShopId(shop.id());
     }
 
     private record TituloImagem(String titulo, String imagemUrl) {

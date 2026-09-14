@@ -6,7 +6,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 
 import java.time.OffsetDateTime;
 
-public record ProdutoColetado(
+public record OfertaColetada(
         CodigoLoja loja,
         String identificadorLoja,
         TipoProduto tipo,
@@ -20,7 +20,6 @@ public record ProdutoColetado(
         Short descontoPct,
         boolean disponivel,
         OrigemColeta origemColeta,
-        OffsetDateTime coletadoEm,
         OffsetDateTime expiry
 ) {
 }

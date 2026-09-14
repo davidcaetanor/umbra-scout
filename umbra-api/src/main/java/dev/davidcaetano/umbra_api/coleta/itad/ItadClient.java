@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface ItadClient {
 
-    ItadDescobertaResponse buscarDescoberta(List<Integer> shopIds, int offset);
+    ItadDescobertaResponse buscarDescoberta(int offset);
 
     Map<UUID, List<String>> resolverIdentificadorNativo(int shopId, List<UUID> gids);
 

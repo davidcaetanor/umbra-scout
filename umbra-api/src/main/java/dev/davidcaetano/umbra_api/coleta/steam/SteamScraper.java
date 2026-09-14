@@ -3,7 +3,9 @@ package dev.davidcaetano.umbra_api.coleta.steam;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamAppDetalhesResponse;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamJogoDescobertoResponse;
@@ -13,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +24,6 @@ import java.util.List;
 @Slf4j
 public class SteamScraper implements Scraper {
 
-    private static final String MOEDA_ESPERADA = "BRL";
-
     private final SteamClient steamClient;
 
     @Override
@@ -33,53 +32,46 @@ public class SteamScraper implements Scraper {
     }
 
     @Override
-    public List<ProdutoColetado> coletar() {
+    public ResultadoColeta coletar() {
         List<SteamJogoDescobertoResponse> descobertos = steamClient.buscarDescoberta().specials().items();
 
-        List<ProdutoColetado> resultado = new ArrayList<>();
+        List<OfertaColetada> resultado = new ArrayList<>();
+        FiltroMoeda filtroMoeda = new FiltroMoeda();
+
+        int totalElegivel = 0;
+        int totalSemPreco = 0;
 
         for (SteamJogoDescobertoResponse item : descobertos) {
             if (!item.discounted()) {
-                log.warn("Descartando item Steam sem desconto: id={} name={}", item.id(), item.name());
+                log.debug("Item Steam sem desconto: id={} name={}", item.id(), item.name());
                 continue;
             }
 
             SteamAppDetalhesResponse detalhes = steamClient.buscarDetalhes(item.id());
 
-            if (!isJogoValido(item, detalhes)) {
+            TriagemItem triagem = triar(item, detalhes, filtroMoeda);
+
+            if (triagem == TriagemItem.FORA_ESCOPO) {
                 continue;
             }
 
-            resultado.add(toProdutoColetado(item, detalhes.data().overview()));
+            totalElegivel++;
+
+            if (triagem == TriagemItem.SEM_PRECO) {
+                totalSemPreco++;
+                continue;
+            }
+
+            resultado.add(toOfertaColetada(item, detalhes.data().overview()));
         }
 
-        return resultado;
+        filtroMoeda.logarResumo(fonte());
+
+        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
     }
 
-    private boolean isJogoValido(SteamJogoDescobertoResponse item, SteamAppDetalhesResponse detalhes) {
-        if (detalhes == null || !detalhes.success() || detalhes.data() == null) {
-            log.warn("Descartando item Steam com detalhes ausentes ou inconsistentes: id={} detalhes={}",
-                    item.id(), detalhes);
-            return false;
-        }
-
-        if (!"game".equals(detalhes.data().type())) {
-            log.warn("Descartando item Steam que nao e do tipo game: id={} type={}",
-                    item.id(), detalhes.data().type());
-            return false;
-        }
-
-        if (!MOEDA_ESPERADA.equals(detalhes.data().overview().currency())) {
-            log.warn("Descartando item Steam fora da moeda esperada: id={} currency={}",
-                    item.id(), detalhes.data().overview().currency());
-            return false;
-        }
-
-        return true;
-    }
-
-    private static ProdutoColetado toProdutoColetado(SteamJogoDescobertoResponse item, SteamPrecoResponse overview) {
-        return new ProdutoColetado(
+    private static OfertaColetada toOfertaColetada(SteamJogoDescobertoResponse item, SteamPrecoResponse overview) {
+        return new OfertaColetada(
                 CodigoLoja.STEAM,
                 String.valueOf(item.id()),
                 TipoProduto.JOGO,
@@ -93,8 +85,43 @@ public class SteamScraper implements Scraper {
                 (short) overview.discountPercent(),
                 true,
                 OrigemColeta.STEAM_API,
-                OffsetDateTime.now(),
                 Instant.ofEpochSecond(item.discountExpiration()).atOffset(ZoneOffset.UTC)
         );
+    }
+
+    private static TriagemItem triar(SteamJogoDescobertoResponse item,
+                                     SteamAppDetalhesResponse detalhes,
+                                     FiltroMoeda filtroMoeda) {
+
+        if (detalhes == null || !detalhes.success() || detalhes.data() == null) {
+            log.warn("Item Steam com detalhes ausentes: id={} detalhes={}", item.id(), detalhes);
+            return TriagemItem.SEM_PRECO;
+        }
+
+        if (!"game".equals(detalhes.data().type())) {
+            log.debug("Item Steam fora do escopo: id={} type={}", item.id(), detalhes.data().type());
+            return TriagemItem.FORA_ESCOPO;
+        }
+
+        SteamPrecoResponse overview = detalhes.data().overview();
+
+        if (overview == null) {
+            log.warn("Item Steam sem bloco de preco: id={}", item.id());
+            return TriagemItem.SEM_PRECO;
+        }
+
+        if (!filtroMoeda.aceita(overview.currency())) {
+            log.debug("Item Steam fora da moeda esperada: id={} currency={}", item.id(), overview.currency());
+            filtroMoeda.registrarDescarte(overview.currency());
+            return TriagemItem.FORA_ESCOPO;
+        }
+
+        return TriagemItem.ACEITO;
+    }
+
+    private enum TriagemItem {
+        ACEITO,
+        FORA_ESCOPO,
+        SEM_PRECO
     }
 }
