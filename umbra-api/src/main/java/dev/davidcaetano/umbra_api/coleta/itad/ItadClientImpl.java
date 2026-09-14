@@ -22,24 +22,24 @@ import java.util.stream.Collectors;
 public class ItadClientImpl implements ItadClient {
 
     private static final String COUNTRY = "BR";
-
-    //Steam = 61, Nuuvem = 50
-
-    private static final List<Integer> SHOPS = List.of(61, 50);
+    private static final int LIMITE_DESCOBERTA = 200;
+    private static final String ORDENACAO_DESCOBERTA = "-trending";
 
     private final RestClient itadRestClient;
 
     @Override
     @RateLimiter(name = "itad")
-    public ItadDescobertaResponse buscarDescoberta(List<Integer> shopIds, int offset) {
+    public ItadDescobertaResponse buscarDescoberta(int offset) {
         try {
             return itadRestClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/deals/v2")
                             .queryParam("country", COUNTRY)
-                            .queryParam("shops", juntar(shopIds))
+                            .queryParam("shops", juntar(LojaItad.shopIds()))
                             .queryParam("nondeals", false)
                             .queryParam("offset", offset)
+                            .queryParam("limit", LIMITE_DESCOBERTA)
+                            .queryParam("sort", ORDENACAO_DESCOBERTA)
                             .build())
                     .retrieve()
                     .body(ItadDescobertaResponse.class);
@@ -73,7 +73,7 @@ public class ItadClientImpl implements ItadClient {
                     .uri(uriBuilder -> uriBuilder
                             .path("/games/prices/v3")
                             .queryParam("country", COUNTRY)
-                            .queryParam("shops", juntar(SHOPS))
+                            .queryParam("shops", juntar(LojaItad.shopIds()))
                             .build())
                     .body(gids)
                     .retrieve()

@@ -10,7 +10,6 @@ import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoDescobertoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadLojaResponse;
-import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadOfertaDescobertaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadOfertaPrecoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +30,11 @@ import java.util.UUID;
 @Slf4j
 public class ItadScraper implements Scraper {
 
-    private static final List<Integer> SHOPS = List.of(61, 50);
-    private static final int MAX_PAGINAS_DESCOBERTA = 50;
-    private static final int TAMANHO_LOTE_PRECOS = 200;
+    // Orçamento de descoberta por rodada — decisão de produto sobre quanto catálogo semear
+    // a cada execução, não guarda de segurança. Também é o teto de memória de uma rodada:
+    // PAGINAS_POR_RODADA * limite da página itens ficam em memória de uma vez.
+    private static final int PAGINAS_POR_RODADA = 30;
+    private static final int TAMANHO_LOTE = 200;
 
     private final ItadClient itadClient;
 
@@ -51,20 +52,10 @@ public class ItadScraper implements Scraper {
                 .toList();
 
         Map<UUID, TituloImagem> tituloImagemPorGid = new HashMap<>();
-        Map<Integer, Set<UUID>> gidsPorShop = new HashMap<>();
-
         for (ItadJogoDescobertoResponse jogo : jogos) {
             tituloImagemPorGid.putIfAbsent(jogo.id(),
                     new TituloImagem(jogo.title(), jogo.assets() == null ? null : jogo.assets().boxart()));
-
-            ItadOfertaDescobertaResponse deal = jogo.deal();
-            if (deal == null || deal.shop() == null) {
-                continue;
-            }
-            gidsPorShop.computeIfAbsent(deal.shop().id(), k -> new LinkedHashSet<>()).add(jogo.id());
         }
-
-        Map<Integer, Map<UUID, String>> identificadorPorShop = resolverIdentificadoresNativos(gidsPorShop);
 
         List<UUID> gidsDistintos = jogos.stream()
                 .map(ItadJogoDescobertoResponse::id)
@@ -72,6 +63,9 @@ public class ItadScraper implements Scraper {
                 .toList();
 
         List<ItadPrecoJogoResponse> precos = buscarTodosPrecos(gidsDistintos);
+
+        Map<Integer, Set<UUID>> gidsPorShop = montarGidsPorShop(precos);
+        Map<Integer, Map<UUID, String>> identificadorPorShop = resolverIdentificadoresNativos(gidsPorShop);
 
         List<OfertaColetada> resultado = new ArrayList<>();
         FiltroMoeda filtroMoeda = new FiltroMoeda();
@@ -146,13 +140,13 @@ public class ItadScraper implements Scraper {
         int pagina = 0;
 
         while (true) {
-            if (pagina >= MAX_PAGINAS_DESCOBERTA) {
-                log.warn("Descoberta ITAD atingiu o limite de seguranca de {} paginas, parando com hasMore ainda verdadeiro (offset={})",
-                        MAX_PAGINAS_DESCOBERTA, offset);
+            if (pagina >= PAGINAS_POR_RODADA) {
+                log.warn("Descoberta ITAD atingiu o orcamento de {} paginas da rodada, parando com hasMore ainda verdadeiro (offset={})",
+                        PAGINAS_POR_RODADA, offset);
                 break;
             }
 
-            ItadDescobertaResponse resposta = itadClient.buscarDescoberta(SHOPS, offset);
+            ItadDescobertaResponse resposta = itadClient.buscarDescoberta(offset);
             todos.addAll(resposta.list());
             pagina++;
 
@@ -165,6 +159,22 @@ public class ItadScraper implements Scraper {
         return todos;
     }
 
+    private static Map<Integer, Set<UUID>> montarGidsPorShop(List<ItadPrecoJogoResponse> precos) {
+        Map<Integer, Set<UUID>> gidsPorShop = new HashMap<>();
+
+        for (ItadPrecoJogoResponse precoJogo : precos) {
+            for (ItadOfertaPrecoResponse deal : precoJogo.deals()) {
+                ItadLojaResponse shop = deal.shop();
+                if (shop == null || LojaItad.codigoLojaPorShopId(shop.id()).isEmpty()) {
+                    continue;
+                }
+                gidsPorShop.computeIfAbsent(shop.id(), k -> new LinkedHashSet<>()).add(precoJogo.id());
+            }
+        }
+
+        return gidsPorShop;
+    }
+
     private Map<Integer, Map<UUID, String>> resolverIdentificadoresNativos(Map<Integer, Set<UUID>> gidsPorShop) {
         Map<Integer, Map<UUID, String>> identificadorPorShop = new HashMap<>();
 
@@ -172,18 +182,16 @@ public class ItadScraper implements Scraper {
             int shopId = entry.getKey();
             List<UUID> gids = List.copyOf(entry.getValue());
 
-            if (gids.isEmpty()) {
-                continue;
-            }
-
-            Map<UUID, List<String>> resolvido = itadClient.resolverIdentificadorNativo(shopId, gids);
             Map<UUID, String> primeiroIdentificador = new HashMap<>();
 
-            resolvido.forEach((gid, identificadores) -> {
-                if (identificadores != null && !identificadores.isEmpty()) {
-                    primeiroIdentificador.put(gid, identificadores.getFirst());
-                }
-            });
+            for (List<UUID> lote : particionar(gids, TAMANHO_LOTE)) {
+                Map<UUID, List<String>> resolvido = itadClient.resolverIdentificadorNativo(shopId, lote);
+                resolvido.forEach((gid, identificadores) -> {
+                    if (identificadores != null && !identificadores.isEmpty()) {
+                        primeiroIdentificador.put(gid, primeiroIdentificadorOrdenado(identificadores));
+                    }
+                });
+            }
 
             identificadorPorShop.put(shopId, primeiroIdentificador);
         }
@@ -191,10 +199,16 @@ public class ItadScraper implements Scraper {
         return identificadorPorShop;
     }
 
+    private static String primeiroIdentificadorOrdenado(List<String> identificadores) {
+        List<String> ordenados = new ArrayList<>(identificadores);
+        ordenados.sort(null);
+        return ordenados.getFirst();
+    }
+
     private List<ItadPrecoJogoResponse> buscarTodosPrecos(List<UUID> gidsDistintos) {
         List<ItadPrecoJogoResponse> precos = new ArrayList<>();
 
-        for (List<UUID> lote : particionar(gidsDistintos, TAMANHO_LOTE_PRECOS)) {
+        for (List<UUID> lote : particionar(gidsDistintos, TAMANHO_LOTE)) {
             precos.addAll(itadClient.buscarPrecos(lote));
         }
 
@@ -214,11 +228,7 @@ public class ItadScraper implements Scraper {
             return Optional.empty();
         }
 
-        return switch (shop.id()) {
-            case 61 -> Optional.of(CodigoLoja.STEAM);
-            case 50 -> Optional.of(CodigoLoja.NUUVEM);
-            default -> Optional.empty();
-        };
+        return LojaItad.codigoLojaPorShopId(shop.id());
     }
 
     private record TituloImagem(String titulo, String imagemUrl) {
