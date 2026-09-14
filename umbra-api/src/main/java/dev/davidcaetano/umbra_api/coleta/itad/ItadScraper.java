@@ -4,7 +4,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
@@ -73,7 +73,7 @@ public class ItadScraper implements Scraper {
 
         List<ItadPrecoJogoResponse> precos = buscarTodosPrecos(gidsDistintos);
 
-        List<ProdutoColetado> resultado = new ArrayList<>();
+        List<OfertaColetada> resultado = new ArrayList<>();
         FiltroMoeda filtroMoeda = new FiltroMoeda();
 
         int totalElegivel = 0;
@@ -115,7 +115,7 @@ public class ItadScraper implements Scraper {
                     continue;
                 }
 
-                resultado.add(new ProdutoColetado(
+                resultado.add(new OfertaColetada(
                         loja.get(),
                         identificadorLoja,
                         TipoProduto.JOGO,

@@ -4,7 +4,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamAppDetalhesResponse;
@@ -35,7 +35,7 @@ public class SteamScraper implements Scraper {
     public ResultadoColeta coletar() {
         List<SteamJogoDescobertoResponse> descobertos = steamClient.buscarDescoberta().specials().items();
 
-        List<ProdutoColetado> resultado = new ArrayList<>();
+        List<OfertaColetada> resultado = new ArrayList<>();
         FiltroMoeda filtroMoeda = new FiltroMoeda();
 
         int totalElegivel = 0;
@@ -62,7 +62,7 @@ public class SteamScraper implements Scraper {
                 continue;
             }
 
-            resultado.add(toProdutoColetado(item, detalhes.data().overview()));
+            resultado.add(toOfertaColetada(item, detalhes.data().overview()));
         }
 
         filtroMoeda.logarResumo(fonte());
@@ -70,8 +70,8 @@ public class SteamScraper implements Scraper {
         return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
     }
 
-    private static ProdutoColetado toProdutoColetado(SteamJogoDescobertoResponse item, SteamPrecoResponse overview) {
-        return new ProdutoColetado(
+    private static OfertaColetada toOfertaColetada(SteamJogoDescobertoResponse item, SteamPrecoResponse overview) {
+        return new OfertaColetada(
                 CodigoLoja.STEAM,
                 String.valueOf(item.id()),
                 TipoProduto.JOGO,

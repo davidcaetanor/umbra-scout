@@ -3,7 +3,7 @@ package dev.davidcaetano.umbra_api.coleta.kabum;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumAtributosResponse;
@@ -53,7 +53,7 @@ public class KabumScraper implements Scraper {
     public ResultadoColeta coletar() {
         List<KabumProdutoResponse> produtos = buscarCatalogoCompleto();
 
-        List<ProdutoColetado> resultado = new ArrayList<>();
+        List<OfertaColetada> resultado = new ArrayList<>();
         int totalElegivel = 0;
         int totalSemPreco = 0;
 
@@ -75,7 +75,7 @@ public class KabumScraper implements Scraper {
                 continue;
             }
 
-            resultado.add(toProdutoColetado(produto, categoria));
+            resultado.add(toOfertaColetada(produto, categoria));
         }
 
         return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
@@ -109,7 +109,7 @@ public class KabumScraper implements Scraper {
         return null;
     }
 
-    private static ProdutoColetado toProdutoColetado(KabumProdutoResponse item, String categoria) {
+    private static OfertaColetada toOfertaColetada(KabumProdutoResponse item, String categoria) {
         KabumAtributosResponse atributos = item.attributes();
 
         boolean temDesconto = atributos.discountPercentage() != 0;
@@ -118,7 +118,7 @@ public class KabumScraper implements Scraper {
                 && atributos.stock() > 0
                 && atributos.priceWithDiscount().compareTo(BigDecimal.ZERO) > 0;
 
-        return new ProdutoColetado(
+        return new OfertaColetada(
                 CodigoLoja.KABUM,
                 String.valueOf(item.id()),
                 TipoProduto.HARDWARE,

@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
@@ -157,7 +157,7 @@ class ItadScraperTest extends IntegrationTestBase {
     }
 
     @Test
-    void coletar_deveMontarProdutoColetadoParaSteamENuuvemEDescartarDlc() {
+    void coletar_deveMontarOfertaColetadaParaSteamENuuvemEDescartarDlc() {
         UUID gidDlc = UUID.fromString("018d0000-0000-7000-8000-000000000003");
         UUID gidNuuvem = UUID.fromString("018d0000-0000-7000-8000-000000000001");
         UUID gidSteam = UUID.fromString("018d0000-0000-7000-8000-000000000002");
@@ -181,12 +181,12 @@ class ItadScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = itadScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(2);
-        assertThat(resultado.produtos()).noneMatch(p -> p.chaveItad().equals(gidDlc.toString()));
+        assertThat(resultado.ofertas()).hasSize(2);
+        assertThat(resultado.ofertas()).noneMatch(p -> p.chaveItad().equals(gidDlc.toString()));
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
 
-        ProdutoColetado nuuvem = resultado.produtos().get(0);
+        OfertaColetada nuuvem = resultado.ofertas().get(0);
         assertThat(nuuvem.loja()).isEqualTo(CodigoLoja.NUUVEM);
         assertThat(nuuvem.identificadorLoja()).isEqualTo("NUUVEM_ID_1");
         assertThat(nuuvem.tipo()).isEqualTo(TipoProduto.JOGO);
@@ -202,7 +202,7 @@ class ItadScraperTest extends IntegrationTestBase {
         assertThat(nuuvem.origemColeta()).isEqualTo(OrigemColeta.ITAD_API);
         assertThat(nuuvem.expiry()).isNull();
 
-        ProdutoColetado steam = resultado.produtos().get(1);
+        OfertaColetada steam = resultado.ofertas().get(1);
         assertThat(steam.loja()).isEqualTo(CodigoLoja.STEAM);
         assertThat(steam.identificadorLoja()).isEqualTo("620");
         assertThat(steam.nome()).isEqualTo("Jogo Steam");
@@ -228,7 +228,7 @@ class ItadScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = itadScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(0);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
     }
@@ -255,9 +255,9 @@ class ItadScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = itadScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(1);
-        assertThat(resultado.produtos().get(0).chaveItad()).isEqualTo(gidComIdentificador.toString());
-        assertThat(resultado.produtos().get(0).identificadorLoja()).isEqualTo("700");
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).chaveItad()).isEqualTo(gidComIdentificador.toString());
+        assertThat(resultado.ofertas().get(0).identificadorLoja()).isEqualTo("700");
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
@@ -298,8 +298,8 @@ class ItadScraperTest extends IntegrationTestBase {
 
         WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/deals/v2")));
 
-        assertThat(resultado.produtos()).hasSize(2);
-        assertThat(resultado.produtos()).extracting(ProdutoColetado::identificadorLoja)
+        assertThat(resultado.ofertas()).hasSize(2);
+        assertThat(resultado.ofertas()).extracting(OfertaColetada::identificadorLoja)
                 .containsExactlyInAnyOrder("111", "222");
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
@@ -327,8 +327,8 @@ class ItadScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = itadScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(1);
-        assertThat(resultado.produtos().get(0).chaveItad()).isEqualTo(gidBrl.toString());
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).chaveItad()).isEqualTo(gidBrl.toString());
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
     }
@@ -354,8 +354,8 @@ class ItadScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = itadScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(1);
-        assertThat(resultado.produtos().get(0).chaveItad()).isEqualTo(gidConhecido.toString());
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).chaveItad()).isEqualTo(gidConhecido.toString());
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }

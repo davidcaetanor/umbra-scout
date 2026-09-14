@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
@@ -132,7 +132,7 @@ class SteamScraperTest extends IntegrationTestBase {
     }
 
     @Test
-    void coletar_deveMontarProdutoColetadoEDescartarItemSemDescontoEDlc() {
+    void coletar_deveMontarOfertaColetadaEDescartarItemSemDescontoEDlc() {
         int idSemDesconto = 300;
         int idDlc = 200;
         int idGame = 100;
@@ -148,11 +148,11 @@ class SteamScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(1);
+        assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
 
-        ProdutoColetado produto = resultado.produtos().getFirst();
+        OfertaColetada produto = resultado.ofertas().getFirst();
         assertThat(produto.loja()).isEqualTo(CodigoLoja.STEAM);
         assertThat(produto.identificadorLoja()).isEqualTo(String.valueOf(idGame));
         assertThat(produto.tipo()).isEqualTo(TipoProduto.JOGO);
@@ -181,7 +181,7 @@ class SteamScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(0);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
         WIREMOCK.verify(0, getRequestedFor(urlPathEqualTo("/appdetails"))
@@ -198,7 +198,7 @@ class SteamScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
@@ -213,7 +213,7 @@ class SteamScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
@@ -228,7 +228,7 @@ class SteamScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(0);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
     }
@@ -243,7 +243,7 @@ class SteamScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = steamScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }

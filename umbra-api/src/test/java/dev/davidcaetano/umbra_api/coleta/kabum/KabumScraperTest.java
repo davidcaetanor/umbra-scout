@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
-import dev.davidcaetano.umbra_api.coleta.ProdutoColetado;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
@@ -181,11 +181,11 @@ class KabumScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(3);
+        assertThat(resultado.ofertas()).hasSize(3);
         assertThat(resultado.totalElegivel()).isEqualTo(3);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
 
-        ProdutoColetado descontoSimples = resultado.produtos().get(0);
+        OfertaColetada descontoSimples = resultado.ofertas().get(0);
         assertThat(descontoSimples.loja()).isEqualTo(CodigoLoja.KABUM);
         assertThat(descontoSimples.identificadorLoja()).isEqualTo("883976");
         assertThat(descontoSimples.tipo()).isEqualTo(TipoProduto.HARDWARE);
@@ -201,7 +201,7 @@ class KabumScraperTest extends IntegrationTestBase {
         assertThat(descontoSimples.origemColeta()).isEqualTo(OrigemColeta.KABUM_API);
         assertThat(descontoSimples.expiry()).isNull();
 
-        ProdutoColetado marketplace = resultado.produtos().get(1);
+        OfertaColetada marketplace = resultado.ofertas().get(1);
         assertThat(marketplace.identificadorLoja()).isEqualTo("161693");
         assertThat(marketplace.categoria()).isEqualTo("GPU");
         assertThat(marketplace.url())
@@ -210,7 +210,7 @@ class KabumScraperTest extends IntegrationTestBase {
         assertThat(marketplace.valorOriginalCentavos()).isNull();
         assertThat(marketplace.descontoPct()).isNull();
 
-        ProdutoColetado comPrime = resultado.produtos().get(2);
+        OfertaColetada comPrime = resultado.ofertas().get(2);
         assertThat(comPrime.identificadorLoja()).isEqualTo("1059765");
         assertThat(comPrime.categoria()).isEqualTo("HD");
         // Usa a price_with_discount publica (10199.99)
@@ -228,7 +228,7 @@ class KabumScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(0);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
     }
@@ -242,11 +242,11 @@ class KabumScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(1);
+        assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
-        assertThat(resultado.produtos().getFirst().disponivel()).isFalse();
-        assertThat(resultado.produtos().getFirst().categoria()).isEqualTo("SSD");
+        assertThat(resultado.ofertas().getFirst().disponivel()).isFalse();
+        assertThat(resultado.ofertas().getFirst().categoria()).isEqualTo("SSD");
     }
 
     @Test
@@ -261,8 +261,8 @@ class KabumScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado.produtos()).hasSize(2);
-        assertThat(resultado.produtos()).extracting(ProdutoColetado::identificadorLoja)
+        assertThat(resultado.ofertas()).hasSize(2);
+        assertThat(resultado.ofertas()).extracting(OfertaColetada::identificadorLoja)
                 .containsExactlyInAnyOrder("1001", "1002");
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
@@ -282,7 +282,7 @@ class KabumScraperTest extends IntegrationTestBase {
 
         ResultadoColeta resultado = kabumScraper.coletar();
 
-        assertThat(resultado.produtos()).isEmpty();
+        assertThat(resultado.ofertas()).isEmpty();
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(1);
     }
