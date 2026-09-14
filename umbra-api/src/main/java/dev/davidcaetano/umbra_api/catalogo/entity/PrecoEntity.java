@@ -20,8 +20,8 @@ public class PrecoEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "produto_id", nullable = false)
-    private ProdutoEntity produto;
+    @JoinColumn(name = "oferta_id", nullable = false)
+    private OfertaEntity oferta;
 
     @Column(nullable = false)
     private long valorCentavos;
@@ -42,7 +42,7 @@ public class PrecoEntity {
 
     private OffsetDateTime expiraEm;
 
-    public static PrecoEntity novo(ProdutoEntity produto,
+    public static PrecoEntity novo(OfertaEntity oferta,
                                    long valorCentavos,
                                    Long valorOriginalCentavos,
                                    Short descontoPct,
@@ -51,7 +51,7 @@ public class PrecoEntity {
                                    OffsetDateTime expiraEm,
                                    OffsetDateTime dataHoraAgora) {
 
-        Objects.requireNonNull(produto, "produto é obrigatório");
+        Objects.requireNonNull(oferta, "oferta é obrigatório");
         Objects.requireNonNull(origemColeta, "origem coleta é obrigatório");
         Objects.requireNonNull(dataHoraAgora, "dataHoraAgora é obrigatório");
 
@@ -68,7 +68,7 @@ public class PrecoEntity {
         }
 
         PrecoEntity preco = new PrecoEntity();
-        preco.produto = produto;
+        preco.oferta = oferta;
         preco.valorCentavos = valorCentavos;
         preco.valorOriginalCentavos = valorOriginalCentavos;
         preco.descontoPct = descontoPct;

@@ -13,83 +13,55 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ProdutoEntityTest {
 
     private static final OffsetDateTime PRIMEIRA_COLETA = OffsetDateTime.parse("2026-09-01T09:00:00Z");
-    private static final String URL_VALIDA = "https://store.steampowered.com/app/730";
 
-    private final LojaEntity loja = new LojaEntity();
-
-    private DadosProduto dados(String nome, String url) {
-        return new DadosProduto(nome, "Acao", url, null, null);
+    private DadosProduto dados(String nome, String categoria, String imagemUrl, String chaveItad) {
+        return new DadosProduto(nome, categoria, imagemUrl, chaveItad);
     }
 
     @Test
     void deveFalharQuandoNomeTiverApenasEspacos() {
-        assertThatThrownBy(() -> ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("   ", URL_VALIDA), PRIMEIRA_COLETA))
+        assertThatThrownBy(() -> ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("   ", "Acao", null, null), PRIMEIRA_COLETA))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nome");
     }
 
     @Test
-    void deveFalharQuandoUrlNaoComecarComHttp() {
-        assertThatThrownBy(() -> ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", "/app/730"), PRIMEIRA_COLETA))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("URL");
+    void deveFalharQuandoTipoForNulo() {
+        assertThatThrownBy(() -> ProdutoEntity.novo(null,
+                dados("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("tipo");
     }
 
     @Test
-    void deveFalharQuandoLojaForNula() {
-        assertThatThrownBy(() -> ProdutoEntity.novo(null, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA))
+    void deveFalharQuandoNomeForNulo() {
+        assertThatThrownBy(() -> ProdutoEntity.novo(TipoProduto.JOGO,
+                dados(null, "Acao", null, null), PRIMEIRA_COLETA))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("loja");
+                .hasMessageContaining("nome");
     }
 
     @Test
     void deveRemoverEspacosLateraisDoNomeQuandoCriarProduto() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("  Counter-Strike 2  ", URL_VALIDA), PRIMEIRA_COLETA);
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("  Counter-Strike 2  ", "Acao", null, null), PRIMEIRA_COLETA);
 
         assertThat(produto.getNome()).isEqualTo("Counter-Strike 2");
-    }
-
-    @Test
-    void devePreservarValorAtualQuandoAtualizarComCampoVazio() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
-
-        OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
-        produto.atualizarDados(new DadosProduto("   ", null, null, null, "cs2-itad"), segundaColeta);
-
-        assertThat(produto.getNome()).isEqualTo("Counter-Strike 2");
-        assertThat(produto.getCategoria()).isEqualTo("Acao");
-        assertThat(produto.getChaveItad()).isEqualTo("cs2-itad");
-        assertThat(produto.getAtualizadoEm()).isEqualTo(segundaColeta);
-    }
-
-    @Test
-    void deveFalharQuandoAtualizarComUrlRelativa() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
-
-        assertThatThrownBy(() -> produto.atualizarDados(
-                new DadosProduto(null, null, "/app/730", null, null), PRIMEIRA_COLETA.plusHours(6)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("URL");
     }
 
     @Test
     void deveNascerAtivoQuandoCriarProduto() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA);
 
         assertThat(produto.isAtivo()).isTrue();
     }
 
     @Test
-    void deveDesativarProdutoQuandoSairDoCatalogoDaLoja() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+    void deveMarcarInativoEAtualizarDataQuandoDesativar() {
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA);
         OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
 
         produto.desativar(segundaColeta);
@@ -100,9 +72,9 @@ class ProdutoEntityTest {
     }
 
     @Test
-    void deveReativarProdutoQuandoVoltarAoCatalogoDaLoja() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+    void deveVoltarAAtivoEAtualizarDataQuandoReativar() {
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA);
         produto.desativar(PRIMEIRA_COLETA.plusHours(6));
         OffsetDateTime terceiraColeta = PRIMEIRA_COLETA.plusHours(12);
 
@@ -113,28 +85,33 @@ class ProdutoEntityTest {
     }
 
     @Test
-    void deveManterDesativadoQuandoDesativarProdutoJaDesativado() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
-        produto.desativar(PRIMEIRA_COLETA.plusHours(6));
-        OffsetDateTime terceiraColeta = PRIMEIRA_COLETA.plusHours(12);
+    void devePreencherCamposAusentesQuandoCompletarDadosComInformacaoNova() {
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("Counter-Strike 2", null, null, null), PRIMEIRA_COLETA);
 
-        produto.desativar(terceiraColeta);
+        OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
+        produto.completarDadosAusentes(
+                dados("Counter-Strike 2 (Nuuvem)", "Acao", "https://img/cs2.jpg", "cs2-itad"),
+                segundaColeta);
 
-        assertThat(produto.isAtivo()).isFalse();
-        assertThat(produto.getAtualizadoEm()).isEqualTo(terceiraColeta);
+        assertThat(produto.getCategoria()).isEqualTo("Acao");
+        assertThat(produto.getImagemUrl()).isEqualTo("https://img/cs2.jpg");
+        assertThat(produto.getChaveItad()).isEqualTo("cs2-itad");
+        assertThat(produto.getAtualizadoEm()).isEqualTo(segundaColeta);
     }
 
     @Test
-    void devePreservarDadosDoProdutoQuandoDesativar() {
-        ProdutoEntity produto = ProdutoEntity.novo(loja, "app-730", TipoProduto.JOGO,
-                dados("Counter-Strike 2", URL_VALIDA), PRIMEIRA_COLETA);
+    void deveManterValoresExistentesEAtualizadoEmInalteradoQuandoNadaEstiverAusente() {
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
+                dados("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA);
 
-        produto.desativar(PRIMEIRA_COLETA.plusHours(6));
+        OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
+        produto.completarDadosAusentes(
+                dados("Counter-Strike 2 (Nuuvem)", "Fps", null, null), segundaColeta);
 
         assertThat(produto.getNome()).isEqualTo("Counter-Strike 2");
-        assertThat(produto.getUrl()).isEqualTo(URL_VALIDA);
         assertThat(produto.getCategoria()).isEqualTo("Acao");
+        assertThat(produto.getAtualizadoEm()).isEqualTo(PRIMEIRA_COLETA);
     }
 
 }
