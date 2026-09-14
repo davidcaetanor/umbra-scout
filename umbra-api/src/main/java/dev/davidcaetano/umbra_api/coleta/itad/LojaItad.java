@@ -9,7 +9,10 @@ import java.util.Optional;
 public enum LojaItad {
 
     STEAM(61, CodigoLoja.STEAM),
-    NUUVEM(50, CodigoLoja.NUUVEM);
+    NUUVEM(50, CodigoLoja.NUUVEM),
+    GOG(35, CodigoLoja.GOG),
+    EPIC(16, CodigoLoja.EPIC),
+    GREEN_MAN_GAMING(36, CodigoLoja.GREEN_MAN_GAMING);
 
     private final int shopId;
     private final CodigoLoja codigoLoja;

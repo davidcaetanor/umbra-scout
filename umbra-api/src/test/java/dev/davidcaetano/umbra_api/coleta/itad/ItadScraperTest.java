@@ -407,6 +407,28 @@ class ItadScraperTest extends IntegrationTestBase {
     }
 
     @Test
+    void coletar_deveColetarOfertaDeLojaNovaDoItad() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000011");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo GOG", "game", "https://img/gog.jpg",
+                        35, "GOG", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/gog")));
+
+        stubLookup(35, lookupComEntrada(gid, "gog_jogo_gog"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid, dealJson(35, "GOG", 1500, 3000, 50,
+                        "https://itad.link/gog", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).loja()).isEqualTo(CodigoLoja.GOG);
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
+    }
+
+    @Test
     void coletar_naoDevePedirIdentificadorParaShopForaDasLojasSuportadas() {
         UUID gidConhecido = UUID.fromString("018d0000-0000-7000-8000-00000000000f");
         UUID gidDesconhecido = UUID.fromString("018d0000-0000-7000-8000-000000000010");

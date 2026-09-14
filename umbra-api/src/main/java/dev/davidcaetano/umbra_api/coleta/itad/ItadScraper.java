@@ -200,9 +200,7 @@ public class ItadScraper implements Scraper {
     }
 
     private static String primeiroIdentificadorOrdenado(List<String> identificadores) {
-        List<String> ordenados = new ArrayList<>(identificadores);
-        ordenados.sort(null);
-        return ordenados.getFirst();
+        return identificadores.stream().sorted().findFirst().orElseThrow();
     }
 
     private List<ItadPrecoJogoResponse> buscarTodosPrecos(List<UUID> gidsDistintos) {

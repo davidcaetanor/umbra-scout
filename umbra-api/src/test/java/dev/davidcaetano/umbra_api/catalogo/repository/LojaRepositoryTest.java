@@ -34,7 +34,8 @@ class LojaRepositoryTest extends IntegrationTestBase {
         assertThat(lojaRepository.findAll())
                 .extracting(LojaEntity::getCodigo)
                 .containsExactlyInAnyOrder(CodigoLoja.STEAM, CodigoLoja.NUUVEM,
-                        CodigoLoja.TERABYTE, CodigoLoja.EPIC, CodigoLoja.KABUM);
+                        CodigoLoja.TERABYTE, CodigoLoja.EPIC, CodigoLoja.KABUM,
+                        CodigoLoja.GOG, CodigoLoja.GREEN_MAN_GAMING);
     }
 
 }

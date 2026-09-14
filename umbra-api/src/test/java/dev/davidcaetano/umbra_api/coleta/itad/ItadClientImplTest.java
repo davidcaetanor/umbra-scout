@@ -320,6 +320,6 @@ class ItadClientImplTest extends IntegrationTestBase {
         WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/deals/v2"))
                 .withQueryParam("limit", equalTo("200"))
                 .withQueryParam("sort", equalTo("-trending"))
-                .withQueryParam("shops", equalTo("61,50")));
+                .withQueryParam("shops", equalTo("61,50,35,16,36")));
     }
 }
