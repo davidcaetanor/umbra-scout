@@ -17,6 +17,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -86,7 +87,7 @@ class OfertaRepositoryTest extends IntegrationTestBase {
     void deveRetornarVazioQuandoIdentificadorNaoExistirNaLoja() {
         ofertaRepository.saveAndFlush(ofertaDaSteam());
 
-        assertThat(ofertaRepository.findByLojaIdAndIdentificadorLoja(steam.getId(), "app-000"))
+        assertThat(ofertaRepository.findByLojaIdAndIdentificadorLojaIn(steam.getId(), List.of("app-000")))
                 .isEmpty();
     }
 
@@ -134,9 +135,8 @@ class OfertaRepositoryTest extends IntegrationTestBase {
         em.flush();
         em.clear();
 
-        assertThat(ofertaRepository.findByLojaIdAndIdentificadorLoja(steam.getId(), IDENTIFICADOR))
-                .isPresent()
-                .get()
+        assertThat(ofertaRepository.findByLojaIdAndIdentificadorLojaIn(steam.getId(), List.of(IDENTIFICADOR)))
+                .singleElement()
                 .extracting(OfertaEntity::getId)
                 .isEqualTo(id);
     }

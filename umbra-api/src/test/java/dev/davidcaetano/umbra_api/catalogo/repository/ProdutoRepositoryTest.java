@@ -11,6 +11,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,9 +30,8 @@ class ProdutoRepositoryTest extends IntegrationTestBase {
         ProdutoEntity produto = produtoRepository.saveAndFlush(ProdutoEntity.novo(TipoProduto.JOGO,
                 new DadosProduto("Counter-Strike 2", "Acao", null, "cs2-itad"), PRIMEIRA_COLETA));
 
-        assertThat(produtoRepository.findByChaveItad("cs2-itad"))
-                .isPresent()
-                .get()
+        assertThat(produtoRepository.findByChaveItadIn(List.of("cs2-itad")))
+                .singleElement()
                 .extracting(ProdutoEntity::getId)
                 .isEqualTo(produto.getId());
     }
@@ -41,7 +41,7 @@ class ProdutoRepositoryTest extends IntegrationTestBase {
         produtoRepository.saveAndFlush(ProdutoEntity.novo(TipoProduto.JOGO,
                 new DadosProduto("Counter-Strike 2", "Acao", null, "cs2-itad"), PRIMEIRA_COLETA));
 
-        assertThat(produtoRepository.findByChaveItad("nao-existe")).isEmpty();
+        assertThat(produtoRepository.findByChaveItadIn(List.of("nao-existe"))).isEmpty();
     }
 
     @Test
@@ -61,16 +61,15 @@ class ProdutoRepositoryTest extends IntegrationTestBase {
         Long id = produtoRepository.saveAndFlush(ProdutoEntity.novo(TipoProduto.JOGO,
                 new DadosProduto("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA)).getId();
 
-        assertThat(produtoRepository.findByChaveItad(gid)).isEmpty();
+        assertThat(produtoRepository.findByChaveItadIn(List.of(gid))).isEmpty();
 
         ProdutoEntity managed = produtoRepository.findById(id).orElseThrow();
         managed.completarDadosAusentes(
                 new DadosProduto(null, null, null, gid), PRIMEIRA_COLETA.plusHours(6));
         produtoRepository.flush();
 
-        assertThat(produtoRepository.findByChaveItad(gid))
-                .isPresent()
-                .get()
+        assertThat(produtoRepository.findByChaveItadIn(List.of(gid)))
+                .singleElement()
                 .extracting(ProdutoEntity::getId)
                 .isEqualTo(id);
     }

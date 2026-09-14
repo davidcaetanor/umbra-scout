@@ -30,9 +30,6 @@ import java.util.UUID;
 @Slf4j
 public class ItadScraper implements Scraper {
 
-    // Orçamento de descoberta por rodada — decisão de produto sobre quanto catálogo semear
-    // a cada execução, não guarda de segurança. Também é o teto de memória de uma rodada:
-    // PAGINAS_POR_RODADA * limite da página itens ficam em memória de uma vez.
     private static final int PAGINAS_POR_RODADA = 30;
     private static final int TAMANHO_LOTE = 200;
 
