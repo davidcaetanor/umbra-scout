@@ -284,6 +284,22 @@ public class MigrationConstraintsTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveExistirLinhasDasLojasDoItadEmLoja() {
+        Integer totalGog = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM loja
+                WHERE codigo = 'GOG' AND nome = 'GOG' AND url_base = 'https://www.gog.com' AND ativa
+                """, Integer.class);
+        Integer totalGreenManGaming = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM loja
+                WHERE codigo = 'GREEN_MAN_GAMING' AND nome = 'Green Man Gaming'
+                    AND url_base = 'https://www.greenmangaming.com' AND ativa
+                """, Integer.class);
+
+        assertThat(totalGog).isEqualTo(1);
+        assertThat(totalGreenManGaming).isEqualTo(1);
+    }
+
+    @Test
     void deveAceitarOrigemKabumApi() {
         Long produtoId = inserirProduto(null);
         Long ofertaId = inserirOferta(produtoId, lojaId("KABUM"), "kabum-777");
