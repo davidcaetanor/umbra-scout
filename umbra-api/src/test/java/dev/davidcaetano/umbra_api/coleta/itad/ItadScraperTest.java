@@ -23,6 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -353,6 +354,80 @@ class ItadScraperTest extends IntegrationTestBase {
                         "https://itad.link/desconhecido", EXPIRY_NULO))));
 
         ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).chaveItad()).isEqualTo(gidConhecido.toString());
+        assertThat(resultado.totalElegivel()).isEqualTo(2);
+        assertThat(resultado.totalSemPreco()).isEqualTo(1);
+    }
+
+    @Test
+    void coletar_deveColetarOfertaDeLojaOndeOJogoNaoTeveDesconto() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-00000000000d");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo Multi Loja", "game", "https://img/multi.jpg",
+                        61, "Steam", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/multi-steam")));
+
+        stubLookup(61, lookupComEntrada(gid, "610"));
+        stubLookup(50, lookupComEntrada(gid, "NUUVEM_610"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid,
+                        dealJson(61, "Steam", 1500, 3000, 50, "https://itad.link/multi-steam", EXPIRY_NULO),
+                        dealJson(50, "Nuuvem", 2900, 2900, 0, "https://itad.link/multi-nuuvem", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(2);
+        assertThat(resultado.ofertas()).extracting(OfertaColetada::loja)
+                .containsExactlyInAnyOrder(CodigoLoja.STEAM, CodigoLoja.NUUVEM);
+        assertThat(resultado.totalElegivel()).isEqualTo(2);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
+    }
+
+    @Test
+    void coletar_deveEscolherIdentificadorNativoDeFormaDeterministicaQuandoHouverMaisDeUm() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-00000000000e");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo Multi Id", "game", "https://img/multiid.jpg",
+                        61, "Steam", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/multiid")));
+
+        stubLookup(61, lookupComEntrada(gid, "zzz-id", "aaa-id"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid, dealJson(61, "Steam", 1500, 3000, 50,
+                        "https://itad.link/multiid", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).identificadorLoja()).isEqualTo("aaa-id");
+    }
+
+    @Test
+    void coletar_naoDevePedirIdentificadorParaShopForaDasLojasSuportadas() {
+        UUID gidConhecido = UUID.fromString("018d0000-0000-7000-8000-00000000000f");
+        UUID gidDesconhecido = UUID.fromString("018d0000-0000-7000-8000-000000000010");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gidConhecido, "Jogo Shop Conhecido", "game", "https://img/conhecido.jpg",
+                        61, "Steam", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/conhecido"),
+                jogoDescoberta(gidDesconhecido, "Jogo Shop Desconhecido", "game", "https://img/desconhecido.jpg",
+                        61, "Steam", 1000, 2000, 50, EXPIRY_NULO, "https://itad.link/desconhecido")));
+
+        stubLookup(61, lookupComEntrada(gidConhecido, "610"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gidConhecido, dealJson(61, "Steam", 1500, 3000, 50,
+                        "https://itad.link/conhecido", EXPIRY_NULO)),
+                precoJogoJson(gidDesconhecido, dealJson(99, "LojaDesconhecida", 1000, 2000, 50,
+                        "https://itad.link/desconhecido", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        WIREMOCK.verify(0, postRequestedFor(urlPathEqualTo("/lookup/shop/99/id/v1")));
 
         assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.ofertas().get(0).chaveItad()).isEqualTo(gidConhecido.toString());
