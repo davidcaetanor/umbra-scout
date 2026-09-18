@@ -11,6 +11,7 @@ import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;
@@ -86,7 +87,8 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
             }
             ofertas.add(ofertaComUrlInvalida("invalida-500"));
 
-            assertThatCode(() -> coletaService.gravar(new ResultadoColeta(ofertas, ofertas.size(), 0)))
+            assertThatCode(() -> coletaService.gravar(new ResultadoColeta(ofertas, ofertas.size(), 0,
+                    new Reconciliacao(null, ofertas.size(), ofertas.size()))))
                     .doesNotThrowAnyException();
 
             assertThat(produtoRepository.count()).isEqualTo(500);
@@ -108,7 +110,8 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
         try {
             List<OfertaColetada> ofertas = List.of(ofertaComUrlInvalida("unica-invalida"));
 
-            assertThatThrownBy(() -> coletaService.gravar(new ResultadoColeta(ofertas, ofertas.size(), 0)))
+            assertThatThrownBy(() -> coletaService.gravar(new ResultadoColeta(ofertas, ofertas.size(), 0,
+                    new Reconciliacao(null, ofertas.size(), ofertas.size()))))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Nenhum dos 1 chunk");
 
