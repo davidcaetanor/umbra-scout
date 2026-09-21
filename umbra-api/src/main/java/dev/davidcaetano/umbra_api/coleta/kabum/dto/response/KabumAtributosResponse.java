@@ -23,6 +23,9 @@ public record KabumAtributosResponse(
         @JsonProperty("is_marketplace")
         boolean isMarketplace,
 
+        @JsonProperty("is_openbox")
+        boolean isOpenbox,
+
         @JsonProperty("product_link")
         String productLink,
 

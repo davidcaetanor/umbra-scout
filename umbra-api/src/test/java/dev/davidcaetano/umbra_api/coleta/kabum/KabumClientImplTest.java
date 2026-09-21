@@ -40,8 +40,9 @@ class KabumClientImplTest extends IntegrationTestBase {
     @Autowired
     private KabumClient kabumClient;
 
-    // base64('{"category":["Hardware"]}') — único facet aceito por meta.filters.string_filters (KABUM-HARDWARE.md §2)
-    private static final String FACET_FILTERS_HARDWARE = "eyJjYXRlZ29yeSI6WyJIYXJkd2FyZSJdfQ==";
+    // base64('{"category":["Hardware"],"kabum_product":[true]}') — facets aceitos por meta.filters.string_filters
+    // e meta.filters.boolean_filters (KABUM-HARDWARE.md §2, CONTRATOS-FONTES.md §4.2.7)
+    private static final String FACET_FILTERS_HARDWARE = "eyJjYXRlZ29yeSI6WyJIYXJkd2FyZSJdLCJrYWJ1bV9wcm9kdWN0IjpbdHJ1ZV19";
 
     // Fixture — GET /catalog/v2/products?facet_filters=...&page_number=1&page_size=100
     private static final String FIXTURE_CATALOGO_HARDWARE = """
@@ -248,14 +249,15 @@ class KabumClientImplTest extends IntegrationTestBase {
     void buscarPaginaHardware_deveDesserializarRespostaReal() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .withQueryParam("facet_filters", equalTo(FACET_FILTERS_HARDWARE))
+                .withQueryParam("sort", equalTo("name"))
                 .withQueryParam("page_number", equalTo("1"))
-                .withQueryParam("page_size", equalTo("100"))
+                .withQueryParam("page_size", equalTo("120"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody(FIXTURE_CATALOGO_HARDWARE)));
 
-        KabumCatalogoResponse resposta = kabumClient.buscarPaginaHardware(1, 100);
+        KabumCatalogoResponse resposta = kabumClient.buscarPaginaHardware(1);
 
         assertThat(resposta.meta().totalItemsCount()).isEqualTo(8155);
         assertThat(resposta.meta().totalPagesCount()).isEqualTo(82);
@@ -270,6 +272,7 @@ class KabumClientImplTest extends IntegrationTestBase {
         assertThat(descontoSimples.attributes().available()).isTrue();
         assertThat(descontoSimples.attributes().stock()).isEqualTo(2);
         assertThat(descontoSimples.attributes().isMarketplace()).isFalse();
+        assertThat(descontoSimples.attributes().isOpenbox()).isFalse();
         assertThat(descontoSimples.attributes().productLink())
                 .isEqualTo("hd-wd-gold-enterprise-class-hdd-12tb-7200-rpm-cache-512mb-cmr-sata-wd122kryz");
         assertThat(descontoSimples.attributes().prime()).isNull();
@@ -292,17 +295,19 @@ class KabumClientImplTest extends IntegrationTestBase {
     }
 
     @Test
-    void buscarPaginaHardware_deveEnviarFacetFiltersDoCategoriaHardwareCodificadoEmBase64() {
+    void buscarPaginaHardware_deveEnviarFacetFiltersSortEPageSizeComoContratoDaFonte() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody(FIXTURE_CATALOGO_HARDWARE)));
 
-        kabumClient.buscarPaginaHardware(1, 100);
+        kabumClient.buscarPaginaHardware(1);
 
         WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/catalog/v2/products"))
-                .withQueryParam("facet_filters", equalTo(FACET_FILTERS_HARDWARE)));
+                .withQueryParam("facet_filters", equalTo(FACET_FILTERS_HARDWARE))
+                .withQueryParam("sort", equalTo("name"))
+                .withQueryParam("page_size", equalTo("120")));
     }
 
     @Test
@@ -310,7 +315,7 @@ class KabumClientImplTest extends IntegrationTestBase {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .willReturn(aResponse().withStatus(500)));
 
-        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1, 100))
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
                 .isInstanceOf(KabumApiException.class)
                 .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(500));
     }
@@ -320,7 +325,7 @@ class KabumClientImplTest extends IntegrationTestBase {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .willReturn(aResponse().withStatus(429)));
 
-        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1, 100))
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
                 .isInstanceOf(KabumApiException.class)
                 .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(429));
     }
@@ -333,7 +338,7 @@ class KabumClientImplTest extends IntegrationTestBase {
                         .withHeader("Content-Type", "application/json")
                         .withBody("isso nao eh json")));
 
-        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1, 100))
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
                 .isInstanceOf(KabumApiException.class)
                 .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(0));
     }

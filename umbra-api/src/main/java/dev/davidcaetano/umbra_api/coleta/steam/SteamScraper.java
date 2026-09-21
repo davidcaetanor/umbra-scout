@@ -3,8 +3,10 @@ package dev.davidcaetano.umbra_api.coleta.steam;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamAppDetalhesResponse;
@@ -17,7 +19,9 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +36,18 @@ public class SteamScraper implements Scraper {
     }
 
     @Override
+    public Cobertura cobertura() {
+        return Cobertura.AMOSTRA;
+    }
+
+    @Override
     public ResultadoColeta coletar() {
         List<SteamJogoDescobertoResponse> descobertos = steamClient.buscarDescoberta().specials().items();
+
+        Set<Integer> appidsVistos = new LinkedHashSet<>();
+        for (SteamJogoDescobertoResponse item : descobertos) {
+            appidsVistos.add(item.id());
+        }
 
         List<OfertaColetada> resultado = new ArrayList<>();
         FiltroMoeda filtroMoeda = new FiltroMoeda();
@@ -67,7 +81,8 @@ public class SteamScraper implements Scraper {
 
         filtroMoeda.logarResumo(fonte());
 
-        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
+        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco,
+                new Reconciliacao(null, descobertos.size(), appidsVistos.size()));
     }
 
     private static OfertaColetada toOfertaColetada(SteamJogoDescobertoResponse item, SteamPrecoResponse overview) {

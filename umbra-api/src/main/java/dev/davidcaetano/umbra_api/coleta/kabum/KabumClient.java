@@ -4,6 +4,6 @@ import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoRespons
 
 public interface KabumClient {
 
-    KabumCatalogoResponse buscarPaginaHardware(int pageNumber, int pageSize);
+    KabumCatalogoResponse buscarPaginaHardware(int pageNumber);
 
 }
