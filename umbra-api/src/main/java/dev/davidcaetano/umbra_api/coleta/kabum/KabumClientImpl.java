@@ -12,6 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,14 +21,23 @@ import java.util.Map;
 @Slf4j
 public class KabumClientImpl implements KabumClient {
 
-    private static final Map<String, List<String>> FILTRO_CATEGORIA_HARDWARE = Map.of("category", List.of("Hardware"));
+    private static final String SORT = "name";
+    private static final int PAGE_SIZE = 120;
+    private static final Map<String, List<?>> FILTRO_CATALOGO = filtroCatalogo();
 
     private final RestClient kabumRestClient;
     private final ObjectMapper objectMapper;
 
+    private static Map<String, List<?>> filtroCatalogo() {
+        Map<String, List<?>> filtro = new LinkedHashMap<>();
+        filtro.put("category", List.of("Hardware"));
+        filtro.put("kabum_product", List.of(true));
+        return filtro;
+    }
+
     @Override
     @RateLimiter(name = "kabum")
-    public KabumCatalogoResponse buscarPaginaHardware(int pageNumber, int pageSize) {
+    public KabumCatalogoResponse buscarPaginaHardware(int pageNumber) {
         String facetFilters = codificarFacetFilters();
 
         try {
@@ -35,8 +45,9 @@ public class KabumClientImpl implements KabumClient {
                     .uri(uriBuilder -> uriBuilder
                             .path("/catalog/v2/products")
                             .queryParam("facet_filters", facetFilters)
+                            .queryParam("sort", SORT)
                             .queryParam("page_number", pageNumber)
-                            .queryParam("page_size", pageSize)
+                            .queryParam("page_size", PAGE_SIZE)
                             .build())
                     .retrieve()
                     .body(KabumCatalogoResponse.class);
@@ -46,7 +57,7 @@ public class KabumClientImpl implements KabumClient {
     }
 
     private String codificarFacetFilters() {
-        String json = objectMapper.writeValueAsString(FILTRO_CATEGORIA_HARDWARE);
+        String json = objectMapper.writeValueAsString(FILTRO_CATALOGO);
         return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
     }
 

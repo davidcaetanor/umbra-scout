@@ -3,7 +3,9 @@ package dev.davidcaetano.umbra_api.coleta.kabum;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumAtributosResponse;
@@ -17,15 +19,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class KabumScraper implements Scraper {
-
-    private static final int PAGE_SIZE = 100;
 
     private static final Map<String, String> CATEGORIA_POR_PREFIXO_MENU = new LinkedHashMap<>();
 
@@ -50,15 +52,34 @@ public class KabumScraper implements Scraper {
     }
 
     @Override
+    public Cobertura cobertura() {
+        return Cobertura.CENSO;
+    }
+
+    @Override
     public ResultadoColeta coletar() {
-        List<KabumProdutoResponse> produtos = buscarCatalogoCompleto();
+        CatalogoBruto catalogo = buscarCatalogoCompleto();
 
         List<OfertaColetada> resultado = new ArrayList<>();
+        Set<Long> idsVistos = new LinkedHashSet<>();
         int totalElegivel = 0;
         int totalSemPreco = 0;
+        int marketplaceInesperado = 0;
 
-        for (KabumProdutoResponse produto : produtos) {
+        for (KabumProdutoResponse produto : catalogo.produtos()) {
+            idsVistos.add(produto.id());
+
             KabumAtributosResponse atributos = produto.attributes();
+
+            if (atributos.isMarketplace()) {
+                marketplaceInesperado++;
+                continue;
+            }
+
+            if (atributos.isOpenbox()) {
+                log.debug("Item Kabum openbox fora do escopo: id={} menu={}", produto.id(), atributos.menu());
+                continue;
+            }
 
             String categoria = mapearCategoria(atributos.menu());
 
@@ -78,21 +99,38 @@ public class KabumScraper implements Scraper {
             resultado.add(toOfertaColetada(produto, categoria));
         }
 
-        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
+        if (marketplaceInesperado > 0) {
+            log.warn("{}: {} itens de marketplace vistos nesta rodada apesar do facet kabum_product",
+                    fonte(), marketplaceInesperado);
+        }
+
+        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco,
+                new Reconciliacao(catalogo.declarado(), catalogo.produtos().size(), idsVistos.size()));
     }
 
-    private List<KabumProdutoResponse> buscarCatalogoCompleto() {
-        KabumCatalogoResponse primeiraPagina = kabumClient.buscarPaginaHardware(1, PAGE_SIZE);
+    private CatalogoBruto buscarCatalogoCompleto() {
+        KabumCatalogoResponse primeiraPagina = kabumClient.buscarPaginaHardware(1);
 
         List<KabumProdutoResponse> produtos = new ArrayList<>(primeiraPagina.data());
+        long declarado = primeiraPagina.meta().totalItemsCount();
 
         int totalPaginas = primeiraPagina.meta().totalPagesCount();
         for (int pagina = 2; pagina <= totalPaginas; pagina++) {
-            KabumCatalogoResponse proximaPagina = kabumClient.buscarPaginaHardware(pagina, PAGE_SIZE);
-            produtos.addAll(proximaPagina.data());
+            KabumCatalogoResponse proximaPagina = kabumClient.buscarPaginaHardware(pagina);
+            List<KabumProdutoResponse> itensPagina = proximaPagina.data();
+
+            if (itensPagina.isEmpty()) {
+                log.debug("Pagina Kabum {} veio vazia — catalogo encolheu durante a varredura", pagina);
+                continue;
+            }
+
+            produtos.addAll(itensPagina);
         }
 
-        return produtos;
+        return new CatalogoBruto(produtos, declarado);
+    }
+
+    private record CatalogoBruto(List<KabumProdutoResponse> produtos, long declarado) {
     }
 
     private static String mapearCategoria(String menu) {
