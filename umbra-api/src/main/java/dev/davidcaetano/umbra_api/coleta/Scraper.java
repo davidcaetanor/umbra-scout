@@ -6,5 +6,7 @@ public interface Scraper {
 
     OrigemColeta fonte();
 
+    Cobertura cobertura();
+
     ResultadoColeta coletar();
 }
