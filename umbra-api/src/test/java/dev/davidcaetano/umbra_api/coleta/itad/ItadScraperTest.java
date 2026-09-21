@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
@@ -186,6 +187,10 @@ class ItadScraperTest extends IntegrationTestBase {
         assertThat(resultado.ofertas()).noneMatch(p -> p.chaveItad().equals(gidDlc.toString()));
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
+        assertThat(itadScraper.cobertura()).isEqualTo(Cobertura.AMOSTRA);
+        assertThat(resultado.reconciliacao().declarado()).isNull();
+        assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);
+        assertThat(resultado.reconciliacao().distintos()).isEqualTo(3);
 
         OfertaColetada nuuvem = resultado.ofertas().get(0);
         assertThat(nuuvem.loja()).isEqualTo(CodigoLoja.NUUVEM);

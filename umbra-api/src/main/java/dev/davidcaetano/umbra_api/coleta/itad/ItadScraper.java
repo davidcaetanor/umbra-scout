@@ -3,8 +3,10 @@ package dev.davidcaetano.umbra_api.coleta.itad;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
@@ -24,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +44,17 @@ public class ItadScraper implements Scraper {
     }
 
     @Override
+    public Cobertura cobertura() {
+        return Cobertura.AMOSTRA;
+    }
+
+    @Override
     public ResultadoColeta coletar() {
         List<ItadJogoDescobertoResponse> descobertos = buscarTodaDescoberta();
+
+        Set<UUID> gidsBrutos = descobertos.stream()
+                .map(ItadJogoDescobertoResponse::id)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         List<ItadJogoDescobertoResponse> jogos = descobertos.stream()
                 .filter(jogo -> "game".equals(jogo.type()))
@@ -54,12 +66,12 @@ public class ItadScraper implements Scraper {
                     new TituloImagem(jogo.title(), jogo.assets() == null ? null : jogo.assets().boxart()));
         }
 
-        List<UUID> gidsDistintos = jogos.stream()
+        List<UUID> gidsParaPreco = jogos.stream()
                 .map(ItadJogoDescobertoResponse::id)
                 .distinct()
                 .toList();
 
-        List<ItadPrecoJogoResponse> precos = buscarTodosPrecos(gidsDistintos);
+        List<ItadPrecoJogoResponse> precos = buscarTodosPrecos(gidsParaPreco);
 
         Map<Integer, Set<UUID>> gidsPorShop = montarGidsPorShop(precos);
         Map<Integer, Map<UUID, String>> identificadorPorShop = resolverIdentificadoresNativos(gidsPorShop);
@@ -127,7 +139,8 @@ public class ItadScraper implements Scraper {
 
         filtroMoeda.logarResumo(fonte());
 
-        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco);
+        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco,
+                new Reconciliacao(null, descobertos.size(), gidsBrutos.size()));
     }
 
     private List<ItadJogoDescobertoResponse> buscarTodaDescoberta() {

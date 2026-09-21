@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
@@ -151,6 +152,10 @@ class SteamScraperTest extends IntegrationTestBase {
         assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
+        assertThat(steamScraper.cobertura()).isEqualTo(Cobertura.AMOSTRA);
+        assertThat(resultado.reconciliacao().declarado()).isNull();
+        assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);
+        assertThat(resultado.reconciliacao().distintos()).isEqualTo(3);
 
         OfertaColetada produto = resultado.ofertas().getFirst();
         assertThat(produto.loja()).isEqualTo(CodigoLoja.STEAM);

@@ -11,6 +11,7 @@ import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,7 +87,8 @@ class ColetaServiceImplTest extends IntegrationTestBase {
 
     private void gravar(OfertaColetada... ofertas) {
         List<OfertaColetada> lista = List.of(ofertas);
-        coletaService.gravar(new ResultadoColeta(lista, lista.size(), 0));
+        coletaService.gravar(new ResultadoColeta(lista, lista.size(), 0,
+                new Reconciliacao(null, lista.size(), lista.size())));
     }
 
     @Test
