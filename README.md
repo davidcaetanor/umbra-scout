@@ -22,3 +22,10 @@ Os preços vêm de três fontes, todas por API: IsThereAnyDeal, para jogos em re
 | :------ | :---------- |
 | `umbra-api` | Java 25, Spring Boot 4.1.1, Spring Data JPA, Flyway, PostgreSQL 18, Resilience4j, Testcontainers |
 | `umbra-web` | Angular 22, TypeScript |
+
+## Contexto acadêmico
+
+A primeira versão do Umbra é também o sistema do Projeto Integrador da disciplina de Qualidade de Software, no curso de Análise e Desenvolvimento de Sistemas da Universidade São Judas Tadeu. 
+No trabalho, o produto é especificado, avaliado segundo o modelo de qualidade da ISO/IEC 25010 e verificado por testes, com rastreabilidade entre requisitos e evidências. 
+
+Orientação: Prof. José Carmino Gomes Junior e Prof. Keity Yamamoto.
