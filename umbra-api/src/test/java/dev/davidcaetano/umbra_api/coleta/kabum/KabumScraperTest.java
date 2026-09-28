@@ -157,7 +157,7 @@ class KabumScraperTest extends IntegrationTestBase {
                         .withBody(corpo)));
     }
 
-    // Fixture — resposta real e trimmada da Kabum, docs/payloads/kabum-hardware-page1.json (capturada 08/09/2026)
+    // Fixture — resposta real e trimmada da Kabum (capturada da API real em 08/09/2026)
     private static final String FIXTURE_PAGINA_UNICA = """
             {
               "meta": {
@@ -240,6 +240,7 @@ class KabumScraperTest extends IntegrationTestBase {
             assertThat(resultado.totalElegivel()).isEqualTo(2);
             assertThat(resultado.totalSemPreco()).isEqualTo(0);
             assertThat(kabumScraper.cobertura()).isEqualTo(Cobertura.CENSO);
+            assertThat(resultado.fonte()).isEqualTo(OrigemColeta.KABUM_API);
             assertThat(resultado.reconciliacao().declarado()).isEqualTo(3L);
             assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);
             assertThat(resultado.reconciliacao().distintos()).isEqualTo(3);

@@ -188,6 +188,7 @@ class ItadScraperTest extends IntegrationTestBase {
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
         assertThat(itadScraper.cobertura()).isEqualTo(Cobertura.AMOSTRA);
+        assertThat(resultado.fonte()).isEqualTo(OrigemColeta.ITAD_API);
         assertThat(resultado.reconciliacao().declarado()).isNull();
         assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);
         assertThat(resultado.reconciliacao().distintos()).isEqualTo(3);

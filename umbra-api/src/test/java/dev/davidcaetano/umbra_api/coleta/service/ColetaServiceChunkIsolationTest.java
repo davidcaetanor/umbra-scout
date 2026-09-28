@@ -64,7 +64,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
     }
 
     private static ListAppender<ILoggingEvent> capturarLogsDoServico() {
-        Logger logger = (Logger) LoggerFactory.getLogger(ColetaServiceImpl.class);
+        Logger logger = (Logger) LoggerFactory.getLogger(ColetaService.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();
         logger.addAppender(appender);
@@ -73,7 +73,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
 
     private static void pararDeCapturar(ListAppender<ILoggingEvent> appender) {
         appender.stop();
-        ((Logger) LoggerFactory.getLogger(ColetaServiceImpl.class)).detachAppender(appender);
+        ((Logger) LoggerFactory.getLogger(ColetaService.class)).detachAppender(appender);
     }
 
     @Test
@@ -87,7 +87,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
             }
             ofertas.add(ofertaComUrlInvalida("invalida-500"));
 
-            assertThatCode(() -> coletaService.gravar(new ResultadoColeta(ofertas, ofertas.size(), 0,
+            assertThatCode(() -> coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, ofertas.size(), 0,
                     new Reconciliacao(null, ofertas.size(), ofertas.size()))))
                     .doesNotThrowAnyException();
 
@@ -110,7 +110,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
         try {
             List<OfertaColetada> ofertas = List.of(ofertaComUrlInvalida("unica-invalida"));
 
-            assertThatThrownBy(() -> coletaService.gravar(new ResultadoColeta(ofertas, ofertas.size(), 0,
+            assertThatThrownBy(() -> coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, ofertas.size(), 0,
                     new Reconciliacao(null, ofertas.size(), ofertas.size()))))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Nenhum dos 1 chunk");

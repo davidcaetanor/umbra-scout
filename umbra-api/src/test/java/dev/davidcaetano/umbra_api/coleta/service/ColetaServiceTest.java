@@ -36,9 +36,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(ColetaServiceImplTest.RelogioDeTesteConfig.class)
+@Import(ColetaServiceTest.RelogioDeTesteConfig.class)
 @Transactional
-class ColetaServiceImplTest extends IntegrationTestBase {
+class ColetaServiceTest extends IntegrationTestBase {
 
     private static final OffsetDateTime INSTANTE_RODADA_1 = OffsetDateTime.parse("2026-06-01T09:00:00-03:00");
 
@@ -87,7 +87,7 @@ class ColetaServiceImplTest extends IntegrationTestBase {
 
     private void gravar(OfertaColetada... ofertas) {
         List<OfertaColetada> lista = List.of(ofertas);
-        coletaService.gravar(new ResultadoColeta(lista, lista.size(), 0,
+        coletaService.gravar(new ResultadoColeta(ofertas[0].origemColeta(), lista, lista.size(), 0,
                 new Reconciliacao(null, lista.size(), lista.size())));
     }
 
