@@ -1,11 +1,15 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 public record VereditoRodada(Set<CondicaoDeDrift> condicoes) {
 
     public VereditoRodada {
-        condicoes = Set.copyOf(condicoes);
+        Set<CondicaoDeDrift> emOrdemDeDeclaracao = EnumSet.noneOf(CondicaoDeDrift.class);
+        emOrdemDeDeclaracao.addAll(condicoes);
+        condicoes = Collections.unmodifiableSet(emOrdemDeDeclaracao);
     }
 
     public SituacaoRodada situacao() {

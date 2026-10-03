@@ -11,6 +11,7 @@ import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository.UltimoPrecoProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
+import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada.GrupoChave;
 import dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada.GrupoDeOfertas;
@@ -45,6 +46,7 @@ public class ColetaService {
     private final TransactionTemplate transactionTemplate;
     private final PreparadorDeRodada preparadorDeRodada = new PreparadorDeRodada();
     private final RegraDeGravacaoDePreco regraDeGravacaoDePreco = new RegraDeGravacaoDePreco();
+    private final JulgamentoDeRodada julgamentoDeRodada = new JulgamentoDeRodada();
 
     public ColetaService(ProdutoRepository produtoRepository,
                           OfertaRepository ofertaRepository,
@@ -61,7 +63,22 @@ public class ColetaService {
         this.transactionTemplate = transactionTemplate;
     }
 
-    public void gravar(ResultadoColeta resultado) {
+    public VereditoRodada gravar(ResultadoColeta resultado) {
+
+        VereditoRodada veredito = julgamentoDeRodada.julgar(resultado);
+
+        if (veredito.situacao() != SituacaoRodada.SAUDAVEL) {
+            Reconciliacao reconciliacao = resultado.reconciliacao();
+            log.warn("Alarme de schema drift: fonte={} situacao={} condicoes={} elegiveis={} semPreco={} "
+                            + "declarado={} brutos={} distintos={}",
+                    resultado.fonte(), veredito.situacao(), veredito.condicoes(), resultado.totalElegivel(),
+                    resultado.totalSemPreco(), reconciliacao.declarado(), reconciliacao.brutos(),
+                    reconciliacao.distintos());
+        }
+
+        if (veredito.situacao() == SituacaoRodada.REJEITADA) {
+            return veredito;
+        }
 
         List<List<GrupoDeOfertas>> chunks = preparadorDeRodada.preparar(resultado.ofertas());
 
@@ -91,14 +108,16 @@ public class ColetaService {
         }
 
         if (chunksComFalha > 0) {
-            log.info("Coleta gravada: {} produto(s) criado(s), {} oferta(s) criada(s), {} preço(s) gravado(s) "
-                            + "({} de {} chunk(s) descartado(s))",
-                    totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados(),
+            log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), "
+                            + "{} preço(s) gravado(s) ({} de {} chunk(s) descartado(s))",
+                    resultado.fonte(), totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados(),
                     chunksComFalha, chunks.size());
         } else {
-            log.info("Coleta gravada: {} produto(s) criado(s), {} oferta(s) criada(s), {} preço(s) gravado(s)",
-                    totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados());
+            log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), {} preço(s) gravado(s)",
+                    resultado.fonte(), totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados());
         }
+
+        return veredito;
     }
 
     private Contadores gravarChunk(List<GrupoDeOfertas> grupos, Map<CodigoLoja, LojaEntity> lojasPorCodigo, OffsetDateTime agora) {
