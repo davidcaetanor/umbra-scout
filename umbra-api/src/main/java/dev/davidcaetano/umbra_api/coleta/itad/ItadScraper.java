@@ -139,7 +139,7 @@ public class ItadScraper implements Scraper {
 
         filtroMoeda.logarResumo(fonte());
 
-        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco,
+        return new ResultadoColeta(fonte(), resultado, totalElegivel, totalSemPreco,
                 new Reconciliacao(null, descobertos.size(), gidsBrutos.size()));
     }
 

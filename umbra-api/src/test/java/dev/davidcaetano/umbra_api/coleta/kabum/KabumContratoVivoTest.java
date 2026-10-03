@@ -7,6 +7,7 @@ import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
+import dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -61,7 +62,7 @@ class KabumContratoVivoTest extends IntegrationTestBase {
     void coletar_devePersistirProdutoOfertaEPrecoNoPostgresAPartirDeRodadaReal() {
         ResultadoColeta resultado = kabumScraper.coletar();
 
-        coletaService.gravar(resultado);
+        assertThat(coletaService.gravar(resultado).situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
 
         List<OfertaEntity> ofertasGravadas = ofertaRepository.findByLojaCodigo(CodigoLoja.KABUM);
 

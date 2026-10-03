@@ -104,7 +104,7 @@ public class KabumScraper implements Scraper {
                     fonte(), marketplaceInesperado);
         }
 
-        return new ResultadoColeta(resultado, totalElegivel, totalSemPreco,
+        return new ResultadoColeta(fonte(), resultado, totalElegivel, totalSemPreco,
                 new Reconciliacao(catalogo.declarado(), catalogo.produtos().size(), idsVistos.size()));
     }
 

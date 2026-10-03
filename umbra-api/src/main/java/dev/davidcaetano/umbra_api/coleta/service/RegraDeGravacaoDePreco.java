@@ -3,12 +3,12 @@ package dev.davidcaetano.umbra_api.coleta.service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-public final class RegraDeGravacaoDePreco {
+final class RegraDeGravacaoDePreco {
 
     static final int JANELA_VIVACIDADE_DIAS = 90;
 
-    public boolean devePersistir(boolean ofertaNova, UltimoPreco ultimoPreco, long valorCentavos,
-                                  boolean disponivel, Instant agora) {
+    boolean devePersistir(boolean ofertaNova, UltimoPreco ultimoPreco, long valorCentavos,
+                           boolean disponivel, Instant agora) {
 
         if (ofertaNova || ultimoPreco == null) {
             return true;
@@ -22,6 +22,6 @@ public final class RegraDeGravacaoDePreco {
         return valorMudou || disponibilidadeMudou || janelaDeVivacidadeExpirou;
     }
 
-    public record UltimoPreco(long valorCentavos, boolean disponivel, Instant coletadoEm) {
+    record UltimoPreco(long valorCentavos, boolean disponivel, Instant coletadoEm) {
     }
 }
