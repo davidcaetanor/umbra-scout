@@ -1,6 +1,8 @@
 # --- Ambiente ---
 .env
 
+docs/*
+
 
 # --- umbra-api 
 umbra-api/target/
