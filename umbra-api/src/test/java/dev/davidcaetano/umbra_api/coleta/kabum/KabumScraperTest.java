@@ -157,7 +157,7 @@ class KabumScraperTest extends IntegrationTestBase {
                         .withBody(corpo)));
     }
 
-    // Fixture — resposta real e trimmada da Kabum (capturada da API real em 08/09/2026)
+    // Fixture — resposta trimmada da Kabum, capturada da API real em 08/09/2026
     private static final String FIXTURE_PAGINA_UNICA = """
             {
               "meta": {

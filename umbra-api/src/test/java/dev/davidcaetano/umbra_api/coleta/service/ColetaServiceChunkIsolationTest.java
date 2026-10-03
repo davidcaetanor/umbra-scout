@@ -122,4 +122,22 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
             pararDeCapturar(logs);
         }
     }
+
+    @Test
+    void deveEmitirUmUnicoWarnDeAlarmeQuandoRodadaForRejeitada() {
+        ListAppender<ILoggingEvent> logs = capturarLogsDoServico();
+
+        try {
+            coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, List.of(), 0, 0,
+                    new Reconciliacao(null, 0, 0)));
+
+            assertThat(logs.list)
+                    .filteredOn(evento -> evento.getLevel() == Level.WARN)
+                    .singleElement()
+                    .satisfies(evento -> assertThat(evento.getFormattedMessage())
+                            .contains("Alarme de schema drift", "fonte=KABUM_API", "REJEITADA"));
+        } finally {
+            pararDeCapturar(logs);
+        }
+    }
 }

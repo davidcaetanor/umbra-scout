@@ -40,7 +40,7 @@ class SteamClientImplTest extends IntegrationTestBase {
 
     private static final int APPID_RDR2 = 1174180;
 
-    // Fixture 1 — GET /featuredcategories?cc=br&l=portuguese (real, capturada da API real em 08/09/2026).
+    // Fixture 1 — GET /featuredcategories?cc=br&l=portuguese (capturada da API real em 08/09/2026).
     // Mantido apenas o bloco "specials", os demais (spotlights, daily deal, coming soon etc.) não são mapeados por
     // SteamDescobertaResponse e são descartados pelo @JsonIgnoreProperties(ignoreUnknown = true).
     private static final String FIXTURE_DESCOBERTA = """
