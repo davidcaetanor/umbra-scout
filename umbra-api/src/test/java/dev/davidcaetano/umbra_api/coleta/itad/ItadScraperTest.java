@@ -173,7 +173,7 @@ class ItadScraperTest extends IntegrationTestBase {
                         61, "Steam", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/steam")));
 
         stubLookup(50, lookupComEntrada(gidNuuvem, "NUUVEM_ID_1"));
-        stubLookup(61, lookupComEntrada(gidSteam, "620"));
+        stubLookup(61, lookupComEntrada(gidSteam, "app/620"));
 
         stubPrecos(precosResponse(
                 precoJogoJson(gidNuuvem, dealJson(50, "Nuuvem", 1000, 2000, 50,
@@ -410,6 +410,26 @@ class ItadScraperTest extends IntegrationTestBase {
 
         assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.ofertas().get(0).identificadorLoja()).isEqualTo("aaa-id");
+    }
+
+    @Test
+    void coletar_deveGravarIdentificadorDaSteamDeOutroTipoSemRemoverPrefixo() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000012");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo Pacote Steam", "game", "https://img/sub.jpg",
+                        61, "Steam", 1500, 3000, 50, EXPIRY_NULO, "https://itad.link/sub")));
+
+        stubLookup(61, lookupComEntrada(gid, "sub/123"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid, dealJson(61, "Steam", 1500, 3000, 50,
+                        "https://itad.link/sub", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).identificadorLoja()).isEqualTo("sub/123");
     }
 
     @Test
