@@ -8,18 +8,20 @@ import java.util.Optional;
 
 public enum LojaItad {
 
-    STEAM(61, CodigoLoja.STEAM),
-    NUUVEM(50, CodigoLoja.NUUVEM),
-    GOG(35, CodigoLoja.GOG),
-    EPIC(16, CodigoLoja.EPIC),
-    GREEN_MAN_GAMING(36, CodigoLoja.GREEN_MAN_GAMING);
+    STEAM(61, CodigoLoja.STEAM, "app/"),
+    NUUVEM(50, CodigoLoja.NUUVEM, null),
+    GOG(35, CodigoLoja.GOG, null),
+    EPIC(16, CodigoLoja.EPIC, null),
+    GREEN_MAN_GAMING(36, CodigoLoja.GREEN_MAN_GAMING, null);
 
     private final int shopId;
     private final CodigoLoja codigoLoja;
+    private final String prefixoIdentificador;
 
-    LojaItad(int shopId, CodigoLoja codigoLoja) {
+    LojaItad(int shopId, CodigoLoja codigoLoja, String prefixoIdentificador) {
         this.shopId = shopId;
         this.codigoLoja = codigoLoja;
+        this.prefixoIdentificador = prefixoIdentificador;
     }
 
     public static List<Integer> shopIds() {
@@ -29,9 +31,20 @@ public enum LojaItad {
     }
 
     public static Optional<CodigoLoja> codigoLojaPorShopId(int shopId) {
+        return porShopId(shopId).map(loja -> loja.codigoLoja);
+    }
+
+    public static String identificadorNativo(int shopId, String identificadorItad) {
+        return porShopId(shopId)
+                .map(loja -> loja.prefixoIdentificador)
+                .filter(identificadorItad::startsWith)
+                .map(prefixo -> identificadorItad.substring(prefixo.length()))
+                .orElse(identificadorItad);
+    }
+
+    private static Optional<LojaItad> porShopId(int shopId) {
         return Arrays.stream(values())
                 .filter(loja -> loja.shopId == shopId)
-                .map(loja -> loja.codigoLoja)
                 .findFirst();
     }
 }

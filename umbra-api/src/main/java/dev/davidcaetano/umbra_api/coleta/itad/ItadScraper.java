@@ -198,7 +198,8 @@ public class ItadScraper implements Scraper {
                 Map<UUID, List<String>> resolvido = itadClient.resolverIdentificadorNativo(shopId, lote);
                 resolvido.forEach((gid, identificadores) -> {
                     if (identificadores != null && !identificadores.isEmpty()) {
-                        primeiroIdentificador.put(gid, primeiroIdentificadorOrdenado(identificadores));
+                        primeiroIdentificador.put(gid,
+                                LojaItad.identificadorNativo(shopId, primeiroIdentificadorOrdenado(identificadores)));
                     }
                 });
             }
