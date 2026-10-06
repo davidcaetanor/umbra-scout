@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ class JulgamentoDeRodadaTest {
 
     private static ResultadoColeta resultado(Long declarado, int brutos, int distintos, int elegiveis, int semPreco) {
         return new ResultadoColeta(OrigemColeta.KABUM_API, List.of(), elegiveis, semPreco,
-                new Reconciliacao(declarado, brutos, distintos));
+                new Reconciliacao(declarado, brutos, distintos), Cobertura.amostra());
     }
 
     @Test

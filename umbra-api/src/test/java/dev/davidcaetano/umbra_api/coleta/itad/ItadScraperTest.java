@@ -187,7 +187,7 @@ class ItadScraperTest extends IntegrationTestBase {
         assertThat(resultado.ofertas()).noneMatch(p -> p.chaveItad().equals(gidDlc.toString()));
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
-        assertThat(itadScraper.cobertura()).isEqualTo(Cobertura.AMOSTRA);
+        assertThat(resultado.cobertura()).isEqualTo(Cobertura.amostra());
         assertThat(resultado.fonte()).isEqualTo(OrigemColeta.ITAD_API);
         assertThat(resultado.reconciliacao().declarado()).isNull();
         assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);
@@ -430,6 +430,56 @@ class ItadScraperTest extends IntegrationTestBase {
 
         assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.ofertas().get(0).identificadorLoja()).isEqualTo("sub/123");
+    }
+
+    @Test
+    void coletar_deveColetarJogoGratuitoComValorZeroEDisponivel() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000013");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo Gratuito", "game", "https://img/gratuito.jpg",
+                        61, "Steam", 0, 0, 0, EXPIRY_NULO, "https://itad.link/gratuito")));
+
+        stubLookup(61, lookupComEntrada(gid, "app/730"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid, dealJson(61, "Steam", 0, 0, 0,
+                        "https://itad.link/gratuito", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+        assertThat(resultado.totalSemPreco()).isEqualTo(0);
+
+        OfertaColetada gratuito = resultado.ofertas().get(0);
+        assertThat(gratuito.valorCentavos()).isEqualTo(0);
+        assertThat(gratuito.valorOriginalCentavos()).isEqualTo(0L);
+        assertThat(gratuito.disponivel()).isTrue();
+    }
+
+    @Test
+    void coletar_deveColetarPromocaoDeCemPorCentoComValorOriginalDaFonte() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000014");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo Em Promocao Total", "game", "https://img/promo.jpg",
+                        61, "Steam", 0, 5990, 100, EXPIRY_NULO, "https://itad.link/promo")));
+
+        stubLookup(61, lookupComEntrada(gid, "app/4000"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid, dealJson(61, "Steam", 0, 5990, 100,
+                        "https://itad.link/promo", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+
+        OfertaColetada promocao = resultado.ofertas().get(0);
+        assertThat(promocao.valorCentavos()).isEqualTo(0);
+        assertThat(promocao.valorOriginalCentavos()).isEqualTo(5990L);
+        assertThat(promocao.descontoPct()).isEqualTo((short) 100);
     }
 
     @Test

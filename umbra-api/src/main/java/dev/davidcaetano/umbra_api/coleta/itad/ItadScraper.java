@@ -44,11 +44,6 @@ public class ItadScraper implements Scraper {
     }
 
     @Override
-    public Cobertura cobertura() {
-        return Cobertura.AMOSTRA;
-    }
-
-    @Override
     public ResultadoColeta coletar() {
         List<ItadJogoDescobertoResponse> descobertos = buscarTodaDescoberta();
 
@@ -140,7 +135,8 @@ public class ItadScraper implements Scraper {
         filtroMoeda.logarResumo(fonte());
 
         return new ResultadoColeta(fonte(), resultado, totalElegivel, totalSemPreco,
-                new Reconciliacao(null, descobertos.size(), gidsBrutos.size()));
+                new Reconciliacao(null, descobertos.size(), gidsBrutos.size()),
+                Cobertura.amostra());
     }
 
     private List<ItadJogoDescobertoResponse> buscarTodaDescoberta() {

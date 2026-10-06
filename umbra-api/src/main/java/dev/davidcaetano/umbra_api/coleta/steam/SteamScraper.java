@@ -36,11 +36,6 @@ public class SteamScraper implements Scraper {
     }
 
     @Override
-    public Cobertura cobertura() {
-        return Cobertura.AMOSTRA;
-    }
-
-    @Override
     public ResultadoColeta coletar() {
         List<SteamJogoDescobertoResponse> descobertos = steamClient.buscarDescoberta().specials().items();
 
@@ -82,7 +77,8 @@ public class SteamScraper implements Scraper {
         filtroMoeda.logarResumo(fonte());
 
         return new ResultadoColeta(fonte(), resultado, totalElegivel, totalSemPreco,
-                new Reconciliacao(null, descobertos.size(), appidsVistos.size()));
+                new Reconciliacao(null, descobertos.size(), appidsVistos.size()),
+                Cobertura.amostra());
     }
 
     private static OfertaColetada toOfertaColetada(SteamJogoDescobertoResponse item, SteamPrecoResponse overview) {

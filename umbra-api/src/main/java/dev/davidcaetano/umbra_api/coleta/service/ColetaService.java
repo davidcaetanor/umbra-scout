@@ -44,6 +44,7 @@ public class ColetaService {
     private final LojaRepository lojaRepository;
     private final Clock clock;
     private final TransactionTemplate transactionTemplate;
+    private final AusenciaPorCenso ausenciaPorCenso;
     private final PreparadorDeRodada preparadorDeRodada = new PreparadorDeRodada();
     private final RegraDeGravacaoDePreco regraDeGravacaoDePreco = new RegraDeGravacaoDePreco();
     private final JulgamentoDeRodada julgamentoDeRodada = new JulgamentoDeRodada();
@@ -53,7 +54,8 @@ public class ColetaService {
                           PrecoRepository precoRepository,
                           LojaRepository lojaRepository,
                           Clock clock,
-                          TransactionTemplate transactionTemplate) {
+                          TransactionTemplate transactionTemplate,
+                          AusenciaPorCenso ausenciaPorCenso) {
 
         this.produtoRepository = produtoRepository;
         this.ofertaRepository = ofertaRepository;
@@ -61,6 +63,7 @@ public class ColetaService {
         this.lojaRepository = lojaRepository;
         this.clock = clock;
         this.transactionTemplate = transactionTemplate;
+        this.ausenciaPorCenso = ausenciaPorCenso;
     }
 
     public VereditoRodada gravar(ResultadoColeta resultado) {
@@ -97,7 +100,7 @@ public class ColetaService {
                 chunksComFalha++;
                 ultimaFalha = falhaDoChunk;
                 log.warn("Falha ao gravar chunk com {} grupo(s) de oferta; chunk descartado, "
-                        + "preços já gravados em chunks anteriores são mantidos", chunk.size(), falhaDoChunk);
+                        + "precos ja gravados em chunks anteriores sao mantidos", chunk.size(), falhaDoChunk);
             }
         }
 
@@ -109,13 +112,15 @@ public class ColetaService {
 
         if (chunksComFalha > 0) {
             log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), "
-                            + "{} preço(s) gravado(s) ({} de {} chunk(s) descartado(s))",
+                            + "{} preco(s) gravado(s) ({} de {} chunk(s) descartado(s))",
                     resultado.fonte(), totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados(),
                     chunksComFalha, chunks.size());
         } else {
-            log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), {} preço(s) gravado(s)",
+            log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), {} preco(s) gravado(s)",
                     resultado.fonte(), totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados());
         }
+
+        ausenciaPorCenso.concluir(resultado, veredito, agora);
 
         return veredito;
     }

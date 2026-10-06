@@ -5,9 +5,11 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
+import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada;
+import dev.davidcaetano.umbra_api.coleta.service.VereditoRodada;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +54,7 @@ class KabumContratoVivoTest extends IntegrationTestBase {
         System.out.println("[contrato-vivo] reconciliacao=" + resultado.reconciliacao()
                 + " ofertas=" + resultado.ofertas().size());
 
-        assertThat(kabumScraper.cobertura()).isEqualTo(Cobertura.CENSO);
+        assertThat(resultado.cobertura()).isEqualTo(Cobertura.censoDe(CodigoLoja.KABUM));
         assertThat(resultado.reconciliacao().declarado()).isBetween(800L, 1300L);
         assertThat(resultado.reconciliacao().distintos())
                 .isEqualTo(resultado.reconciliacao().declarado().intValue());
@@ -74,5 +78,33 @@ class KabumContratoVivoTest extends IntegrationTestBase {
             assertThat(precoRepository.findUltimoPrecoPorOfertaIdIn(List.of(oferta.getId()))).hasSize(1);
             assertThat(oferta.getProduto()).isNotNull();
         });
+
+        ResultadoColeta rodada2 = kabumScraper.coletar();
+        VereditoRodada veredito2 = coletaService.gravar(rodada2);
+
+        Set<String> identificadoresDaRodada2 = rodada2.ofertas().stream()
+                .map(OfertaColetada::identificadorLoja)
+                .collect(Collectors.toSet());
+        Set<String> sumiramEntreRodadas = resultado.ofertas().stream()
+                .map(OfertaColetada::identificadorLoja)
+                .filter(identificador -> !identificadoresDaRodada2.contains(identificador))
+                .collect(Collectors.toSet());
+
+        List<Long> idsDasQueSumiram = ofertaRepository.findByLojaCodigo(CodigoLoja.KABUM).stream()
+                .filter(oferta -> sumiramEntreRodadas.contains(oferta.getIdentificadorLoja()))
+                .map(OfertaEntity::getId)
+                .toList();
+        long marcadasIndisponiveis = idsDasQueSumiram.isEmpty() ? 0
+                : precoRepository.findUltimoPrecoPorOfertaIdIn(idsDasQueSumiram).stream()
+                .filter(ultimoPreco -> !ultimoPreco.isDisponivel())
+                .count();
+
+        System.out.println("[contrato-vivo] rodada2 reconciliacao=" + rodada2.reconciliacao()
+                + " semPreco=" + rodada2.totalSemPreco()
+                + " situacao=" + veredito2.situacao()
+                + " sumiramEntreRodadas=" + sumiramEntreRodadas.size()
+                + " marcadasIndisponiveis=" + marcadasIndisponiveis);
+
+        assertThat(veredito2.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
     }
 }

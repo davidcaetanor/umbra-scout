@@ -152,7 +152,7 @@ class SteamScraperTest extends IntegrationTestBase {
         assertThat(resultado.ofertas()).hasSize(1);
         assertThat(resultado.totalElegivel()).isEqualTo(1);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
-        assertThat(steamScraper.cobertura()).isEqualTo(Cobertura.AMOSTRA);
+        assertThat(resultado.cobertura()).isEqualTo(Cobertura.amostra());
         assertThat(resultado.fonte()).isEqualTo(OrigemColeta.STEAM_API);
         assertThat(resultado.reconciliacao().declarado()).isNull();
         assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);

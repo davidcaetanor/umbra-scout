@@ -239,7 +239,7 @@ class KabumScraperTest extends IntegrationTestBase {
             assertThat(resultado.ofertas()).hasSize(2);
             assertThat(resultado.totalElegivel()).isEqualTo(2);
             assertThat(resultado.totalSemPreco()).isEqualTo(0);
-            assertThat(kabumScraper.cobertura()).isEqualTo(Cobertura.CENSO);
+            assertThat(resultado.cobertura()).isEqualTo(Cobertura.censoDe(CodigoLoja.KABUM));
             assertThat(resultado.fonte()).isEqualTo(OrigemColeta.KABUM_API);
             assertThat(resultado.reconciliacao().declarado()).isEqualTo(3L);
             assertThat(resultado.reconciliacao().brutos()).isEqualTo(3);
