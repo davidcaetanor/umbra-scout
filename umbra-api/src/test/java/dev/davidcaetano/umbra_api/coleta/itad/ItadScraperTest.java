@@ -483,6 +483,29 @@ class ItadScraperTest extends IntegrationTestBase {
     }
 
     @Test
+    void coletar_deveFicarComOMenorPrecoQuandoHouverDuasOfertasNaMesmaLoja() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000015");
+
+        stubDescoberta(descobertaResponse(false, 1,
+                jogoDescoberta(gid, "Jogo Duas Edicoes", "game", "https://img/duas.jpg",
+                        50, "Nuuvem", 3000, 6000, 50, EXPIRY_NULO, "https://itad.link/cara")));
+
+        stubLookup(50, lookupComEntrada(gid, "jogo-duas-edicoes"));
+
+        stubPrecos(precosResponse(
+                precoJogoJson(gid,
+                        dealJson(50, "Nuuvem", 3000, 6000, 50, "https://itad.link/cara", EXPIRY_NULO),
+                        dealJson(50, "Nuuvem", 2500, 6000, 58, "https://itad.link/barata", EXPIRY_NULO))));
+
+        ResultadoColeta resultado = itadScraper.coletar();
+
+        assertThat(resultado.ofertas()).hasSize(1);
+        assertThat(resultado.ofertas().get(0).valorCentavos()).isEqualTo(2500);
+        assertThat(resultado.ofertas().get(0).url()).isEqualTo("https://itad.link/barata");
+        assertThat(resultado.totalElegivel()).isEqualTo(1);
+    }
+
+    @Test
     void coletar_deveColetarOfertaDeLojaNovaDoItad() {
         UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000011");
 

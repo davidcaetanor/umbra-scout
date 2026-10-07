@@ -36,6 +36,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -105,8 +106,13 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     private VereditoRodada gravarCenso(CodigoLoja loja, Reconciliacao reconciliacao, int totalSemPreco,
                                        List<OfertaColetada> ofertas) {
+        return gravarRodada(Cobertura.censoDe(loja), reconciliacao, totalSemPreco, ofertas);
+    }
+
+    private VereditoRodada gravarRodada(Cobertura cobertura, Reconciliacao reconciliacao, int totalSemPreco,
+                                        List<OfertaColetada> ofertas) {
         return coletaService.gravar(new ResultadoColeta(ofertas.getFirst().origemColeta(), ofertas,
-                ofertas.size() + totalSemPreco, totalSemPreco, reconciliacao, Cobertura.censoDe(loja)));
+                ofertas.size() + totalSemPreco, totalSemPreco, reconciliacao, cobertura));
     }
 
     private VereditoRodada gravarCensoLimpoDaKabum(OfertaColetada... ofertas) {
@@ -114,9 +120,24 @@ class ColetaServiceTest extends IntegrationTestBase {
                 0, List.of(ofertas));
     }
 
+    private VereditoRodada gravarCensoLimpoDosProdutosDaSteam(Set<String> chavesItad, OfertaColetada... ofertas) {
+        return gravarRodada(Cobertura.censoDosProdutos(Set.of(CodigoLoja.STEAM), chavesItad),
+                new Reconciliacao(null, ofertas.length, ofertas.length), 0, List.of(ofertas));
+    }
+
+    private OfertaColetada jogoNaSteam(String identificadorLoja, String chaveItad, long valorCentavos) {
+        return oferta(CodigoLoja.STEAM, identificadorLoja, TipoProduto.JOGO, "Jogo " + identificadorLoja,
+                chaveItad, valorCentavos, true, OrigemColeta.ITAD_API);
+    }
+
     private OfertaColetada pecaKabum(String identificadorLoja, long valorCentavos, boolean disponivel) {
         return oferta(CodigoLoja.KABUM, identificadorLoja, TipoProduto.HARDWARE, "Peça " + identificadorLoja,
                 null, valorCentavos, disponivel, OrigemColeta.KABUM_API);
+    }
+
+    private OfertaColetada pecaKabumComUrl(String identificadorLoja, String url) {
+        return new OfertaColetada(CodigoLoja.KABUM, identificadorLoja, TipoProduto.HARDWARE, "Peça " + identificadorLoja,
+                "Acao", url, null, null, 10000L, null, null, true, OrigemColeta.KABUM_API, null);
     }
 
     private List<OfertaColetada> pecasKabum(int quantidade) {
@@ -519,6 +540,51 @@ class ColetaServiceTest extends IntegrationTestBase {
 
         assertThat(precosDa("222").getLast().isDisponivel()).isFalse();
         assertThat(ofertaPorIdentificador("222").isAtiva()).isTrue();
+    }
+
+    @Test
+    void ausencia_deveMarcarSoOfertaDeProdutoCobertoQuandoCensoForRestritoAProdutos() {
+        gravar(
+                jogoNaSteam("100", "gid-coberto-ausente", 1000L),
+                jogoNaSteam("200", "gid-coberto-presente", 2000L),
+                jogoNaSteam("300", "gid-fora-do-censo", 3000L),
+                oferta(CodigoLoja.STEAM, "400", TipoProduto.JOGO, "Jogo Sem Chave",
+                        null, 4000L, true, OrigemColeta.STEAM_API));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDosProdutosDaSteam(Set.of("gid-coberto-ausente", "gid-coberto-presente"),
+                jogoNaSteam("200", "gid-coberto-presente", 2000L));
+
+        assertThat(precosDa("100")).hasSize(2);
+        assertThat(precosDa("100").getLast().isDisponivel()).isFalse();
+        assertThat(precosDa("200")).hasSize(1);
+        assertThat(precosDa("300")).hasSize(1);
+        assertThat(precosDa("400")).hasSize(1);
+    }
+
+    @Test
+    void url_deveSerAtualizadaQuandoRodadaDeCensoTrouxerUrlDiferente() {
+        gravarCensoLimpoDaKabum(pecaKabumComUrl("111", "https://loja.exemplo/antiga"));
+
+        avancar(Duration.ofHours(6));
+        OffsetDateTime instanteRodada2 = OffsetDateTime.now(clock);
+        gravarCensoLimpoDaKabum(pecaKabumComUrl("111", "https://loja.exemplo/nova"));
+
+        OfertaEntity oferta = ofertaPorIdentificador("111");
+        assertThat(oferta.getUrl()).isEqualTo("https://loja.exemplo/nova");
+        assertThat(oferta.getAtualizadoEm().toInstant()).isEqualTo(instanteRodada2.toInstant());
+    }
+
+    @Test
+    void url_naoDeveSerAtualizadaQuandoRodadaDeAmostraTrouxerUrlDiferente() {
+        gravar(pecaKabumComUrl("111", "https://loja.exemplo/antiga"));
+
+        avancar(Duration.ofHours(6));
+        gravar(pecaKabumComUrl("111", "https://loja.exemplo/nova"));
+
+        OfertaEntity oferta = ofertaPorIdentificador("111");
+        assertThat(oferta.getUrl()).isEqualTo("https://loja.exemplo/antiga");
+        assertThat(oferta.getAtualizadoEm().toInstant()).isEqualTo(INSTANTE_RODADA_1.toInstant());
     }
 
     @TestConfiguration
