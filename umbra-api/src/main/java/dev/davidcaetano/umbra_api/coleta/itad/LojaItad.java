@@ -5,6 +5,8 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public enum LojaItad {
 
@@ -28,6 +30,12 @@ public enum LojaItad {
         return Arrays.stream(values())
                 .map(loja -> loja.shopId)
                 .toList();
+    }
+
+    public static Set<CodigoLoja> codigosLoja() {
+        return Arrays.stream(values())
+                .map(loja -> loja.codigoLoja)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     public static Optional<CodigoLoja> codigoLojaPorShopId(int shopId) {

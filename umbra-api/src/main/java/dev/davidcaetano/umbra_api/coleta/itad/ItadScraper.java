@@ -81,7 +81,7 @@ public class ItadScraper implements Scraper {
             UUID gid = precoJogo.id();
             TituloImagem info = tituloImagemPorGid.get(gid);
 
-            for (ItadOfertaPrecoResponse deal : precoJogo.deals()) {
+            for (ItadOfertaPrecoResponse deal : MenorPrecoPorLoja.escolher(precoJogo.deals())) {
                 String moedaPreco = deal.price() == null ? null : deal.price().currency();
                 String moedaRegular = deal.regular() == null ? null : deal.regular().currency();
 
