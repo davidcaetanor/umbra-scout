@@ -110,6 +110,17 @@ class ItadContratoVivoTest extends IntegrationTestBase {
         assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
     }
 
+    @Test
+    void lookupReversoDaSteam_deveAceitarSoOIdentificadorComPrefixo() {
+        Map<String, UUID> gidPorIdentificador = itadClient.resolverGidPorIdentificador(SHOP_STEAM, List.of("app/730", "730"));
+
+        System.out.println("[contrato-vivo] lookupReverso app/730=" + gidPorIdentificador.get("app/730")
+                + " 730=" + gidPorIdentificador.get("730"));
+
+        assertThat(gidPorIdentificador.get("app/730")).isNotNull();
+        assertThat(gidPorIdentificador.get("730")).isNull();
+    }
+
     private static String prefixo(String identificador) {
         int barra = identificador.indexOf('/');
         return barra < 0 ? "(sem prefixo)" : identificador.substring(0, barra);
