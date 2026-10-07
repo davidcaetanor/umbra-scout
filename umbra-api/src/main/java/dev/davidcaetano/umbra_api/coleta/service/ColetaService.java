@@ -10,6 +10,7 @@ import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository.UltimoPrecoProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
@@ -95,7 +96,7 @@ public class ColetaService {
 
         for (List<GrupoDeOfertas> chunk : chunks) {
             try {
-                totais = totais.somar(transactionTemplate.execute(status -> gravarChunk(chunk, lojasPorCodigo, agora)));
+                totais = totais.somar(transactionTemplate.execute(status -> gravarChunk(chunk, lojasPorCodigo, resultado.cobertura(), agora)));
             } catch (RuntimeException falhaDoChunk) {
                 chunksComFalha++;
                 ultimaFalha = falhaDoChunk;
@@ -125,7 +126,8 @@ public class ColetaService {
         return veredito;
     }
 
-    private Contadores gravarChunk(List<GrupoDeOfertas> grupos, Map<CodigoLoja, LojaEntity> lojasPorCodigo, OffsetDateTime agora) {
+    private Contadores gravarChunk(List<GrupoDeOfertas> grupos, Map<CodigoLoja, LojaEntity> lojasPorCodigo,
+                                   Cobertura cobertura, OffsetDateTime agora) {
 
         ContextoDoChunk contexto = carregarContexto(grupos, lojasPorCodigo);
 
@@ -151,6 +153,8 @@ public class ColetaService {
                     oferta = criarOferta(resolucao.produto(), loja, ofertaColetada, agora);
                     contexto.ofertasExistentes().put(chaveOferta, oferta);
                     ofertasCriadas++;
+                } else if (cobertura.cobre(ofertaColetada.loja(), oferta.getProduto().getChaveItad())) {
+                    oferta.atualizarUrl(ofertaColetada.url(), agora);
                 }
 
                 if (devePersistirPreco(ofertaNova, oferta.getId(), ofertaColetada, contexto, agora)) {
