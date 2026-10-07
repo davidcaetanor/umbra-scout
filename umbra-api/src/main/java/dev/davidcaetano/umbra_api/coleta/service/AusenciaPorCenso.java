@@ -5,6 +5,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaComUltimoPrecoProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePreco.UltimoPreco;
@@ -17,10 +18,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Em rodada de censo que viu tudo, a oferta ativa do escopo que não voltou ganha uma linha
- * indisponível com o último valor conhecido (ARCHITECTURE.md §4.11). {@code oferta.ativa} não é tocado.
- */
 @Slf4j
 @Component
 class AusenciaPorCenso {
@@ -53,8 +50,12 @@ class AusenciaPorCenso {
             return;
         }
 
+        Cobertura cobertura = resultado.cobertura();
         List<OfertaComUltimoPrecoProjecao> conhecidas = precoRepository.findOfertasAtivasComUltimoPrecoPorCodigoLojaIn(
-                resultado.cobertura().lojasEmCenso().stream().map(CodigoLoja::name).toList());
+                        cobertura.lojasEmCenso().stream().map(CodigoLoja::name).toList())
+                .stream()
+                .filter(oferta -> cobertura.cobre(CodigoLoja.valueOf(oferta.getCodigoLoja()), oferta.getChaveItad()))
+                .toList();
 
         Set<OfertaVista> vistas = resultado.ofertas().stream()
                 .map(oferta -> new OfertaVista(oferta.loja(), oferta.identificadorLoja()))
@@ -76,11 +77,7 @@ class AusenciaPorCenso {
                 resultado.fonte(), conhecidas.size(), aMarcar.size());
     }
 
-    /**
-     * Mais estreita que o alarme de propósito: gravar tolera ruído, ausência é deduzida de a rodada ter
-     * visto tudo. Item que voltou sem preço foi visto e não lido; marcá-lo seria transformar falha de
-     * leitura em fato no histórico.
-     */
+
     static boolean rodadaViuTudoQuantoPretendia(ResultadoColeta resultado, VereditoRodada veredito) {
         Reconciliacao reconciliacao = resultado.reconciliacao();
         Long declarado = reconciliacao.declarado();

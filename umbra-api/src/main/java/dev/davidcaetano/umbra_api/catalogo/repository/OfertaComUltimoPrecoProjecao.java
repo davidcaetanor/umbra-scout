@@ -10,6 +10,10 @@ public interface OfertaComUltimoPrecoProjecao {
 
     String getIdentificadorLoja();
 
+    String getChaveItad();
+
+    String getNomeProduto();
+
     long getValorCentavos();
 
     boolean isDisponivel();
