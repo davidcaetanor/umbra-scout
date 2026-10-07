@@ -16,6 +16,8 @@ public enum LojaItad {
     EPIC(16, CodigoLoja.EPIC, null),
     GREEN_MAN_GAMING(36, CodigoLoja.GREEN_MAN_GAMING, null);
 
+    private static final String SEPARADOR_DE_TIPO = "/";
+
     private final int shopId;
     private final CodigoLoja codigoLoja;
     private final String prefixoIdentificador;
@@ -24,6 +26,10 @@ public enum LojaItad {
         this.shopId = shopId;
         this.codigoLoja = codigoLoja;
         this.prefixoIdentificador = prefixoIdentificador;
+    }
+
+    public int shopId() {
+        return shopId;
     }
 
     public static List<Integer> shopIds() {
@@ -48,6 +54,14 @@ public enum LojaItad {
                 .filter(identificadorItad::startsWith)
                 .map(prefixo -> identificadorItad.substring(prefixo.length()))
                 .orElse(identificadorItad);
+    }
+
+    public static String identificadorItad(int shopId, String identificadorNativo) {
+        return porShopId(shopId)
+                .map(loja -> loja.prefixoIdentificador)
+                .filter(prefixo -> !identificadorNativo.contains(SEPARADOR_DE_TIPO))
+                .map(prefixo -> prefixo + identificadorNativo)
+                .orElse(identificadorNativo);
     }
 
     private static Optional<LojaItad> porShopId(int shopId) {

@@ -67,6 +67,23 @@ public class ItadClientImpl implements ItadClient {
 
     @Override
     @RateLimiter(name = "itad")
+    public Map<String, UUID> resolverGidPorIdentificador(int shopId, List<String> identificadoresItad) {
+        try {
+            Map<String, UUID> resposta = itadRestClient.post()
+                    .uri("/lookup/id/shop/{shopId}/v1", shopId)
+                    .body(identificadoresItad)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, UUID>>() {
+                    });
+
+            return resposta == null ? Map.of() : resposta;
+        } catch (RestClientResponseException ex) {
+            throw traduzirErro(ex);
+        }
+    }
+
+    @Override
+    @RateLimiter(name = "itad")
     public List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids) {
         try {
             List<ItadPrecoJogoResponse> resposta = itadRestClient.post()
