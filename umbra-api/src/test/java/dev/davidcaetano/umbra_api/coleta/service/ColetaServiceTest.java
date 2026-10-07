@@ -10,10 +10,12 @@ import dev.davidcaetano.umbra_api.catalogo.repository.LojaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,8 +32,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -61,6 +67,12 @@ class ColetaServiceTest extends IntegrationTestBase {
     @Autowired
     private Clock clock;
 
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Autowired
+    private EntityManager entityManager;
+
     private RelogioMutavel relogio;
 
     @BeforeEach
@@ -89,7 +101,71 @@ class ColetaServiceTest extends IntegrationTestBase {
     private VereditoRodada gravar(OfertaColetada... ofertas) {
         List<OfertaColetada> lista = List.of(ofertas);
         return coletaService.gravar(new ResultadoColeta(ofertas[0].origemColeta(), lista, lista.size(), 0,
-                new Reconciliacao(null, lista.size(), lista.size())));
+                new Reconciliacao(null, lista.size(), lista.size()), Cobertura.amostra()));
+    }
+
+    private VereditoRodada gravarCenso(CodigoLoja loja, Reconciliacao reconciliacao, int totalSemPreco,
+                                       List<OfertaColetada> ofertas) {
+        return gravarRodada(Cobertura.censoDe(loja), reconciliacao, totalSemPreco, ofertas);
+    }
+
+    private VereditoRodada gravarRodada(Cobertura cobertura, Reconciliacao reconciliacao, int totalSemPreco,
+                                        List<OfertaColetada> ofertas) {
+        return coletaService.gravar(new ResultadoColeta(ofertas.getFirst().origemColeta(), ofertas,
+                ofertas.size() + totalSemPreco, totalSemPreco, reconciliacao, cobertura));
+    }
+
+    private VereditoRodada gravarCensoLimpoDaKabum(OfertaColetada... ofertas) {
+        return gravarCenso(CodigoLoja.KABUM, new Reconciliacao((long) ofertas.length, ofertas.length, ofertas.length),
+                0, List.of(ofertas));
+    }
+
+    private VereditoRodada gravarCensoLimpoDosProdutosDaSteam(Set<String> chavesItad, OfertaColetada... ofertas) {
+        return gravarRodada(Cobertura.censoDosProdutos(Set.of(CodigoLoja.STEAM), chavesItad),
+                new Reconciliacao(null, ofertas.length, ofertas.length), 0, List.of(ofertas));
+    }
+
+    private OfertaColetada jogoNaSteam(String identificadorLoja, String chaveItad, long valorCentavos) {
+        return oferta(CodigoLoja.STEAM, identificadorLoja, TipoProduto.JOGO, "Jogo " + identificadorLoja,
+                chaveItad, valorCentavos, true, OrigemColeta.ITAD_API);
+    }
+
+    private OfertaColetada pecaKabum(String identificadorLoja, long valorCentavos, boolean disponivel) {
+        return oferta(CodigoLoja.KABUM, identificadorLoja, TipoProduto.HARDWARE, "Peça " + identificadorLoja,
+                null, valorCentavos, disponivel, OrigemColeta.KABUM_API);
+    }
+
+    private OfertaColetada pecaKabumComUrl(String identificadorLoja, String url) {
+        return new OfertaColetada(CodigoLoja.KABUM, identificadorLoja, TipoProduto.HARDWARE, "Peça " + identificadorLoja,
+                "Acao", url, null, null, 10000L, null, null, true, OrigemColeta.KABUM_API, null);
+    }
+
+    private List<OfertaColetada> pecasKabum(int quantidade) {
+        List<OfertaColetada> pecas = new ArrayList<>();
+        for (int i = 0; i < quantidade; i++) {
+            pecas.add(pecaKabum("peca-" + i, 10000L, true));
+        }
+        return pecas;
+    }
+
+    private List<PrecoEntity> precosDa(String identificadorLoja) {
+        Long ofertaId = ofertaPorIdentificador(identificadorLoja).getId();
+        return precoRepository.findAll().stream()
+                .filter(preco -> preco.getOferta().getId().equals(ofertaId))
+                .sorted(Comparator.comparing(PrecoEntity::getColetadoEm).thenComparing(PrecoEntity::getId))
+                .toList();
+    }
+
+    private List<Long> ofertasNaMelhorOfertaAtual() {
+        entityManager.flush();
+        return jdbc.queryForList("SELECT oferta_id FROM vw_melhor_oferta_atual", Long.class);
+    }
+
+    private OfertaEntity ofertaPorIdentificador(String identificadorLoja) {
+        return ofertaRepository.findAll().stream()
+                .filter(oferta -> oferta.getIdentificadorLoja().equals(identificadorLoja))
+                .findFirst()
+                .orElseThrow();
     }
 
     @Test
@@ -257,7 +333,7 @@ class ColetaServiceTest extends IntegrationTestBase {
         }
 
         VereditoRodada veredito = coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, 10, 3,
-                new Reconciliacao(null, 10, 10)));
+                new Reconciliacao(null, 10, 10), Cobertura.amostra()));
 
         assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.REJEITADA);
         assertThat(produtoRepository.count()).isZero();
@@ -274,11 +350,31 @@ class ColetaServiceTest extends IntegrationTestBase {
                         null, 189900L, true, OrigemColeta.KABUM_API));
 
         VereditoRodada veredito = coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, 2, 0,
-                new Reconciliacao(10L, 2, 2)));
+                new Reconciliacao(10L, 2, 2), Cobertura.amostra()));
 
         assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.DEGRADADA);
         assertThat(ofertaRepository.count()).isEqualTo(2);
         assertThat(precoRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void deveGravarOfertaGratuitaEElegerComoMelhorOfertaDoProduto() {
+        gravar(
+                oferta(CodigoLoja.STEAM, "730", TipoProduto.JOGO, "Counter-Strike 2",
+                        "gid-cs2", 0L, true, OrigemColeta.ITAD_API),
+                oferta(CodigoLoja.NUUVEM, "cs2-nuuvem", TipoProduto.JOGO, "Counter-Strike 2",
+                        "gid-cs2", 4990L, true, OrigemColeta.ITAD_API));
+
+        entityManager.flush();
+
+        assertThat(precoRepository.count()).isEqualTo(2);
+
+        OfertaEntity gratuita = ofertaPorIdentificador("730");
+        Long melhorOferta = jdbc.queryForObject(
+                "SELECT oferta_id FROM vw_melhor_oferta_atual WHERE produto_id = ?",
+                Long.class, gratuita.getProduto().getId());
+
+        assertThat(melhorOferta).isEqualTo(gratuita.getId());
     }
 
     @Test
@@ -287,6 +383,208 @@ class ColetaServiceTest extends IntegrationTestBase {
                 "gid-cs2", 8990L, true, OrigemColeta.STEAM_API));
 
         assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
+    }
+
+    @Test
+    void ausencia_deveMarcarIndisponivelComUltimoValorQuandoOfertaNaoVoltarEmCensoLimpo() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        OffsetDateTime instanteRodada2 = OffsetDateTime.now(clock);
+
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        List<PrecoEntity> precosDaAusente = precosDa("222");
+        assertThat(precosDaAusente).hasSize(2);
+
+        PrecoEntity ausencia = precosDaAusente.getLast();
+        assertThat(ausencia.isDisponivel()).isFalse();
+        assertThat(ausencia.getValorCentavos()).isEqualTo(20000L);
+        assertThat(ausencia.getValorOriginalCentavos()).isNull();
+        assertThat(ausencia.getDescontoPct()).isNull();
+        assertThat(ausencia.getExpiraEm()).isNull();
+        assertThat(ausencia.getOrigemColeta()).isEqualTo(OrigemColeta.KABUM_API);
+        assertThat(ausencia.getColetadoEm().toInstant()).isEqualTo(instanteRodada2.toInstant());
+        assertThat(precosDa("111")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_deveTirarOfertaAusenteDaMelhorOfertaAtualEManterAQueVoltou() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        assertThat(ofertasNaMelhorOfertaAtual())
+                .contains(ofertaPorIdentificador("111").getId())
+                .doesNotContain(ofertaPorIdentificador("222").getId());
+    }
+
+    @Test
+    void ausencia_deveVoltarParaMelhorOfertaAtualQuandoReaparecerPeloMesmoPreco() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        List<PrecoEntity> precosDaQueVoltou = precosDa("222");
+        assertThat(precosDaQueVoltou).hasSize(3);
+        assertThat(precosDaQueVoltou.getLast().isDisponivel()).isTrue();
+        assertThat(precosDaQueVoltou.getLast().getValorCentavos()).isEqualTo(20000L);
+        assertThat(ofertasNaMelhorOfertaAtual()).contains(ofertaPorIdentificador("222").getId());
+    }
+
+    @Test
+    void ausencia_naoDeveGravarLinhaNovaQuandoOfertaContinuarAusenteNaRodadaSeguinte() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        assertThat(precosDa("222")).hasSize(2);
+    }
+
+    @Test
+    void ausencia_naoDeveGravarLinhaQuandoOfertaJaVeioIndisponivelDoColetorEDepoisSumir() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, false));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        assertThat(precosDa("222")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_naoDeveSerConcluidaEmRodadaDeAmostra() {
+        gravar(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravar(pecaKabum("111", 10000L, true));
+
+        assertThat(precosDa("222")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_naoDeveSerConcluidaEmCensoDegradadoMasDeveGravarOQueVeio() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        VereditoRodada veredito = gravarCenso(CodigoLoja.KABUM, new Reconciliacao(null, 100, 95), 0,
+                List.of(pecaKabum("111", 9000L, true)));
+
+        assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.DEGRADADA);
+        assertThat(precosDa("111")).hasSize(2);
+        assertThat(precosDa("222")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_naoDeveSerConcluidaEmCensoSaudavelComItemSemPreco() {
+        gravarCensoLimpoDaKabum(pecasKabum(10).toArray(OfertaColetada[]::new));
+
+        avancar(Duration.ofHours(6));
+        VereditoRodada veredito = gravarCenso(CodigoLoja.KABUM, new Reconciliacao(10L, 10, 10), 1,
+                pecasKabum(9));
+
+        assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
+        assertThat(precosDa("peca-9")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_naoDeveSerConcluidaEmCensoSaudavelComDistintosAbaixoDoDeclarado() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        VereditoRodada veredito = gravarCenso(CodigoLoja.KABUM, new Reconciliacao(100L, 99, 99), 0,
+                List.of(pecaKabum("111", 10000L, true)));
+
+        assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
+        assertThat(precosDa("222")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_naoDeveTocarOfertaDeLojaForaDoCenso() {
+        gravar(oferta(CodigoLoja.STEAM, "730", TipoProduto.JOGO, "Counter-Strike 2",
+                "gid-cs2", 8990L, true, OrigemColeta.STEAM_API));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        assertThat(precosDa("730")).hasSize(1);
+        assertThat(precosDa("222")).hasSize(2);
+    }
+
+    @Test
+    void ausencia_naoDeveTocarOfertaInativaDaLojaDoCenso() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        ofertaPorIdentificador("222").desativar(OffsetDateTime.now(clock));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        assertThat(precosDa("222")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_deveManterOfertaAtivaQuandoMarcarIndisponivel() {
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+
+        assertThat(precosDa("222").getLast().isDisponivel()).isFalse();
+        assertThat(ofertaPorIdentificador("222").isAtiva()).isTrue();
+    }
+
+    @Test
+    void ausencia_deveMarcarSoOfertaDeProdutoCobertoQuandoCensoForRestritoAProdutos() {
+        gravar(
+                jogoNaSteam("100", "gid-coberto-ausente", 1000L),
+                jogoNaSteam("200", "gid-coberto-presente", 2000L),
+                jogoNaSteam("300", "gid-fora-do-censo", 3000L),
+                oferta(CodigoLoja.STEAM, "400", TipoProduto.JOGO, "Jogo Sem Chave",
+                        null, 4000L, true, OrigemColeta.STEAM_API));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDosProdutosDaSteam(Set.of("gid-coberto-ausente", "gid-coberto-presente"),
+                jogoNaSteam("200", "gid-coberto-presente", 2000L));
+
+        assertThat(precosDa("100")).hasSize(2);
+        assertThat(precosDa("100").getLast().isDisponivel()).isFalse();
+        assertThat(precosDa("200")).hasSize(1);
+        assertThat(precosDa("300")).hasSize(1);
+        assertThat(precosDa("400")).hasSize(1);
+    }
+
+    @Test
+    void url_deveSerAtualizadaQuandoRodadaDeCensoTrouxerUrlDiferente() {
+        gravarCensoLimpoDaKabum(pecaKabumComUrl("111", "https://loja.exemplo/antiga"));
+
+        avancar(Duration.ofHours(6));
+        OffsetDateTime instanteRodada2 = OffsetDateTime.now(clock);
+        gravarCensoLimpoDaKabum(pecaKabumComUrl("111", "https://loja.exemplo/nova"));
+
+        OfertaEntity oferta = ofertaPorIdentificador("111");
+        assertThat(oferta.getUrl()).isEqualTo("https://loja.exemplo/nova");
+        assertThat(oferta.getAtualizadoEm().toInstant()).isEqualTo(instanteRodada2.toInstant());
+    }
+
+    @Test
+    void url_naoDeveSerAtualizadaQuandoRodadaDeAmostraTrouxerUrlDiferente() {
+        gravar(pecaKabumComUrl("111", "https://loja.exemplo/antiga"));
+
+        avancar(Duration.ofHours(6));
+        gravar(pecaKabumComUrl("111", "https://loja.exemplo/nova"));
+
+        OfertaEntity oferta = ofertaPorIdentificador("111");
+        assertThat(oferta.getUrl()).isEqualTo("https://loja.exemplo/antiga");
+        assertThat(oferta.getAtualizadoEm().toInstant()).isEqualTo(INSTANTE_RODADA_1.toInstant());
     }
 
     @TestConfiguration

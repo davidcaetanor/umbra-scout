@@ -44,11 +44,6 @@ public class ItadScraper implements Scraper {
     }
 
     @Override
-    public Cobertura cobertura() {
-        return Cobertura.AMOSTRA;
-    }
-
-    @Override
     public ResultadoColeta coletar() {
         List<ItadJogoDescobertoResponse> descobertos = buscarTodaDescoberta();
 
@@ -86,7 +81,7 @@ public class ItadScraper implements Scraper {
             UUID gid = precoJogo.id();
             TituloImagem info = tituloImagemPorGid.get(gid);
 
-            for (ItadOfertaPrecoResponse deal : precoJogo.deals()) {
+            for (ItadOfertaPrecoResponse deal : MenorPrecoPorLoja.escolher(precoJogo.deals())) {
                 String moedaPreco = deal.price() == null ? null : deal.price().currency();
                 String moedaRegular = deal.regular() == null ? null : deal.regular().currency();
 
@@ -140,7 +135,8 @@ public class ItadScraper implements Scraper {
         filtroMoeda.logarResumo(fonte());
 
         return new ResultadoColeta(fonte(), resultado, totalElegivel, totalSemPreco,
-                new Reconciliacao(null, descobertos.size(), gidsBrutos.size()));
+                new Reconciliacao(null, descobertos.size(), gidsBrutos.size()),
+                Cobertura.amostra());
     }
 
     private List<ItadJogoDescobertoResponse> buscarTodaDescoberta() {
@@ -198,7 +194,8 @@ public class ItadScraper implements Scraper {
                 Map<UUID, List<String>> resolvido = itadClient.resolverIdentificadorNativo(shopId, lote);
                 resolvido.forEach((gid, identificadores) -> {
                     if (identificadores != null && !identificadores.isEmpty()) {
-                        primeiroIdentificador.put(gid, primeiroIdentificadorOrdenado(identificadores));
+                        primeiroIdentificador.put(gid,
+                                LojaItad.identificadorNativo(shopId, primeiroIdentificadorOrdenado(identificadores)));
                     }
                 });
             }

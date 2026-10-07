@@ -1,6 +1,9 @@
 spring:
   main:
     banner-mode: off
+  datasource:
+    hikari:
+      maximum-pool-size: 5
   jpa:
     hibernate:
       ddl-auto: validate

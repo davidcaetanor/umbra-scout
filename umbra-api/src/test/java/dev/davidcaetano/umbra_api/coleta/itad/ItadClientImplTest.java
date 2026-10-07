@@ -216,6 +216,22 @@ class ItadClientImplTest extends IntegrationTestBase {
     }
 
     @Test
+    void resolverGidPorIdentificador_devePostarAListaEMapearGidOuNulo() {
+        WIREMOCK.stubFor(post(urlPathEqualTo("/lookup/id/shop/61/v1"))
+                .withRequestBody(equalToJson("[\"app/730\", \"730\"]"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"app/730\":\"018d937f-7851-7004-b780-3f657a301f9a\",\"730\":null}")));
+
+        Map<String, UUID> resultado = itadClient.resolverGidPorIdentificador(61, List.of("app/730", "730"));
+
+        assertThat(resultado).containsEntry("app/730", UUID.fromString("018d937f-7851-7004-b780-3f657a301f9a"));
+        assertThat(resultado).containsKey("730");
+        assertThat(resultado.get("730")).isNull();
+    }
+
+    @Test
     void buscarPrecos_deveDesserializarSemErro() {
         WIREMOCK.stubFor(post(urlPathEqualTo("/games/prices/v3"))
                 .willReturn(aResponse()

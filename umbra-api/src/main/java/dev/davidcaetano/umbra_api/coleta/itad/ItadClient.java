@@ -13,5 +13,7 @@ public interface ItadClient {
 
     Map<UUID, List<String>> resolverIdentificadorNativo(int shopId, List<UUID> gids);
 
+    Map<String, UUID> resolverGidPorIdentificador(int shopId, List<String> identificadoresItad);
+
     List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids);
 }

@@ -52,11 +52,6 @@ public class KabumScraper implements Scraper {
     }
 
     @Override
-    public Cobertura cobertura() {
-        return Cobertura.CENSO;
-    }
-
-    @Override
     public ResultadoColeta coletar() {
         CatalogoBruto catalogo = buscarCatalogoCompleto();
 
@@ -105,7 +100,8 @@ public class KabumScraper implements Scraper {
         }
 
         return new ResultadoColeta(fonte(), resultado, totalElegivel, totalSemPreco,
-                new Reconciliacao(catalogo.declarado(), catalogo.produtos().size(), idsVistos.size()));
+                new Reconciliacao(catalogo.declarado(), catalogo.produtos().size(), idsVistos.size()),
+                Cobertura.censoDe(CodigoLoja.KABUM));
     }
 
     private CatalogoBruto buscarCatalogoCompleto() {
@@ -120,7 +116,7 @@ public class KabumScraper implements Scraper {
             List<KabumProdutoResponse> itensPagina = proximaPagina.data();
 
             if (itensPagina.isEmpty()) {
-                log.debug("Pagina Kabum {} veio vazia — catalogo encolheu durante a varredura", pagina);
+                log.debug("Pagina Kabum {} veio vazia - catalogo encolheu durante a varredura", pagina);
                 continue;
             }
 

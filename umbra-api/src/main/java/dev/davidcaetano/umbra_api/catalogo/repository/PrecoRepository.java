@@ -18,6 +18,21 @@ public interface PrecoRepository extends JpaRepository<PrecoEntity, Long> {
             """, nativeQuery = true)
     List<UltimoPrecoProjecao> findUltimoPrecoPorOfertaIdIn(@Param("ofertaIds") Collection<Long> ofertaIds);
 
+    @Query(value = """
+            SELECT o.id AS ofertaId, l.codigo AS codigoLoja, o.identificador_loja AS identificadorLoja,
+                   p.chave_itad AS chaveItad, p.nome AS nomeProduto,
+                   v.valor_centavos AS valorCentavos, v.disponivel, v.coletado_em AS coletadoEm
+              FROM oferta o
+              JOIN loja l ON l.id = o.loja_id
+              JOIN produto p ON p.id = o.produto_id
+              JOIN vw_preco_atual v ON v.oferta_id = o.id
+             WHERE o.ativa
+               AND p.ativo
+               AND l.codigo IN (:codigosLoja)
+            """, nativeQuery = true)
+    List<OfertaComUltimoPrecoProjecao> findOfertasAtivasComUltimoPrecoPorCodigoLojaIn(
+            @Param("codigosLoja") Collection<String> codigosLoja);
+
     interface UltimoPrecoProjecao {
 
         Long getOfertaId();

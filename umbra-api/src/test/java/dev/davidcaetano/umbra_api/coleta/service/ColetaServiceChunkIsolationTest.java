@@ -10,6 +10,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
+import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
@@ -88,7 +89,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
             ofertas.add(ofertaComUrlInvalida("invalida-500"));
 
             assertThatCode(() -> coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, ofertas.size(), 0,
-                    new Reconciliacao(null, ofertas.size(), ofertas.size()))))
+                    new Reconciliacao(null, ofertas.size(), ofertas.size()), Cobertura.amostra())))
                     .doesNotThrowAnyException();
 
             assertThat(produtoRepository.count()).isEqualTo(500);
@@ -111,7 +112,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
             List<OfertaColetada> ofertas = List.of(ofertaComUrlInvalida("unica-invalida"));
 
             assertThatThrownBy(() -> coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, ofertas.size(), 0,
-                    new Reconciliacao(null, ofertas.size(), ofertas.size()))))
+                    new Reconciliacao(null, ofertas.size(), ofertas.size()), Cobertura.amostra())))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Nenhum dos 1 chunk");
 
@@ -129,7 +130,7 @@ class ColetaServiceChunkIsolationTest extends IntegrationTestBase {
 
         try {
             coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, List.of(), 0, 0,
-                    new Reconciliacao(null, 0, 0)));
+                    new Reconciliacao(null, 0, 0), Cobertura.amostra()));
 
             assertThat(logs.list)
                     .filteredOn(evento -> evento.getLevel() == Level.WARN)

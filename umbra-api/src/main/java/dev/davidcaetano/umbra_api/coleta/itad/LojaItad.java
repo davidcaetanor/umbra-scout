@@ -5,21 +5,31 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public enum LojaItad {
 
-    STEAM(61, CodigoLoja.STEAM),
-    NUUVEM(50, CodigoLoja.NUUVEM),
-    GOG(35, CodigoLoja.GOG),
-    EPIC(16, CodigoLoja.EPIC),
-    GREEN_MAN_GAMING(36, CodigoLoja.GREEN_MAN_GAMING);
+    STEAM(61, CodigoLoja.STEAM, "app/"),
+    NUUVEM(50, CodigoLoja.NUUVEM, null),
+    GOG(35, CodigoLoja.GOG, null),
+    EPIC(16, CodigoLoja.EPIC, null),
+    GREEN_MAN_GAMING(36, CodigoLoja.GREEN_MAN_GAMING, null);
+
+    private static final String SEPARADOR_DE_TIPO = "/";
 
     private final int shopId;
     private final CodigoLoja codigoLoja;
+    private final String prefixoIdentificador;
 
-    LojaItad(int shopId, CodigoLoja codigoLoja) {
+    LojaItad(int shopId, CodigoLoja codigoLoja, String prefixoIdentificador) {
         this.shopId = shopId;
         this.codigoLoja = codigoLoja;
+        this.prefixoIdentificador = prefixoIdentificador;
+    }
+
+    public int shopId() {
+        return shopId;
     }
 
     public static List<Integer> shopIds() {
@@ -28,10 +38,35 @@ public enum LojaItad {
                 .toList();
     }
 
+    public static Set<CodigoLoja> codigosLoja() {
+        return Arrays.stream(values())
+                .map(loja -> loja.codigoLoja)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
     public static Optional<CodigoLoja> codigoLojaPorShopId(int shopId) {
+        return porShopId(shopId).map(loja -> loja.codigoLoja);
+    }
+
+    public static String identificadorNativo(int shopId, String identificadorItad) {
+        return porShopId(shopId)
+                .map(loja -> loja.prefixoIdentificador)
+                .filter(identificadorItad::startsWith)
+                .map(prefixo -> identificadorItad.substring(prefixo.length()))
+                .orElse(identificadorItad);
+    }
+
+    public static String identificadorItad(int shopId, String identificadorNativo) {
+        return porShopId(shopId)
+                .map(loja -> loja.prefixoIdentificador)
+                .filter(prefixo -> !identificadorNativo.contains(SEPARADOR_DE_TIPO))
+                .map(prefixo -> prefixo + identificadorNativo)
+                .orElse(identificadorNativo);
+    }
+
+    private static Optional<LojaItad> porShopId(int shopId) {
         return Arrays.stream(values())
                 .filter(loja -> loja.shopId == shopId)
-                .map(loja -> loja.codigoLoja)
                 .findFirst();
     }
 }
