@@ -1,16 +1,11 @@
 package dev.davidcaetano.umbra_api.coleta.kabum;
 
-public class KabumApiException extends RuntimeException {
+import dev.davidcaetano.umbra_api.coleta.ColetaApiException;
+import org.springframework.web.client.RestClientException;
 
-    private final int statusCode;
+public class KabumApiException extends ColetaApiException {
 
-    public KabumApiException(int statusCode, String message, Throwable cause) {
-        super("Kabum Catalog API respondeu %d: %s".formatted(statusCode, message), cause);
-        this.statusCode = statusCode;
+    public KabumApiException(String detalhe, RestClientException causa) {
+        super("Kabum Catalog API", detalhe, causa);
     }
-
-    public int statusCode() {
-        return statusCode;
-    }
-
 }
