@@ -9,11 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,94 +32,97 @@ public class ItadClientImpl implements ItadClient {
     @Override
     @RateLimiter(name = "itad")
     public ItadDescobertaResponse buscarDescoberta(int offset) {
-        try {
-            return itadRestClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/deals/v2")
-                            .queryParam("country", COUNTRY)
-                            .queryParam("shops", juntar(LojaItad.shopIds()))
-                            .queryParam("nondeals", false)
-                            .queryParam("offset", offset)
-                            .queryParam("limit", LIMITE_DESCOBERTA)
-                            .queryParam("sort", ORDENACAO_DESCOBERTA)
-                            .build())
-                    .retrieve()
-                    .body(ItadDescobertaResponse.class);
-        } catch (RestClientResponseException ex) {
-            throw traduzirErro(ex);
-        }
+        return executar(() -> itadRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/deals/v2")
+                        .queryParam("country", COUNTRY)
+                        .queryParam("shops", juntar(LojaItad.shopIds()))
+                        .queryParam("nondeals", false)
+                        .queryParam("offset", offset)
+                        .queryParam("limit", LIMITE_DESCOBERTA)
+                        .queryParam("sort", ORDENACAO_DESCOBERTA)
+                        .build())
+                .retrieve()
+                .body(ItadDescobertaResponse.class));
     }
 
     @Override
     @RateLimiter(name = "itad")
     public Map<UUID, List<String>> resolverIdentificadorNativo(int shopId, List<UUID> gids) {
-        try {
-            Map<UUID, List<String>> resposta = itadRestClient.post()
-                    .uri("/lookup/shop/{shopId}/id/v1", shopId)
-                    .body(gids)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<Map<UUID, List<String>>>() {
-                    });
+        Map<UUID, List<String>> resposta = executar(() -> itadRestClient.post()
+                .uri("/lookup/shop/{shopId}/id/v1", shopId)
+                .body(gids)
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<UUID, List<String>>>() {
+                }));
 
-            return resposta == null ? Map.of() : resposta;
-        } catch (RestClientResponseException ex) {
-            throw traduzirErro(ex);
-        }
+        return resposta == null ? Map.of() : resposta;
     }
 
     @Override
     @RateLimiter(name = "itad")
     public Map<String, UUID> resolverGidPorIdentificador(int shopId, List<String> identificadoresItad) {
-        try {
-            Map<String, UUID> resposta = itadRestClient.post()
-                    .uri("/lookup/id/shop/{shopId}/v1", shopId)
-                    .body(identificadoresItad)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<Map<String, UUID>>() {
-                    });
+        Map<String, UUID> resposta = executar(() -> itadRestClient.post()
+                .uri("/lookup/id/shop/{shopId}/v1", shopId)
+                .body(identificadoresItad)
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<String, UUID>>() {
+                }));
 
-            return resposta == null ? Map.of() : resposta;
-        } catch (RestClientResponseException ex) {
-            throw traduzirErro(ex);
-        }
+        return resposta == null ? Map.of() : resposta;
     }
 
     @Override
     @RateLimiter(name = "itad")
     public List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids) {
-        try {
-            List<ItadPrecoJogoResponse> resposta = itadRestClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/games/prices/v3")
-                            .queryParam("country", COUNTRY)
-                            .queryParam("shops", juntar(LojaItad.shopIds()))
-                            .build())
-                    .body(gids)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<List<ItadPrecoJogoResponse>>() {
-                    });
+        List<ItadPrecoJogoResponse> resposta = executar(() -> itadRestClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/games/prices/v3")
+                        .queryParam("country", COUNTRY)
+                        .queryParam("shops", juntar(LojaItad.shopIds()))
+                        .build())
+                .body(gids)
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<ItadPrecoJogoResponse>>() {
+                }));
 
-            return resposta == null ? List.of() : resposta;
-        } catch (RestClientResponseException ex) {
+        return resposta == null ? List.of() : resposta;
+    }
+
+    private <T> T executar(Supplier<T> chamada) {
+        try {
+            return chamada.get();
+        } catch (RestClientException ex) {
             throw traduzirErro(ex);
         }
     }
 
-    private ItadApiException traduzirErro(RestClientResponseException ex) {
-        ItadErroResponse erro = null;
+    private ItadApiException traduzirErro(RestClientException ex) {
+        ItadApiException erro = new ItadApiException(detalhe(ex), ex);
+        log.warn("{}", erro.getMessage());
+        return erro;
+    }
+
+    private static String detalhe(RestClientException ex) {
+        if (!(ex instanceof RestClientResponseException resposta)) {
+            return ex.getMessage();
+        }
+        String reasonPhrase = reasonPhraseDoCorpo(resposta);
+        if (reasonPhrase != null && !reasonPhrase.isBlank()) {
+            return reasonPhrase;
+        }
+        String corpo = resposta.getResponseBodyAsString();
+        return corpo.isBlank() ? resposta.getMessage() : corpo;
+    }
+
+    private static String reasonPhraseDoCorpo(RestClientResponseException resposta) {
         try {
-            erro = ex.getResponseBodyAs(ItadErroResponse.class);
+            ItadErroResponse erro = resposta.getResponseBodyAs(ItadErroResponse.class);
+            return erro == null ? null : erro.reasonPhrase();
         } catch (RuntimeException naoDecodificou) {
-            log.warn("Corpo de erro do ITAD nao pode ser decodificado como ItadErroResponse", naoDecodificou);
+            log.debug("Corpo de erro do ITAD nao pode ser decodificado como ItadErroResponse", naoDecodificou);
+            return null;
         }
-
-        if (erro != null) {
-            log.warn("ITAD respondeu erro: {} - {}", erro.statusCode(), erro.reasonPhrase());
-            return new ItadApiException(erro.statusCode(), erro.reasonPhrase(), ex);
-        }
-
-        log.warn("ITAD respondeu erro sem corpo decodificavel: {}", ex.getStatusCode());
-        return new ItadApiException(ex.getStatusCode().value(), ex.getMessage(), ex);
     }
 
     private static String juntar(List<Integer> shopIds) {
