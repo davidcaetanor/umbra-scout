@@ -261,6 +261,6 @@ class SteamScraperTest extends IntegrationTestBase {
 
         assertThatThrownBy(() -> steamScraper.coletar())
                 .isInstanceOf(SteamApiException.class)
-                .satisfies(ex -> assertThat(((SteamApiException) ex).statusCode()).isEqualTo(500));
+                .satisfies(ex -> assertThat(((SteamApiException) ex).status()).hasValue(500));
     }
 }
