@@ -416,6 +416,6 @@ class KabumScraperTest extends IntegrationTestBase {
 
         assertThatThrownBy(() -> kabumScraper.coletar())
                 .isInstanceOf(KabumApiException.class)
-                .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(500));
+                .satisfies(ex -> assertThat(((KabumApiException) ex).status()).hasValue(500));
     }
 }

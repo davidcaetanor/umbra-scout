@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -26,50 +27,50 @@ public class SteamClientImpl implements SteamClient {
     @Override
     @RateLimiter(name = "steam")
     public SteamDescobertaResponse buscarDescoberta() {
-        try {
-            return steamRestClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/featuredcategories")
-                            .queryParam("cc", COUNTRY)
-                            .queryParam("l", LANGUAGE)
-                            .build())
-                    .retrieve()
-                    .body(SteamDescobertaResponse.class);
-        } catch (RestClientException ex) {
-            throw traduzirErro(ex);
-        }
+        return executar(() -> steamRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/featuredcategories")
+                        .queryParam("cc", COUNTRY)
+                        .queryParam("l", LANGUAGE)
+                        .build())
+                .retrieve()
+                .body(SteamDescobertaResponse.class));
     }
 
     @Override
     @RateLimiter(name = "steam")
     public SteamAppDetalhesResponse buscarDetalhes(int appid) {
-        try {
-            Map<String, SteamAppDetalhesResponse> mapa = steamRestClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/appdetails")
-                            .queryParam("appids", appid)
-                            .queryParam("cc", COUNTRY)
-                            .build())
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<Map<String, SteamAppDetalhesResponse>>() {
-                    });
+        Map<String, SteamAppDetalhesResponse> mapa = executar(() -> steamRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/appdetails")
+                        .queryParam("appids", appid)
+                        .queryParam("cc", COUNTRY)
+                        .build())
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<String, SteamAppDetalhesResponse>>() {
+                }));
 
-            return mapa == null ? null : mapa.get(String.valueOf(appid));
+        return mapa == null ? null : mapa.get(String.valueOf(appid));
+    }
+
+    private <T> T executar(Supplier<T> chamada) {
+        try {
+            return chamada.get();
         } catch (RestClientException ex) {
             throw traduzirErro(ex);
         }
     }
 
     private SteamApiException traduzirErro(RestClientException ex) {
-        if (ex instanceof RestClientResponseException responseEx) {
-            String corpo = responseEx.getResponseBodyAsString();
-            String mensagem = corpo.isBlank() ? responseEx.getMessage() : corpo;
+        SteamApiException erro = new SteamApiException(detalhe(ex), ex);
+        log.warn("{}", erro.getMessage());
+        return erro;
+    }
 
-            log.warn("Steam Storefront API respondeu erro: {} - {}", responseEx.getStatusCode(), mensagem);
-            return new SteamApiException(responseEx.getStatusCode().value(), mensagem, ex);
+    private static String detalhe(RestClientException ex) {
+        if (ex instanceof RestClientResponseException resposta && !resposta.getResponseBodyAsString().isBlank()) {
+            return resposta.getResponseBodyAsString();
         }
-
-        log.warn("Steam Storefront API devolveu corpo que nao pode ser convertido: {}", ex.getMessage());
-        return new SteamApiException(0, ex.getMessage(), ex);
+        return ex.getMessage();
     }
 }

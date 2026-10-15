@@ -36,3 +36,11 @@ jobs:
 
       - name: Build e testes
         run: ./mvnw --batch-mode --no-transfer-progress verify
+
+      - name: Publicar relatorio do JaCoCo
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-umbra-api
+          path: umbra-api/target/site/jacoco/
+          if-no-files-found: warn
