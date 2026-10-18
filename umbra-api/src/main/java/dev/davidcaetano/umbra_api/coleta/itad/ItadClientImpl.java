@@ -3,7 +3,9 @@ package dev.davidcaetano.umbra_api.coleta.itad;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadErroResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -30,6 +32,8 @@ public class ItadClientImpl implements ItadClient {
     private final RestClient itadRestClient;
 
     @Override
+    @Retry(name = "itad")
+    @CircuitBreaker(name = "itad")
     @RateLimiter(name = "itad")
     public ItadDescobertaResponse buscarDescoberta(int offset) {
         return executar(() -> itadRestClient.get()
@@ -47,6 +51,8 @@ public class ItadClientImpl implements ItadClient {
     }
 
     @Override
+    @Retry(name = "itad")
+    @CircuitBreaker(name = "itad")
     @RateLimiter(name = "itad")
     public Map<UUID, List<String>> resolverIdentificadorNativo(int shopId, List<UUID> gids) {
         Map<UUID, List<String>> resposta = executar(() -> itadRestClient.post()
@@ -60,6 +66,8 @@ public class ItadClientImpl implements ItadClient {
     }
 
     @Override
+    @Retry(name = "itad")
+    @CircuitBreaker(name = "itad")
     @RateLimiter(name = "itad")
     public Map<String, UUID> resolverGidPorIdentificador(int shopId, List<String> identificadoresItad) {
         Map<String, UUID> resposta = executar(() -> itadRestClient.post()
@@ -73,6 +81,8 @@ public class ItadClientImpl implements ItadClient {
     }
 
     @Override
+    @Retry(name = "itad")
+    @CircuitBreaker(name = "itad")
     @RateLimiter(name = "itad")
     public List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids) {
         List<ItadPrecoJogoResponse> resposta = executar(() -> itadRestClient.post()

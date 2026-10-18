@@ -1,7 +1,9 @@
 package dev.davidcaetano.umbra_api.coleta.kabum;
 
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,8 @@ public class KabumClientImpl implements KabumClient {
     }
 
     @Override
+    @Retry(name = "kabum")
+    @CircuitBreaker(name = "kabum")
     @RateLimiter(name = "kabum")
     public KabumCatalogoResponse buscarPaginaHardware(int pageNumber) {
         String facetFilters = codificarFacetFilters();

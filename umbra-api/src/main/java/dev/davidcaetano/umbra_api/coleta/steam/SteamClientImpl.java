@@ -2,7 +2,9 @@ package dev.davidcaetano.umbra_api.coleta.steam;
 
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamAppDetalhesResponse;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamDescobertaResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -25,6 +27,8 @@ public class SteamClientImpl implements SteamClient {
     private final RestClient steamRestClient;
 
     @Override
+    @Retry(name = "steam")
+    @CircuitBreaker(name = "steam")
     @RateLimiter(name = "steam")
     public SteamDescobertaResponse buscarDescoberta() {
         return executar(() -> steamRestClient.get()
@@ -38,6 +42,8 @@ public class SteamClientImpl implements SteamClient {
     }
 
     @Override
+    @Retry(name = "steam")
+    @CircuitBreaker(name = "steam")
     @RateLimiter(name = "steam")
     public SteamAppDetalhesResponse buscarDetalhes(int appid) {
         Map<String, SteamAppDetalhesResponse> mapa = executar(() -> steamRestClient.get()
