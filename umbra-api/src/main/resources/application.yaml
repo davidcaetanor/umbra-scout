@@ -55,3 +55,36 @@ resilience4j:
         limit-for-period: 180
         limit-refresh-period: 5m
         timeout-duration: 2s
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exception-predicate: dev.davidcaetano.umbra_api.coleta.ColetaRetryPredicate
+    instances:
+      itad:
+        base-config: default
+      steam:
+        base-config: default
+      kabum:
+        base-config: default
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 3
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 100
+        wait-duration-in-open-state: 5m
+        permitted-number-of-calls-in-half-open-state: 1
+        automatic-transition-from-open-to-half-open-enabled: false
+        record-failure-predicate: dev.davidcaetano.umbra_api.coleta.ColetaCircuitBreakerPredicate
+    instances:
+      itad:
+        base-config: default
+      steam:
+        base-config: default
+      kabum:
+        base-config: default

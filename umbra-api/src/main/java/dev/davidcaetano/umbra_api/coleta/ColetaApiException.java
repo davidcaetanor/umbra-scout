@@ -9,6 +9,7 @@ import java.util.OptionalInt;
 public abstract class ColetaApiException extends RuntimeException {
 
     private static final int MENOR_STATUS_DE_ERRO_DO_SERVIDOR = 500;
+    private static final int STATUS_RATE_LIMIT_EXCEDIDO = 429;
 
     private final TipoFalhaColeta tipo;
 
@@ -35,6 +36,10 @@ public abstract class ColetaApiException extends RuntimeException {
             case RESPOSTA_HTTP -> status().getAsInt() >= MENOR_STATUS_DE_ERRO_DO_SERVIDOR;
             case CORPO_INVALIDO -> false;
         };
+    }
+
+    public boolean rateLimitExcedido() {
+        return tipo == TipoFalhaColeta.RESPOSTA_HTTP && status().getAsInt() == STATUS_RATE_LIMIT_EXCEDIDO;
     }
 
     private static TipoFalhaColeta classificar(RestClientException causa) {
