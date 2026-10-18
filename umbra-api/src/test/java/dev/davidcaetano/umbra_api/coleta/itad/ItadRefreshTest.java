@@ -16,8 +16,10 @@ import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada;
 import dev.davidcaetano.umbra_api.coleta.service.VereditoRodada;
+import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
+@ExtendWith(CircuitBreakerResetExtension.class)
 @Transactional
 class ItadRefreshTest extends IntegrationTestBase {
 

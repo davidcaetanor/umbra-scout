@@ -56,6 +56,15 @@ class ColetaApiExceptionTest {
     }
 
     @Test
+    void rateLimitExcedido_deveSerVerdadeiroSoNoStatus429() {
+        assertThat(new FalhaDeTeste(respostaHttp(429)).rateLimitExcedido()).isTrue();
+        assertThat(new FalhaDeTeste(respostaHttp(500)).rateLimitExcedido()).isFalse();
+        assertThat(new FalhaDeTeste(respostaHttp(404)).rateLimitExcedido()).isFalse();
+        assertThat(new FalhaDeTeste(falhaDeIo()).rateLimitExcedido()).isFalse();
+        assertThat(new FalhaDeTeste(new RestClientException("conversao falhou")).rateLimitExcedido()).isFalse();
+    }
+
+    @Test
     void mensagem_deRespostaHttp_deveTrazerFonteStatusEDetalhe() {
         assertThat(new FalhaDeTeste(respostaHttp(503)).getMessage())
                 .isEqualTo("Fonte de Teste respondeu 503: detalhe da falha");
