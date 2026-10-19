@@ -6,6 +6,8 @@ import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada;
 import dev.davidcaetano.umbra_api.coleta.service.VereditoRodada;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.config.UmbraProperties;
+import dev.davidcaetano.umbra_api.config.UserAgentConfig;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,7 @@ class ItadContratoVivoTest extends IntegrationTestBase {
         // String vazia em vez de null: null cairia no valor fake do application-test.yaml;
         // vazia derruba a subida no @NotBlank de ItadProperties, que nomeia a chave.
         registry.add("itad.itad-api.api-key", () -> Objects.requireNonNullElse(System.getenv("ITAD_API_KEY"), ""));
+        registry.add("umbra.coleta.contato", () -> Objects.requireNonNullElse(System.getenv("UMBRA_COLETA_CONTATO"), ""));
     }
 
     @Autowired
@@ -54,6 +57,9 @@ class ItadContratoVivoTest extends IntegrationTestBase {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Autowired
+    private UmbraProperties umbraProperties;
 
     @Test
     void lookupDaSteam_deveDevolverIdentificadorComPrefixoDeTipo() {
@@ -72,6 +78,7 @@ class ItadContratoVivoTest extends IntegrationTestBase {
         Map<String, Long> contagemPorPrefixo = identificadores.stream()
                 .collect(Collectors.groupingBy(ItadContratoVivoTest::prefixo, Collectors.counting()));
 
+        System.out.println("[contrato-vivo] user-agent=" + UserAgentConfig.userAgent(umbraProperties.coleta().contato()));
         System.out.println("[contrato-vivo] gids=" + gids.size()
                 + " identificadores=" + identificadores.size()
                 + " porPrefixo=" + contagemPorPrefixo

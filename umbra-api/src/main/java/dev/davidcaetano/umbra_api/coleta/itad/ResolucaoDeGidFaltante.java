@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
+import dev.davidcaetano.umbra_api.catalogo.DadosProduto;
 import dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
@@ -145,7 +146,7 @@ public class ResolucaoDeGidFaltante {
 
         transactionTemplate.executeWithoutResult(status -> gidACarimbarPorProduto.forEach((produtoId, gid) ->
                 produtoRepository.findById(produtoId).orElseThrow()
-                        .completarDadosAusentes(new ProdutoEntity.DadosProduto(null, null, null, gid), agora)));
+                        .completarDadosAusentes(new DadosProduto(null, null, null, gid), agora)));
     }
 
     private static String identificadorItad(OfertaEntity oferta) {

@@ -2,10 +2,20 @@ package dev.davidcaetano.umbra_api.coleta.kabum;
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import dev.davidcaetano.umbra_api.coleta.TipoFalhaColeta;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumProdutoResponse;
+import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,12 +29,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
+@ExtendWith(CircuitBreakerResetExtension.class)
 class KabumClientImplTest extends IntegrationTestBase {
 
     @RegisterExtension
@@ -39,6 +51,14 @@ class KabumClientImplTest extends IntegrationTestBase {
 
     @Autowired
     private KabumClient kabumClient;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    // KabumClientConfig le com timeout de 5s
+    private static final int ATRASO_ALEM_DO_TIMEOUT_DE_LEITURA_MS = 6_000;
+    private static final String CENARIO_RETENTATIVA = "retentativa";
+    private static final String ESTADO_APOS_FALHA = "apos-falha";
 
     // base64('{"category":["Hardware"],"kabum_product":[true]}') — facets aceitos por meta.filters.string_filters
     // e meta.filters.boolean_filters (KABUM-HARDWARE.md §2, CONTRATOS-FONTES.md §4.2.7)
@@ -311,27 +331,47 @@ class KabumClientImplTest extends IntegrationTestBase {
     }
 
     @Test
-    void erroHttp_500_deveLancarKabumApiExceptionComStatus500() {
+    void erroHttp_500_deveLancarKabumApiExceptionTransitoriaComStatus500() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .willReturn(aResponse().withStatus(500)));
 
         assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
-                .isInstanceOf(KabumApiException.class)
-                .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(500));
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(500);
+                    assertThat(ex.transitoria()).isTrue();
+                });
     }
 
     @Test
-    void erroHttp_429_deveLancarKabumApiExceptionComStatus429() {
+    void erroHttp_429_deveLancarKabumApiExceptionNaoTransitoriaComStatus429() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .willReturn(aResponse().withStatus(429)));
 
         assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
-                .isInstanceOf(KabumApiException.class)
-                .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(429));
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(429);
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404})
+    void erroHttp_403e404_deveLancarKabumApiExceptionNaoTransitoria(int status) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse().withStatus(status)));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(status);
+                    assertThat(ex.transitoria()).isFalse();
+                });
     }
 
     @Test
-    void corpoInvalidoComStatus200_deveLancarKabumApiExceptionComStatusSentinela() {
+    void corpoInvalidoComStatus200_deveLancarKabumApiExceptionDeCorpoInvalido() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -339,7 +379,144 @@ class KabumClientImplTest extends IntegrationTestBase {
                         .withBody("isso nao eh json")));
 
         assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
-                .isInstanceOf(KabumApiException.class)
-                .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(0));
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.CORPO_INVALIDO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @Test
+    void conexaoCortada_deveLancarKabumApiExceptionDeFalhaDeIoTransitoria() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.FALHA_DE_IO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isTrue();
+                });
+    }
+
+    @Test
+    void respostaAlemDoTimeoutDeLeitura_deveLancarKabumApiExceptionDeFalhaDeIoTransitoria() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withFixedDelay(ATRASO_ALEM_DO_TIMEOUT_DE_LEITURA_MS)));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.FALHA_DE_IO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isTrue();
+                });
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+    }
+
+    @Test
+    void erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .inScenario(CENARIO_RETENTATIVA)
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(aResponse().withStatus(500))
+                .willSetStateTo(ESTADO_APOS_FALHA));
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .inScenario(CENARIO_RETENTATIVA)
+                .whenScenarioStateIs(ESTADO_APOS_FALHA)
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_CATALOGO_HARDWARE)));
+
+        KabumCatalogoResponse resposta = kabumClient.buscarPaginaHardware(1);
+
+        assertThat(resposta.meta().totalItemsCount()).isEqualTo(8155);
+        WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404, 429})
+    void erroHttpNaoTransitorio_naoDeveRetentar(int status) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse().withStatus(status)));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOfSatisfying(KabumApiException.class, ex -> assertThat(ex.status()).hasValue(status));
+        WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+    }
+
+    @Test
+    void corpoInvalidoComStatus200_naoDeveRetentar() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("isso nao eh json")));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOf(KabumApiException.class);
+        WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+    }
+
+    @Test
+    void erroHttp_500Permanente_deveAbrirOCircuitoESegundaChamadaNaoSai() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse().withStatus(500)));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOf(KabumApiException.class);
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+        assertThat(estadoDoCircuito("kabum")).isEqualTo(CircuitBreaker.State.OPEN);
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOf(CallNotPermittedException.class);
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+    }
+
+    @Test
+    void erroHttp_429Seguidos_deveAbrirOCircuitoSemRetentar() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse().withStatus(429)));
+
+        for (int chamada = 0; chamada < 3; chamada++) {
+            assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                    .isInstanceOf(KabumApiException.class);
+        }
+
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/catalog/v2/products")));
+        assertThat(estadoDoCircuito("kabum")).isEqualTo(CircuitBreaker.State.OPEN);
+    }
+
+    @Test
+    void circuitoAbertoDaKabum_naoDeveAfetarOsCircuitosDasOutrasFontes() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse().withStatus(500)));
+
+        assertThatThrownBy(() -> kabumClient.buscarPaginaHardware(1))
+                .isInstanceOf(KabumApiException.class);
+
+        assertThat(estadoDoCircuito("kabum")).isEqualTo(CircuitBreaker.State.OPEN);
+        assertThat(estadoDoCircuito("itad")).isEqualTo(CircuitBreaker.State.CLOSED);
+        assertThat(estadoDoCircuito("steam")).isEqualTo(CircuitBreaker.State.CLOSED);
+    }
+
+    @Test
+    void buscarPaginaHardware_deveIdentificarOUmbraNoUserAgent() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_CATALOGO_HARDWARE)));
+
+        kabumClient.buscarPaginaHardware(1);
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/catalog/v2/products"))
+                .withHeader("User-Agent", havingExactly("Umbra/1.0 (+mailto:contato-de-teste@umbra.invalid)")));
+    }
+
+    private CircuitBreaker.State estadoDoCircuito(String fonte) {
+        return circuitBreakerRegistry.find(fonte).orElseThrow().getState();
     }
 }

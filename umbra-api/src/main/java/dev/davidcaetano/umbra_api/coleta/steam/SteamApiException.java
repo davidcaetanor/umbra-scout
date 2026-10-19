@@ -1,16 +1,11 @@
 package dev.davidcaetano.umbra_api.coleta.steam;
 
-public class SteamApiException extends RuntimeException {
+import dev.davidcaetano.umbra_api.coleta.ColetaApiException;
+import org.springframework.web.client.RestClientException;
 
-    private final int statusCode;
+public class SteamApiException extends ColetaApiException {
 
-    public SteamApiException(int statusCode, String message, Throwable cause) {
-        super("Steam Storefront API respondeu %d: %s".formatted(statusCode, message), cause);
-        this.statusCode = statusCode;
+    public SteamApiException(String detalhe, RestClientException causa) {
+        super("Steam Storefront API", detalhe, causa);
     }
-
-    public int statusCode() {
-        return statusCode;
-    }
-
 }

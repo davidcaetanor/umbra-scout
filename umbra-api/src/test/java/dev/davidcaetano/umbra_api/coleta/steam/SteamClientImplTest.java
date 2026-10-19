@@ -1,12 +1,23 @@
 package dev.davidcaetano.umbra_api.coleta.steam;
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import dev.davidcaetano.umbra_api.coleta.TipoFalhaColeta;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamAppDetalhesResponse;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamDescobertaResponse;
 import dev.davidcaetano.umbra_api.coleta.steam.dto.response.SteamJogoDescobertoResponse;
+import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,15 +25,20 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.util.function.Supplier;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
+@ExtendWith(CircuitBreakerResetExtension.class)
 class SteamClientImplTest extends IntegrationTestBase {
 
     @RegisterExtension
@@ -38,7 +54,12 @@ class SteamClientImplTest extends IntegrationTestBase {
     @Autowired
     private SteamClient steamClient;
 
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
     private static final int APPID_RDR2 = 1174180;
+    private static final String CENARIO_RETENTATIVA = "retentativa";
+    private static final String ESTADO_APOS_FALHA = "apos-falha";
 
     // Fixture 1 — GET /featuredcategories?cc=br&l=portuguese (capturada da API real em 08/09/2026).
     // Mantido apenas o bloco "specials", os demais (spotlights, daily deal, coming soon etc.) não são mapeados por
@@ -346,27 +367,47 @@ class SteamClientImplTest extends IntegrationTestBase {
     }
 
     @Test
-    void erroHttp_429_deveLancarSteamApiExceptionComStatus429() {
-        WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
-                .willReturn(aResponse().withStatus(429)));
-
-        assertThatThrownBy(steamClient::buscarDescoberta)
-                .isInstanceOf(SteamApiException.class)
-                .satisfies(ex -> assertThat(((SteamApiException) ex).statusCode()).isEqualTo(429));
-    }
-
-    @Test
-    void erroHttp_500_deveLancarSteamApiExceptionComStatus500() {
+    void erroHttp_500_deveLancarSteamApiExceptionTransitoriaComStatus500() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
                 .willReturn(aResponse().withStatus(500)));
 
         assertThatThrownBy(steamClient::buscarDescoberta)
-                .isInstanceOf(SteamApiException.class)
-                .satisfies(ex -> assertThat(((SteamApiException) ex).statusCode()).isEqualTo(500));
+                .isInstanceOfSatisfying(SteamApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(500);
+                    assertThat(ex.transitoria()).isTrue();
+                });
     }
 
     @Test
-    void corpoInvalidoComStatus200_deveLancarSteamApiExceptionComStatusSentinela() {
+    void erroHttp_429_deveLancarSteamApiExceptionNaoTransitoriaComStatus429() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/appdetails"))
+                .willReturn(aResponse().withStatus(429)));
+
+        assertThatThrownBy(() -> steamClient.buscarDetalhes(APPID_RDR2))
+                .isInstanceOfSatisfying(SteamApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(429);
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404})
+    void erroHttp_403e404_deveLancarSteamApiExceptionNaoTransitoria(int status) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/appdetails"))
+                .willReturn(aResponse().withStatus(status)));
+
+        assertThatThrownBy(() -> steamClient.buscarDetalhes(APPID_RDR2))
+                .isInstanceOfSatisfying(SteamApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(status);
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @Test
+    void corpoInvalidoComStatus200_deveLancarSteamApiExceptionDeCorpoInvalido() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -374,7 +415,111 @@ class SteamClientImplTest extends IntegrationTestBase {
                         .withBody("isso nao eh json")));
 
         assertThatThrownBy(steamClient::buscarDescoberta)
-                .isInstanceOf(SteamApiException.class)
-                .satisfies(ex -> assertThat(((SteamApiException) ex).statusCode()).isEqualTo(0));
+                .isInstanceOfSatisfying(SteamApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.CORPO_INVALIDO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @Test
+    void conexaoCortada_deveLancarSteamApiExceptionDeFalhaDeIoTransitoria() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/appdetails"))
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+        assertThatThrownBy(() -> steamClient.buscarDetalhes(APPID_RDR2))
+                .isInstanceOfSatisfying(SteamApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.FALHA_DE_IO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isTrue();
+                });
+    }
+
+    @Test
+    void buscarDescoberta_erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        responderErro500SeguidoDeSucesso(() -> get(urlPathEqualTo("/featuredcategories")), FIXTURE_DESCOBERTA);
+
+        SteamDescobertaResponse resposta = steamClient.buscarDescoberta();
+
+        assertThat(resposta.specials().items()).hasSize(10);
+        WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/featuredcategories")));
+    }
+
+    @Test
+    void buscarDetalhes_erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        responderErro500SeguidoDeSucesso(() -> get(urlPathEqualTo("/appdetails")), FIXTURE_APPDETALHES);
+
+        SteamAppDetalhesResponse resposta = steamClient.buscarDetalhes(APPID_RDR2);
+
+        assertThat(resposta.data().overview().finalPrice()).isEqualTo(7497);
+        WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/appdetails")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404, 429})
+    void erroHttpNaoTransitorio_naoDeveRetentar(int status) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/appdetails"))
+                .willReturn(aResponse().withStatus(status)));
+
+        assertThatThrownBy(() -> steamClient.buscarDetalhes(APPID_RDR2))
+                .isInstanceOfSatisfying(SteamApiException.class, ex -> assertThat(ex.status()).hasValue(status));
+        WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/appdetails")));
+    }
+
+    @Test
+    void corpoInvalidoComStatus200_naoDeveRetentar() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("isso nao eh json")));
+
+        assertThatThrownBy(steamClient::buscarDescoberta)
+                .isInstanceOf(SteamApiException.class);
+        WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/featuredcategories")));
+    }
+
+    @Test
+    void erroHttp_500Permanente_deveAbrirOCircuitoESegundaChamadaNaoSai() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
+                .willReturn(aResponse().withStatus(500)));
+
+        assertThatThrownBy(steamClient::buscarDescoberta)
+                .isInstanceOf(SteamApiException.class);
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/featuredcategories")));
+        assertThat(circuitBreakerRegistry.find("steam").orElseThrow().getState()).isEqualTo(CircuitBreaker.State.OPEN);
+
+        assertThatThrownBy(steamClient::buscarDescoberta)
+                .isInstanceOf(CallNotPermittedException.class);
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/featuredcategories")));
+    }
+
+    @Test
+    void buscarDescoberta_deveIdentificarOUmbraNoUserAgent() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_DESCOBERTA)));
+
+        steamClient.buscarDescoberta();
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/featuredcategories"))
+                .withHeader("User-Agent", havingExactly("Umbra/1.0 (+mailto:contato-de-teste@umbra.invalid)")));
+    }
+
+    private static void responderErro500SeguidoDeSucesso(Supplier<MappingBuilder> requisicao, String corpoDeSucesso) {
+        WIREMOCK.stubFor(requisicao.get()
+                .inScenario(CENARIO_RETENTATIVA)
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(aResponse().withStatus(500))
+                .willSetStateTo(ESTADO_APOS_FALHA));
+        WIREMOCK.stubFor(requisicao.get()
+                .inScenario(CENARIO_RETENTATIVA)
+                .whenScenarioStateIs(ESTADO_APOS_FALHA)
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(corpoDeSucesso)));
     }
 }

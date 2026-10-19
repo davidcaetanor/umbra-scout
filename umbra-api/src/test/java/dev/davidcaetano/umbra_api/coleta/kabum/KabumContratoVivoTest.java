@@ -11,6 +11,8 @@ import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada;
 import dev.davidcaetano.umbra_api.coleta.service.VereditoRodada;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.config.UmbraProperties;
+import dev.davidcaetano.umbra_api.config.UserAgentConfig;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +21,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,9 +34,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class KabumContratoVivoTest extends IntegrationTestBase {
 
+    private static final long TAMANHO_DA_PAGINA = 120;
+
     @DynamicPropertySource
     static void apontarParaApiReal(DynamicPropertyRegistry registry) {
         registry.add("kabum.kabum-api.base-url", () -> "https://servicespub.prod.api.aws.grupokabum.com.br");
+        // String vazia em vez de null: null cairia no contato .invalid do application-test.yaml;
+        // vazia derruba a subida no @NotBlank de UmbraProperties, que nomeia a chave.
+        registry.add("umbra.coleta.contato", () -> Objects.requireNonNullElse(System.getenv("UMBRA_COLETA_CONTATO"), ""));
+        registry.add("resilience4j.ratelimiter.instances.kabum.limit-refresh-period", () -> "1s");
     }
 
     @Autowired
@@ -47,13 +57,23 @@ class KabumContratoVivoTest extends IntegrationTestBase {
     @Autowired
     private PrecoRepository precoRepository;
 
+    @Autowired
+    private UmbraProperties umbraProperties;
+
     @Test
     void varredura_deveFecharCensoContraApiViva() {
+        long inicio = System.nanoTime();
         ResultadoColeta resultado = kabumScraper.coletar();
+        Duration duracao = Duration.ofNanos(System.nanoTime() - inicio);
+        long paginas = Math.ceilDiv(resultado.reconciliacao().declarado(), TAMANHO_DA_PAGINA);
 
+        System.out.println("[contrato-vivo] user-agent=" + UserAgentConfig.userAgent(umbraProperties.coleta().contato()));
         System.out.println("[contrato-vivo] reconciliacao=" + resultado.reconciliacao()
-                + " ofertas=" + resultado.ofertas().size());
+                + " ofertas=" + resultado.ofertas().size()
+                + " paginas=" + paginas
+                + " duracaoMs=" + duracao.toMillis());
 
+        assertThat(duracao).isGreaterThan(Duration.ofSeconds(paginas - 2));
         assertThat(resultado.cobertura()).isEqualTo(Cobertura.censoDe(CodigoLoja.KABUM));
         assertThat(resultado.reconciliacao().declarado()).isBetween(800L, 1300L);
         assertThat(resultado.reconciliacao().distintos())

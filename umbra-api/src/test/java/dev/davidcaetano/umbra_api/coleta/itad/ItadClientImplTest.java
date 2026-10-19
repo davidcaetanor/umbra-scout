@@ -1,12 +1,24 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import dev.davidcaetano.umbra_api.coleta.TipoFalhaColeta;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoDescobertoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
+import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,19 +29,25 @@ import org.springframework.test.context.DynamicPropertySource;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.any;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
+@ExtendWith(CircuitBreakerResetExtension.class)
 class ItadClientImplTest extends IntegrationTestBase {
 
     @RegisterExtension
@@ -46,7 +64,12 @@ class ItadClientImplTest extends IntegrationTestBase {
     @Autowired
     private ItadClient itadClient;
 
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
     private static final UUID GID_JOGO = UUID.fromString("018d937e-f8d2-7123-9942-85ddaff9efee");
+    private static final String CENARIO_RETENTATIVA = "retentativa";
+    private static final String ESTADO_APOS_FALHA = "apos-falha";
 
     // Fixture 1 — GET /deals/v2?shops=50 (real, Nuuvem, capturada em 05/09/2026)
     private static final String FIXTURE_DESCOBERTA = """
@@ -249,7 +272,7 @@ class ItadClientImplTest extends IntegrationTestBase {
     }
 
     @Test
-    void erroHttp_deveLancarItadApiExceptionComStatusEReasonPhraseDoCorpo() {
+    void erroHttp_400_deveLancarItadApiExceptionNaoTransitoriaComReasonPhraseDoCorpo() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
                 .willReturn(aResponse()
                         .withStatus(400)
@@ -257,16 +280,16 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withBody(FIXTURE_ERRO)));
 
         assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
-                .isInstanceOf(ItadApiException.class)
-                .satisfies(ex -> {
-                    ItadApiException itadEx = (ItadApiException) ex;
-                    assertThat(itadEx.statusCode()).isEqualTo(400);
-                    assertThat(itadEx.reasonPhrase()).isEqualTo("country: Missing data for 'country'");
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(400);
+                    assertThat(ex.transitoria()).isFalse();
+                    assertThat(ex.getMessage()).contains("country: Missing data for 'country'");
                 });
     }
 
     @Test
-    void erroHttp_comCorpoNaoJson_deveCairParaFallbackComStatusCru() {
+    void erroHttp_502_comCorpoNaoJson_deveLancarItadApiExceptionTransitoriaComStatus502() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
                 .willReturn(aResponse()
                         .withStatus(502)
@@ -274,15 +297,15 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withBody("<html><body>Bad Gateway</body></html>")));
 
         assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
-                .isInstanceOf(ItadApiException.class)
-                .satisfies(ex -> {
-                    ItadApiException itadEx = (ItadApiException) ex;
-                    assertThat(itadEx.statusCode()).isEqualTo(502);
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(502);
+                    assertThat(ex.transitoria()).isTrue();
                 });
     }
 
     @Test
-    void erroHttp_429_deveLancarItadApiExceptionComStatus429() {
+    void erroHttp_429_deveLancarItadApiExceptionNaoTransitoriaComStatus429() {
         WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
                 .willReturn(aResponse()
                         .withStatus(429)
@@ -290,12 +313,77 @@ class ItadClientImplTest extends IntegrationTestBase {
                         .withBody(FIXTURE_ERRO_429)));
 
         assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
-                .isInstanceOf(ItadApiException.class)
-                .satisfies(ex -> {
-                    ItadApiException itadEx = (ItadApiException) ex;
-                    assertThat(itadEx.statusCode()).isEqualTo(429);
-                    assertThat(itadEx.reasonPhrase()).isEqualTo("Too Many Requests");
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(429);
+                    assertThat(ex.transitoria()).isFalse();
                 });
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404})
+    void erroHttp_403e404_deveLancarItadApiExceptionNaoTransitoria(int status) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse().withStatus(status)));
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(status);
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @Test
+    void erroHttp_500_comCorpoJsonSemStatusCode_deveUsarStatusDaRespostaHttp() {
+        WIREMOCK.stubFor(post(urlPathEqualTo("/games/prices/v3"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"reason_phrase\":\"Internal Server Error\"}")));
+
+        assertThatThrownBy(() -> itadClient.buscarPrecos(List.of(GID_JOGO)))
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.RESPOSTA_HTTP);
+                    assertThat(ex.status()).hasValue(500);
+                    assertThat(ex.transitoria()).isTrue();
+                });
+    }
+
+    @Test
+    void corpoInvalidoComStatus200_deveLancarItadApiExceptionDeCorpoInvalido() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("isso nao eh json")));
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.CORPO_INVALIDO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isFalse();
+                });
+    }
+
+    @Test
+    void conexaoCortada_emBuscarDescoberta_deveLancarItadApiExceptionDeFalhaDeIo() {
+        deveLancarFalhaDeIoTransitoria(() -> itadClient.buscarDescoberta(0));
+    }
+
+    @Test
+    void conexaoCortada_emResolverIdentificadorNativo_deveLancarItadApiExceptionDeFalhaDeIo() {
+        deveLancarFalhaDeIoTransitoria(() -> itadClient.resolverIdentificadorNativo(50, List.of(GID_JOGO)));
+    }
+
+    @Test
+    void conexaoCortada_emResolverGidPorIdentificador_deveLancarItadApiExceptionDeFalhaDeIo() {
+        deveLancarFalhaDeIoTransitoria(() -> itadClient.resolverGidPorIdentificador(61, List.of("app/730")));
+    }
+
+    @Test
+    void conexaoCortada_emBuscarPrecos_deveLancarItadApiExceptionDeFalhaDeIo() {
+        deveLancarFalhaDeIoTransitoria(() -> itadClient.buscarPrecos(List.of(GID_JOGO)));
     }
 
     @Test
@@ -337,5 +425,126 @@ class ItadClientImplTest extends IntegrationTestBase {
                 .withQueryParam("limit", equalTo("200"))
                 .withQueryParam("sort", equalTo("-trending"))
                 .withQueryParam("shops", equalTo("61,50,35,16,36")));
+    }
+
+    @Test
+    void buscarDescoberta_erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        responderErro500SeguidoDeSucesso(() -> get(urlPathEqualTo("/deals/v2")), FIXTURE_DESCOBERTA);
+
+        ItadDescobertaResponse resposta = itadClient.buscarDescoberta(0);
+
+        assertThat(resposta.list()).hasSize(2);
+        WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/deals/v2")));
+    }
+
+    @Test
+    void resolverIdentificadorNativo_erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        responderErro500SeguidoDeSucesso(() -> post(urlPathEqualTo("/lookup/shop/50/id/v1")), FIXTURE_LOOKUP_RESPONSE);
+
+        Map<UUID, List<String>> resultado = itadClient.resolverIdentificadorNativo(50, List.of(GID_JOGO));
+
+        assertThat(resultado.get(GID_JOGO)).containsExactly("14615");
+        WIREMOCK.verify(2, postRequestedFor(urlPathEqualTo("/lookup/shop/50/id/v1")));
+    }
+
+    @Test
+    void resolverGidPorIdentificador_erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        responderErro500SeguidoDeSucesso(() -> post(urlPathEqualTo("/lookup/id/shop/61/v1")),
+                "{\"app/730\":\"018d937f-7851-7004-b780-3f657a301f9a\"}");
+
+        Map<String, UUID> resultado = itadClient.resolverGidPorIdentificador(61, List.of("app/730"));
+
+        assertThat(resultado).containsEntry("app/730", UUID.fromString("018d937f-7851-7004-b780-3f657a301f9a"));
+        WIREMOCK.verify(2, postRequestedFor(urlPathEqualTo("/lookup/id/shop/61/v1")));
+    }
+
+    @Test
+    void buscarPrecos_erroHttp_500SeguidoDe200_deveRetentarEDevolverASegundaResposta() {
+        responderErro500SeguidoDeSucesso(() -> post(urlPathEqualTo("/games/prices/v3")), FIXTURE_PRECOS);
+
+        List<ItadPrecoJogoResponse> resultado = itadClient.buscarPrecos(List.of(GID_JOGO));
+
+        assertThat(resultado).extracting(ItadPrecoJogoResponse::id).containsExactly(GID_JOGO);
+        WIREMOCK.verify(2, postRequestedFor(urlPathEqualTo("/games/prices/v3")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 404, 429})
+    void erroHttpNaoTransitorio_naoDeveRetentar(int status) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse().withStatus(status)));
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> assertThat(ex.status()).hasValue(status));
+        WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/deals/v2")));
+    }
+
+    @Test
+    void corpoInvalidoComStatus200_naoDeveRetentar() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("isso nao eh json")));
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
+                .isInstanceOf(ItadApiException.class);
+        WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/deals/v2")));
+    }
+
+    @Test
+    void erroHttp_500Permanente_deveAbrirOCircuitoESegundaChamadaNaoSai() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse().withStatus(500)));
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
+                .isInstanceOf(ItadApiException.class);
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/deals/v2")));
+        assertThat(circuitBreakerRegistry.find("itad").orElseThrow().getState()).isEqualTo(CircuitBreaker.State.OPEN);
+
+        assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
+                .isInstanceOf(CallNotPermittedException.class);
+        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/deals/v2")));
+    }
+
+    @Test
+    void buscarDescoberta_deveIdentificarOUmbraNoUserAgent() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_DESCOBERTA)));
+
+        itadClient.buscarDescoberta(0);
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/deals/v2"))
+                .withHeader("User-Agent", havingExactly("Umbra/1.0 (+mailto:contato-de-teste@umbra.invalid)")));
+    }
+
+    private static void deveLancarFalhaDeIoTransitoria(ThrowingCallable chamada) {
+        WIREMOCK.stubFor(any(anyUrl())
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+        assertThatThrownBy(chamada)
+                .isInstanceOfSatisfying(ItadApiException.class, ex -> {
+                    assertThat(ex.tipo()).isEqualTo(TipoFalhaColeta.FALHA_DE_IO);
+                    assertThat(ex.status()).isEmpty();
+                    assertThat(ex.transitoria()).isTrue();
+                });
+    }
+
+    private static void responderErro500SeguidoDeSucesso(Supplier<MappingBuilder> requisicao, String corpoDeSucesso) {
+        WIREMOCK.stubFor(requisicao.get()
+                .inScenario(CENARIO_RETENTATIVA)
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(aResponse().withStatus(500))
+                .willSetStateTo(ESTADO_APOS_FALHA));
+        WIREMOCK.stubFor(requisicao.get()
+                .inScenario(CENARIO_RETENTATIVA)
+                .whenScenarioStateIs(ESTADO_APOS_FALHA)
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(corpoDeSucesso)));
     }
 }

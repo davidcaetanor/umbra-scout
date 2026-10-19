@@ -1,6 +1,6 @@
 package dev.davidcaetano.umbra_api.catalogo.entity;
 
-import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity.DadosProduto;
+import dev.davidcaetano.umbra_api.catalogo.DadosProduto;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import org.junit.jupiter.api.Test;
 

@@ -17,6 +17,9 @@
         <testcontainers.version>2.0.5</testcontainers.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <archunit.version>1.5.1</archunit.version>
+        <pitest.version>1.30.1</pitest.version>
+        <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
 	</properties>
     <dependencyManagement>
         <dependencies>
@@ -170,6 +173,12 @@
 			<version>3.13.2</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit-junit5</artifactId>
+			<version>${archunit.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -274,6 +283,76 @@
 						<configuration>
 							<groups>contrato-vivo</groups>
 							<excludedGroups combine.self="override"/>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>mutacao</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.pitest</groupId>
+						<artifactId>pitest-maven</artifactId>
+						<version>${pitest.version}</version>
+						<dependencies>
+							<dependency>
+								<groupId>org.pitest</groupId>
+								<artifactId>pitest-junit5-plugin</artifactId>
+								<version>${pitest-junit5-plugin.version}</version>
+							</dependency>
+						</dependencies>
+						<configuration>
+							<mutators>
+								<mutator>DEFAULTS</mutator>
+							</mutators>
+							<outputFormats>
+								<outputFormat>HTML</outputFormat>
+								<outputFormat>XML</outputFormat>
+							</outputFormats>
+							<timestampedReports>false</timestampedReports>
+							<threads>4</threads>
+							<targetClasses>
+								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodada</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.VereditoRodada</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.CondicaoDeDrift</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.GrupoChave</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.GrupoDeOfertas</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePreco</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.UltimoPreco</param>
+								<param>dev.davidcaetano.umbra_api.coleta.Cobertura</param>
+								<param>dev.davidcaetano.umbra_api.coleta.Reconciliacao</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ResultadoColeta</param>
+								<param>dev.davidcaetano.umbra_api.coleta.FiltroMoeda</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaApiException</param>
+								<param>dev.davidcaetano.umbra_api.coleta.TipoFalhaColeta</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaRetryPredicate</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaCircuitBreakerPredicate</param>
+								<param>dev.davidcaetano.umbra_api.coleta.itad.LojaItad</param>
+								<param>dev.davidcaetano.umbra_api.coleta.itad.MenorPrecoPorLoja</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntity</param>
+							</targetClasses>
+							<targetTests>
+								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.VereditoRodadaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodadaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePrecoTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.CoberturaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ResultadoColetaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.FiltroMoedaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaApiExceptionTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaResiliencePredicatesTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.itad.LojaItadTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.itad.MenorPrecoPorLojaTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntityTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntityTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntityTest</param>
+							</targetTests>
 						</configuration>
 					</plugin>
 				</plugins>

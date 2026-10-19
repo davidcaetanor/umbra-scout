@@ -1,7 +1,9 @@
 package dev.davidcaetano.umbra_api.coleta.kabum;
 
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -36,24 +39,22 @@ public class KabumClientImpl implements KabumClient {
     }
 
     @Override
+    @Retry(name = "kabum")
+    @CircuitBreaker(name = "kabum")
     @RateLimiter(name = "kabum")
     public KabumCatalogoResponse buscarPaginaHardware(int pageNumber) {
         String facetFilters = codificarFacetFilters();
 
-        try {
-            return kabumRestClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/catalog/v2/products")
-                            .queryParam("facet_filters", facetFilters)
-                            .queryParam("sort", SORT)
-                            .queryParam("page_number", pageNumber)
-                            .queryParam("page_size", PAGE_SIZE)
-                            .build())
-                    .retrieve()
-                    .body(KabumCatalogoResponse.class);
-        } catch (RestClientException ex) {
-            throw traduzirErro(ex);
-        }
+        return executar(() -> kabumRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/catalog/v2/products")
+                        .queryParam("facet_filters", facetFilters)
+                        .queryParam("sort", SORT)
+                        .queryParam("page_number", pageNumber)
+                        .queryParam("page_size", PAGE_SIZE)
+                        .build())
+                .retrieve()
+                .body(KabumCatalogoResponse.class));
     }
 
     private String codificarFacetFilters() {
@@ -61,16 +62,24 @@ public class KabumClientImpl implements KabumClient {
         return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
     }
 
-    private KabumApiException traduzirErro(RestClientException ex) {
-        if (ex instanceof RestClientResponseException responseEx) {
-            String corpo = responseEx.getResponseBodyAsString();
-            String mensagem = corpo.isBlank() ? responseEx.getMessage() : corpo;
-
-            log.warn("Kabum Catalog API respondeu erro: {} - {}", responseEx.getStatusCode(), mensagem);
-            return new KabumApiException(responseEx.getStatusCode().value(), mensagem, ex);
+    private <T> T executar(Supplier<T> chamada) {
+        try {
+            return chamada.get();
+        } catch (RestClientException ex) {
+            throw traduzirErro(ex);
         }
+    }
 
-        log.warn("Kabum Catalog API devolveu corpo que nao pode ser convertido: {}", ex.getMessage());
-        return new KabumApiException(0, ex.getMessage(), ex);
+    private KabumApiException traduzirErro(RestClientException ex) {
+        KabumApiException erro = new KabumApiException(detalhe(ex), ex);
+        log.warn("{}", erro.getMessage());
+        return erro;
+    }
+
+    private static String detalhe(RestClientException ex) {
+        if (ex instanceof RestClientResponseException resposta && !resposta.getResponseBodyAsString().isBlank()) {
+            return resposta.getResponseBodyAsString();
+        }
+        return ex.getMessage();
     }
 }

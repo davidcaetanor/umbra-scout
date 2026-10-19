@@ -12,8 +12,10 @@ import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
+import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
+@ExtendWith(CircuitBreakerResetExtension.class)
 class KabumScraperTest extends IntegrationTestBase {
 
     @RegisterExtension
@@ -416,6 +419,6 @@ class KabumScraperTest extends IntegrationTestBase {
 
         assertThatThrownBy(() -> kabumScraper.coletar())
                 .isInstanceOf(KabumApiException.class)
-                .satisfies(ex -> assertThat(((KabumApiException) ex).statusCode()).isEqualTo(500));
+                .satisfies(ex -> assertThat(((KabumApiException) ex).status()).hasValue(500));
     }
 }
