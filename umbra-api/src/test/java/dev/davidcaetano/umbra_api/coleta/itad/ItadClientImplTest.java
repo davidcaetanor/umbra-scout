@@ -38,6 +38,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -504,6 +505,20 @@ class ItadClientImplTest extends IntegrationTestBase {
         assertThatThrownBy(() -> itadClient.buscarDescoberta(0))
                 .isInstanceOf(CallNotPermittedException.class);
         WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/deals/v2")));
+    }
+
+    @Test
+    void buscarDescoberta_deveIdentificarOUmbraNoUserAgent() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_DESCOBERTA)));
+
+        itadClient.buscarDescoberta(0);
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/deals/v2"))
+                .withHeader("User-Agent", havingExactly("Umbra/1.0 (+mailto:contato-de-teste@umbra.invalid)")));
     }
 
     private static void deveLancarFalhaDeIoTransitoria(ThrowingCallable chamada) {

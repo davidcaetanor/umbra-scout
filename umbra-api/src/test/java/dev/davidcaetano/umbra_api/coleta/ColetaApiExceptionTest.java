@@ -82,6 +82,23 @@ class ColetaApiExceptionTest {
                 .isEqualTo("Fonte de Teste devolveu corpo que nao pode ser convertido: detalhe da falha");
     }
 
+    @Test
+    void mensagem_comDetalheAcimaDoLimite_deveTruncarEm500Caracteres() {
+        String detalheLongo = "x".repeat(2_000);
+
+        String mensagem = new FalhaDeTeste(detalheLongo, respostaHttp(503)).getMessage();
+
+        assertThat(mensagem)
+                .isEqualTo("Fonte de Teste respondeu 503: " + "x".repeat(500) + " (truncado)")
+                .endsWith("(truncado)");
+    }
+
+    @Test
+    void mensagem_comDetalheCurto_naoDeveTruncar() {
+        assertThat(new FalhaDeTeste(DETALHE, respostaHttp(503)).getMessage())
+                .isEqualTo("Fonte de Teste respondeu 503: detalhe da falha");
+    }
+
     private static RestClientResponseException respostaHttp(int status) {
         return new RestClientResponseException("resposta " + status, HttpStatusCode.valueOf(status), "", null, null, null);
     }
@@ -93,7 +110,11 @@ class ColetaApiExceptionTest {
     private static final class FalhaDeTeste extends ColetaApiException {
 
         private FalhaDeTeste(RestClientException causa) {
-            super(FONTE, DETALHE, causa);
+            this(DETALHE, causa);
+        }
+
+        private FalhaDeTeste(String detalhe, RestClientException causa) {
+            super(FONTE, detalhe, causa);
         }
     }
 }

@@ -10,6 +10,7 @@ public abstract class ColetaApiException extends RuntimeException {
 
     private static final int MENOR_STATUS_DE_ERRO_DO_SERVIDOR = 500;
     private static final int STATUS_RATE_LIMIT_EXCEDIDO = 429;
+    private static final int LIMITE_DO_DETALHE = 500;
 
     private final TipoFalhaColeta tipo;
 
@@ -18,7 +19,7 @@ public abstract class ColetaApiException extends RuntimeException {
     }
 
     private ColetaApiException(String fonte, String detalhe, RestClientException causa, TipoFalhaColeta tipo) {
-        super(montarMensagem(fonte, detalhe, tipo, statusDa(causa)), causa);
+        super(montarMensagem(fonte, limitar(detalhe), tipo, statusDa(causa)), causa);
         this.tipo = tipo;
     }
 
@@ -56,6 +57,13 @@ public abstract class ColetaApiException extends RuntimeException {
         return causa instanceof RestClientResponseException resposta
                 ? OptionalInt.of(resposta.getStatusCode().value())
                 : OptionalInt.empty();
+    }
+
+    private static String limitar(String detalhe) {
+        if (detalhe == null || detalhe.length() <= LIMITE_DO_DETALHE) {
+            return detalhe;
+        }
+        return detalhe.substring(0, LIMITE_DO_DETALHE) + " (truncado)";
     }
 
     private static String montarMensagem(String fonte, String detalhe, TipoFalhaColeta tipo, OptionalInt status) {

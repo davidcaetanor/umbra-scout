@@ -31,6 +31,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -491,6 +492,20 @@ class SteamClientImplTest extends IntegrationTestBase {
         assertThatThrownBy(steamClient::buscarDescoberta)
                 .isInstanceOf(CallNotPermittedException.class);
         WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/featuredcategories")));
+    }
+
+    @Test
+    void buscarDescoberta_deveIdentificarOUmbraNoUserAgent() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/featuredcategories"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_DESCOBERTA)));
+
+        steamClient.buscarDescoberta();
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/featuredcategories"))
+                .withHeader("User-Agent", havingExactly("Umbra/1.0 (+mailto:contato-de-teste@umbra.invalid)")));
     }
 
     private static void responderErro500SeguidoDeSucesso(Supplier<MappingBuilder> requisicao, String corpoDeSucesso) {

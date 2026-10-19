@@ -29,6 +29,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -499,6 +500,20 @@ class KabumClientImplTest extends IntegrationTestBase {
         assertThat(estadoDoCircuito("kabum")).isEqualTo(CircuitBreaker.State.OPEN);
         assertThat(estadoDoCircuito("itad")).isEqualTo(CircuitBreaker.State.CLOSED);
         assertThat(estadoDoCircuito("steam")).isEqualTo(CircuitBreaker.State.CLOSED);
+    }
+
+    @Test
+    void buscarPaginaHardware_deveIdentificarOUmbraNoUserAgent() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/catalog/v2/products"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_CATALOGO_HARDWARE)));
+
+        kabumClient.buscarPaginaHardware(1);
+
+        WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/catalog/v2/products"))
+                .withHeader("User-Agent", havingExactly("Umbra/1.0 (+mailto:contato-de-teste@umbra.invalid)")));
     }
 
     private CircuitBreaker.State estadoDoCircuito(String fonte) {
