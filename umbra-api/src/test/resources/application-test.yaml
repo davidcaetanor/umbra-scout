@@ -11,6 +11,8 @@ umbra:
   jwt:
     ttl-horas: 1
     secret: test-secret
+  coleta:
+    contato: contato-de-teste@umbra.invalid
 
 itad:
   itad-api:
@@ -26,6 +28,10 @@ kabum:
     base-url: http://localhost:0
 
 resilience4j:
+  ratelimiter:
+    instances:
+      kabum:
+        limit-refresh-period: 1ms
   retry:
     configs:
       default:

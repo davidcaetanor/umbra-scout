@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api.config;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +10,10 @@ import org.springframework.validation.annotation.Validated;
 
 @ConfigurationProperties(prefix = "umbra")
 @Validated
-public record UmbraProperties(@Valid @NotNull(message = "umbra.jwt é obrigatório") UmbraJWT jwt) {
+public record UmbraProperties(
+        @Valid @NotNull(message = "umbra.jwt é obrigatório") UmbraJWT jwt,
+        @Valid @NotNull(message = "umbra.coleta e obrigatorio (umbra.coleta.contato)") UmbraColeta coleta
+) {
 
     public record UmbraJWT(
             @NotBlank(message = "umbra.jwt.secret é obrigatório e não pode estar vazio!")
@@ -17,6 +21,13 @@ public record UmbraProperties(@Valid @NotNull(message = "umbra.jwt é obrigatór
 
             @Min(value = 1, message = "umbra.jwt.ttl-horas deve ser maior ou igual a 1")
             int ttlHoras
+    ) {
+    }
+
+    public record UmbraColeta(
+            @NotBlank(message = "umbra.coleta.contato e obrigatorio e nao pode estar vazio!")
+            @Email(message = "umbra.coleta.contato deve ser um email valido")
+            String contato
     ) {
     }
 

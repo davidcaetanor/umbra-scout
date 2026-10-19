@@ -26,6 +26,8 @@ logging:
 umbra:
   jwt:
     ttl-horas: 2
+  coleta:
+    contato: ${UMBRA_COLETA_CONTATO}
 
 itad:
   itad-api:
@@ -52,9 +54,9 @@ resilience4j:
         limit-refresh-period: 5m
         timeout-duration: 2s
       kabum:
-        limit-for-period: 180
-        limit-refresh-period: 5m
-        timeout-duration: 2s
+        limit-for-period: 1
+        limit-refresh-period: 1s
+        timeout-duration: 5s
   retry:
     configs:
       default:
