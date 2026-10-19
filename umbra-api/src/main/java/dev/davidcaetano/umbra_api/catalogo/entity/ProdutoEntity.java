@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.catalogo.entity;
 
+import dev.davidcaetano.umbra_api.catalogo.DadosProduto;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,12 +52,6 @@ public class ProdutoEntity {
 
     @Column(nullable = false)
     private OffsetDateTime atualizadoEm;
-
-    public record DadosProduto(String nome,
-                               String categoria,
-                               String imagemUrl,
-                               String chaveItad) {
-    }
 
     public static ProdutoEntity novo(TipoProduto tipo, DadosProduto dados, OffsetDateTime dataHoraAgora) {
 

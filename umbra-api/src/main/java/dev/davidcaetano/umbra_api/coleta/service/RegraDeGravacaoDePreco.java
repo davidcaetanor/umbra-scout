@@ -21,7 +21,4 @@ final class RegraDeGravacaoDePreco {
 
         return valorMudou || disponibilidadeMudou || janelaDeVivacidadeExpirou;
     }
-
-    record UltimoPreco(long valorCentavos, boolean disponivel, Instant coletadoEm) {
-    }
 }

@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
+import dev.davidcaetano.umbra_api.catalogo.DadosProduto;
 import dev.davidcaetano.umbra_api.catalogo.entity.LojaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntity;
@@ -8,15 +9,12 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.repository.LojaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
-import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository.UltimoPrecoProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
+import dev.davidcaetano.umbra_api.catalogo.repository.UltimoPrecoProjecao;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
-import dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada.GrupoChave;
-import dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada.GrupoDeOfertas;
-import dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePreco.UltimoPreco;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -173,7 +171,7 @@ public class ColetaService {
     private ResolucaoProduto resolverProduto(GrupoChave chave, List<OfertaColetada> ofertasDoGrupo,
                                               ContextoDoChunk contexto, OffsetDateTime agora) {
 
-        ProdutoEntity.DadosProduto dados = dadosDoPrimeiro(ofertasDoGrupo);
+        DadosProduto dados = dadosDoPrimeiro(ofertasDoGrupo);
 
         if (chave.chaveItad() != null) {
             ProdutoEntity produtoPorChaveItad = contexto.produtosPorChaveItad().get(chave.chaveItad());
@@ -286,9 +284,9 @@ public class ColetaService {
         return loja;
     }
 
-    private static ProdutoEntity.DadosProduto dadosDoPrimeiro(List<OfertaColetada> ofertasDoGrupo) {
+    private static DadosProduto dadosDoPrimeiro(List<OfertaColetada> ofertasDoGrupo) {
         OfertaColetada primeira = ofertasDoGrupo.get(0);
-        return new ProdutoEntity.DadosProduto(primeira.nome(), primeira.categoria(), primeira.imagemUrl(), primeira.chaveItad());
+        return new DadosProduto(primeira.nome(), primeira.categoria(), primeira.imagemUrl(), primeira.chaveItad());
     }
 
     private static <T> List<List<T>> emBlocos(Collection<T> itens, int tamanhoDoBloco) {

@@ -71,18 +71,6 @@ final class PreparadorDeRodada {
         return chunks;
     }
 
-    record GrupoChave(String chaveItad, CodigoLoja loja, String identificadorLoja) {
-
-        static GrupoChave de(OfertaColetada oferta) {
-            return oferta.chaveItad() != null
-                    ? new GrupoChave(oferta.chaveItad(), null, null)
-                    : new GrupoChave(null, oferta.loja(), oferta.identificadorLoja());
-        }
-    }
-
-    record GrupoDeOfertas(GrupoChave chave, List<OfertaColetada> ofertas) {
-    }
-
     private record ChaveOfertaColetada(CodigoLoja loja, String identificadorLoja) {
     }
 }

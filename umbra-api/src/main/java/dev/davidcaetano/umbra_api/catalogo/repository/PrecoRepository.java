@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,15 +31,4 @@ public interface PrecoRepository extends JpaRepository<PrecoEntity, Long> {
             """, nativeQuery = true)
     List<OfertaComUltimoPrecoProjecao> findOfertasAtivasComUltimoPrecoPorCodigoLojaIn(
             @Param("codigosLoja") Collection<String> codigosLoja);
-
-    interface UltimoPrecoProjecao {
-
-        Long getOfertaId();
-
-        long getValorCentavos();
-
-        boolean isDisponivel();
-
-        Instant getColetadoEm();
-    }
 }
