@@ -1,6 +1,5 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
-import dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePreco.UltimoPreco;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

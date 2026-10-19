@@ -4,7 +4,6 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
-import dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada.GrupoDeOfertas;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

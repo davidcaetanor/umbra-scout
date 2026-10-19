@@ -3,7 +3,7 @@ package dev.davidcaetano.umbra_api.catalogo.repository;
 import dev.davidcaetano.umbra_api.catalogo.entity.LojaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
-import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity.DadosProduto;
+import dev.davidcaetano.umbra_api.catalogo.DadosProduto;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
