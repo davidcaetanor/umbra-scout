@@ -13,6 +13,7 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import dev.davidcaetano.umbra_api.UmbraApiApplication;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import jakarta.persistence.Entity;
@@ -28,6 +29,7 @@ import static com.tngtech.archunit.core.domain.JavaAccess.Predicates.target;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 @AnalyzeClasses(packages = "dev.davidcaetano.umbra_api", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureRulesTest {
@@ -37,8 +39,8 @@ class ArchitectureRulesTest {
             .that().resideOutsideOfPackages("..coleta.itad..", "..coleta.steam..", "..coleta.kabum..")
             .and().doNotBelongToAnyOf(OrigemColeta.class)
             .should().accessTargetWhere(target(declaredIn(OrigemColeta.class)))
-            .because("decidir pela fonte fora do próprio coletor é violação de OCP, inclusive por referência de método; "
-                    + "passar o valor adiante continua permitido (ARCHITECTURE.md §3.3)");
+            .because("decidir pela fonte fora do próprio coletor é violação de OCP; passar o valor adiante continua permitido. "
+                    + "Referência a método herdado de Enum (OrigemColeta::name) escapa desta regra (ARCHITECTURE.md §3.3)");
 
     @ArchTest
     static final ArchRule scraperNaoRecusaMetodoDoContrato = noClasses()
@@ -72,6 +74,20 @@ class ArchitectureRulesTest {
             .should().bePrivate()
             .because("tipo aninhado que outra classe usa tem arquivo próprio; "
                     + "só properties que espelham o YAML continuam aninhadas (ARCHITECTURE.md §3.2, regras 3 e 4)");
+
+    @ArchTest
+    static final ArchRule moduloNaoDependeDeConfig = noClasses()
+            .that().resideOutsideOfPackage("..umbra_api.config..")
+            .and().doNotBelongToAnyOf(UmbraApiApplication.class)
+            .should().dependOnClassesThat().resideInAPackage("..umbra_api.config..")
+            .because("config monta a aplicação e pode depender dos módulos; "
+                    + "módulo que depende de config inverte a direção (ARCHITECTURE.md §3.3)");
+
+    @ArchTest
+    static final ArchRule pacotesDeTopoSemCiclo = slices()
+            .matching("dev.davidcaetano.umbra_api.(*)..")
+            .should().beFreeOfCycles()
+            .because("ciclo entre pacotes de topo impede entender ou mover um módulo sem o outro (ARCHITECTURE.md §3.3)");
 
     private static ArchCondition<JavaMethod> naoTerEntidadeNaAssinatura() {
         return new ArchCondition<>("não ter entidade JPA no tipo de retorno nem nos parâmetros") {
