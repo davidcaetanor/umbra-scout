@@ -2,6 +2,8 @@ package dev.davidcaetano.umbra_api.catalogo.entity;
 
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.OffsetDateTime;
 
@@ -30,12 +32,22 @@ class PrecoEntityTest {
                 .hasMessageContaining("valorOriginalCentavos");
     }
 
-    @Test
-    void deveFalharQuandoDescontoForaDaFaixaPermitida() {
-        assertThatThrownBy(() -> PrecoEntity.novo(oferta, 10000L, null, (short) 101, true,
+    @ParameterizedTest
+    @ValueSource(shorts = {-1, 101})
+    void deveFalharQuandoDescontoForaDaFaixaPermitida(short descontoPct) {
+        assertThatThrownBy(() -> PrecoEntity.novo(oferta, 10000L, null, descontoPct, true,
                 OrigemColeta.STEAM_API, null, COLETADO_EM))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("descontoPct");
+    }
+
+    @ParameterizedTest
+    @ValueSource(shorts = {0, 100})
+    void deveAceitarDescontoNasBordasDaFaixaPermitida(short descontoPct) {
+        PrecoEntity preco = PrecoEntity.novo(oferta, 10000L, null, descontoPct, true,
+                OrigemColeta.STEAM_API, null, COLETADO_EM);
+
+        assertThat(preco.getDescontoPct()).isEqualTo(descontoPct);
     }
 
     @Test
