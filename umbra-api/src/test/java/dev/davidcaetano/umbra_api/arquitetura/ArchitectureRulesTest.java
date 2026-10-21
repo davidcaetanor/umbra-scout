@@ -36,9 +36,8 @@ class ArchitectureRulesTest {
     static final ArchRule fonteSoDecididaNosColetores = noClasses()
             .that().resideOutsideOfPackages("..coleta.itad..", "..coleta.steam..", "..coleta.kabum..")
             .and().doNotBelongToAnyOf(OrigemColeta.class)
-            .should().accessFieldWhere(target(declaredIn(OrigemColeta.class)))
-            .orShould().callMethodWhere(target(declaredIn(OrigemColeta.class)))
-            .because("decidir pela fonte fora do próprio coletor é violação de OCP; "
+            .should().accessTargetWhere(target(declaredIn(OrigemColeta.class)))
+            .because("decidir pela fonte fora do próprio coletor é violação de OCP, inclusive por referência de método; "
                     + "passar o valor adiante continua permitido (ARCHITECTURE.md §3.3)");
 
     @ArchTest
