@@ -8,6 +8,12 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  task:
+    scheduling:
+      pool:
+        size: 2
+      thread-name-prefix: coleta-
+
 management:
   endpoint:
     health:
@@ -28,6 +34,14 @@ umbra:
     ttl-horas: 2
   coleta:
     contato: ${UMBRA_COLETA_CONTATO}
+    habilitada: false
+    agenda:
+      descoberta:
+        itad-api: "0 0 0,6,12,18 * * *"
+        steam-api: "0 15 0,6,12,18 * * *"
+        kabum-api: "0 45 3,15 * * *"
+      refresh: "0 30 0,6,12,18 * * *"
+      rodada-inicial: false
 
 itad:
   itad-api:
