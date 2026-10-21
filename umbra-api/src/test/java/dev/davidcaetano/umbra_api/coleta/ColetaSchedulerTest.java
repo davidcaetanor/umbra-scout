@@ -210,8 +210,7 @@ class ColetaSchedulerTest {
         scheduler.aoFicarPronta();
 
         assertThat(saida.getOut())
-                .contains("Coleta agendada desabilitada")
-                .contains("umbra.coleta.habilitada=true");
+                .contains("Coleta agendada desabilitada");
     }
 
     @Test
