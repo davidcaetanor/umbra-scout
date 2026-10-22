@@ -329,6 +329,7 @@
 							<threads>4</threads>
 							<targetClasses>
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodada</param>
+								<param>dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.VereditoRodada</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.CondicaoDeDrift</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada</param>
@@ -353,6 +354,7 @@
 							</targetClasses>
 							<targetTests>
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaPropertiesTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.VereditoRodadaTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodadaTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePrecoTest</param>
