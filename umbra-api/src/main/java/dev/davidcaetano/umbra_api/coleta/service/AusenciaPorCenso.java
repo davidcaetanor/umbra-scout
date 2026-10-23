@@ -24,15 +24,17 @@ class AusenciaPorCenso {
     private final PrecoRepository precoRepository;
     private final OfertaRepository ofertaRepository;
     private final TransactionTemplate transactionTemplate;
-    private final RegraDeGravacaoDePreco regraDeGravacaoDePreco = new RegraDeGravacaoDePreco();
+    private final RegraDeGravacaoDePreco regraDeGravacaoDePreco;
 
     AusenciaPorCenso(PrecoRepository precoRepository,
                      OfertaRepository ofertaRepository,
-                     TransactionTemplate transactionTemplate) {
+                     TransactionTemplate transactionTemplate,
+                     RegraDeGravacaoDePreco regraDeGravacaoDePreco) {
 
         this.precoRepository = precoRepository;
         this.ofertaRepository = ofertaRepository;
         this.transactionTemplate = transactionTemplate;
+        this.regraDeGravacaoDePreco = regraDeGravacaoDePreco;
     }
 
     void concluir(ResultadoColeta resultado, VereditoRodada veredito, OffsetDateTime agora) {

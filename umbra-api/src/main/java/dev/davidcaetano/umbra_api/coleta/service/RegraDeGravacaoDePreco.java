@@ -1,11 +1,19 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
+import dev.davidcaetano.umbra_api.coleta.properties.GravacaoPrecoProperties;
+import org.springframework.stereotype.Component;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+@Component
 final class RegraDeGravacaoDePreco {
 
-    static final int JANELA_VIVACIDADE_DIAS = 90;
+    private final GravacaoPrecoProperties gravacao;
+
+    RegraDeGravacaoDePreco(GravacaoPrecoProperties gravacao) {
+        this.gravacao = gravacao;
+    }
 
     boolean devePersistir(boolean ofertaNova, UltimoPreco ultimoPreco, long valorCentavos,
                            boolean disponivel, Instant agora) {
@@ -17,7 +25,7 @@ final class RegraDeGravacaoDePreco {
         boolean valorMudou = ultimoPreco.valorCentavos() != valorCentavos;
         boolean disponibilidadeMudou = ultimoPreco.disponivel() != disponivel;
         boolean janelaDeVivacidadeExpirou = ultimoPreco.coletadoEm()
-                .isBefore(agora.minus(JANELA_VIVACIDADE_DIAS, ChronoUnit.DAYS));
+                .isBefore(agora.minus(gravacao.janelaVivacidadeDias(), ChronoUnit.DAYS));
 
         return valorMudou || disponibilidadeMudou || janelaDeVivacidadeExpirou;
     }

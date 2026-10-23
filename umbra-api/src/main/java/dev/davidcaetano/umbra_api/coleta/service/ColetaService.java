@@ -45,8 +45,8 @@ public class ColetaService {
     private final TransactionTemplate transactionTemplate;
     private final AusenciaPorCenso ausenciaPorCenso;
     private final PreparadorDeRodada preparadorDeRodada = new PreparadorDeRodada();
-    private final RegraDeGravacaoDePreco regraDeGravacaoDePreco = new RegraDeGravacaoDePreco();
-    private final JulgamentoDeRodada julgamentoDeRodada = new JulgamentoDeRodada();
+    private final RegraDeGravacaoDePreco regraDeGravacaoDePreco;
+    private final JulgamentoDeRodada julgamentoDeRodada;
 
     public ColetaService(ProdutoRepository produtoRepository,
                           OfertaRepository ofertaRepository,
@@ -54,7 +54,9 @@ public class ColetaService {
                           LojaRepository lojaRepository,
                           Clock clock,
                           TransactionTemplate transactionTemplate,
-                          AusenciaPorCenso ausenciaPorCenso) {
+                          AusenciaPorCenso ausenciaPorCenso,
+                          RegraDeGravacaoDePreco regraDeGravacaoDePreco,
+                          JulgamentoDeRodada julgamentoDeRodada) {
 
         this.produtoRepository = produtoRepository;
         this.ofertaRepository = ofertaRepository;
@@ -63,6 +65,8 @@ public class ColetaService {
         this.clock = clock;
         this.transactionTemplate = transactionTemplate;
         this.ausenciaPorCenso = ausenciaPorCenso;
+        this.regraDeGravacaoDePreco = regraDeGravacaoDePreco;
+        this.julgamentoDeRodada = julgamentoDeRodada;
     }
 
     public VereditoRodada gravar(ResultadoColeta resultado) {
