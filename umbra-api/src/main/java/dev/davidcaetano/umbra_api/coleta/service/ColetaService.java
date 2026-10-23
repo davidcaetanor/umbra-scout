@@ -45,8 +45,8 @@ public class ColetaService {
     private final TransactionTemplate transactionTemplate;
     private final AusenciaPorCenso ausenciaPorCenso;
     private final PreparadorDeRodada preparadorDeRodada = new PreparadorDeRodada();
-    private final RegraDeGravacaoDePreco regraDeGravacaoDePreco = new RegraDeGravacaoDePreco();
-    private final JulgamentoDeRodada julgamentoDeRodada = new JulgamentoDeRodada();
+    private final RegraDeGravacaoDePreco regraDeGravacaoDePreco;
+    private final JulgamentoDeRodada julgamentoDeRodada;
 
     public ColetaService(ProdutoRepository produtoRepository,
                           OfertaRepository ofertaRepository,
@@ -54,7 +54,9 @@ public class ColetaService {
                           LojaRepository lojaRepository,
                           Clock clock,
                           TransactionTemplate transactionTemplate,
-                          AusenciaPorCenso ausenciaPorCenso) {
+                          AusenciaPorCenso ausenciaPorCenso,
+                          RegraDeGravacaoDePreco regraDeGravacaoDePreco,
+                          JulgamentoDeRodada julgamentoDeRodada) {
 
         this.produtoRepository = produtoRepository;
         this.ofertaRepository = ofertaRepository;
@@ -63,14 +65,22 @@ public class ColetaService {
         this.clock = clock;
         this.transactionTemplate = transactionTemplate;
         this.ausenciaPorCenso = ausenciaPorCenso;
+        this.regraDeGravacaoDePreco = regraDeGravacaoDePreco;
+        this.julgamentoDeRodada = julgamentoDeRodada;
     }
 
     public VereditoRodada gravar(ResultadoColeta resultado) {
 
         VereditoRodada veredito = julgamentoDeRodada.julgar(resultado);
+        Reconciliacao reconciliacao = resultado.reconciliacao();
+
+        log.info("Rodada medida: fonte={} situacao={} condicoes={} declarado={} brutos={} distintos={} "
+                        + "elegiveis={} semPreco={} ofertasRecebidas={}",
+                resultado.fonte(), veredito.situacao(), veredito.condicoes(), reconciliacao.declarado(),
+                reconciliacao.brutos(), reconciliacao.distintos(), resultado.totalElegivel(),
+                resultado.totalSemPreco(), resultado.ofertas().size());
 
         if (veredito.situacao() != SituacaoRodada.SAUDAVEL) {
-            Reconciliacao reconciliacao = resultado.reconciliacao();
             log.warn("Alarme de schema drift: fonte={} situacao={} condicoes={} elegiveis={} semPreco={} "
                             + "declarado={} brutos={} distintos={}",
                     resultado.fonte(), veredito.situacao(), veredito.condicoes(), resultado.totalElegivel(),
@@ -83,6 +93,10 @@ public class ColetaService {
         }
 
         List<List<GrupoDeOfertas>> chunks = preparadorDeRodada.preparar(resultado.ofertas());
+        int ofertasUnicas = chunks.stream()
+                .flatMap(List::stream)
+                .mapToInt(grupo -> grupo.ofertas().size())
+                .sum();
 
         Map<CodigoLoja, LojaEntity> lojasPorCodigo = lojaRepository.findAll().stream()
                 .collect(Collectors.toMap(LojaEntity::getCodigo, Function.identity()));
@@ -110,13 +124,15 @@ public class ColetaService {
         }
 
         if (chunksComFalha > 0) {
-            log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), "
-                            + "{} preco(s) gravado(s) ({} de {} chunk(s) descartado(s))",
-                    resultado.fonte(), totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados(),
-                    chunksComFalha, chunks.size());
+            log.info("Coleta gravada: fonte={}, {} oferta(s) unica(s), {} produto(s) criado(s), {} oferta(s) criada(s), "
+                            + "{} preco(s) gravado(s), {} preco(s) inalterado(s) ({} de {} chunk(s) descartado(s))",
+                    resultado.fonte(), ofertasUnicas, totais.produtosCriados(), totais.ofertasCriadas(),
+                    totais.precosGravados(), totais.precosInalterados(), chunksComFalha, chunks.size());
         } else {
-            log.info("Coleta gravada: fonte={}, {} produto(s) criado(s), {} oferta(s) criada(s), {} preco(s) gravado(s)",
-                    resultado.fonte(), totais.produtosCriados(), totais.ofertasCriadas(), totais.precosGravados());
+            log.info("Coleta gravada: fonte={}, {} oferta(s) unica(s), {} produto(s) criado(s), {} oferta(s) criada(s), "
+                            + "{} preco(s) gravado(s), {} preco(s) inalterado(s)",
+                    resultado.fonte(), ofertasUnicas, totais.produtosCriados(), totais.ofertasCriadas(),
+                    totais.precosGravados(), totais.precosInalterados());
         }
 
         ausenciaPorCenso.concluir(resultado, veredito, agora);
@@ -132,6 +148,7 @@ public class ColetaService {
         int produtosCriados = 0;
         int ofertasCriadas = 0;
         int precosGravados = 0;
+        int precosInalterados = 0;
 
         for (GrupoDeOfertas grupo : grupos) {
             List<OfertaColetada> ofertasDoGrupo = grupo.ofertas();
@@ -161,11 +178,13 @@ public class ColetaService {
                             ofertaColetada.disponivel(), ofertaColetada.origemColeta(),
                             ofertaColetada.expiry(), agora));
                     precosGravados++;
+                } else {
+                    precosInalterados++;
                 }
             }
         }
 
-        return new Contadores(produtosCriados, ofertasCriadas, precosGravados);
+        return new Contadores(produtosCriados, ofertasCriadas, precosGravados, precosInalterados);
     }
 
     private ResolucaoProduto resolverProduto(GrupoChave chave, List<OfertaColetada> ofertasDoGrupo,
@@ -316,15 +335,16 @@ public class ColetaService {
     private record ResolucaoProduto(ProdutoEntity produto, boolean criado) {
     }
 
-    private record Contadores(int produtosCriados, int ofertasCriadas, int precosGravados) {
+    private record Contadores(int produtosCriados, int ofertasCriadas, int precosGravados, int precosInalterados) {
 
-        static final Contadores ZERO = new Contadores(0, 0, 0);
+        static final Contadores ZERO = new Contadores(0, 0, 0, 0);
 
         Contadores somar(Contadores outro) {
             return new Contadores(
                     produtosCriados + outro.produtosCriados,
                     ofertasCriadas + outro.ofertasCriadas,
-                    precosGravados + outro.precosGravados);
+                    precosGravados + outro.precosGravados,
+                    precosInalterados + outro.precosInalterados);
         }
     }
 }

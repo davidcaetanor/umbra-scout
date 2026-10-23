@@ -42,6 +42,14 @@ umbra:
         kabum-api: "0 45 3,15 * * *"
       refresh: "0 30 0,6,12,18 * * *"
       rodada-inicial: false
+    alarme:
+      padrao:
+        amostra-minima: 10
+        limiar-sem-preco-percentual: 20
+        margem-cobertura-percentual: 2
+        margem-duplicata-percentual: 2
+    gravacao:
+      janela-vivacidade-dias: 90
 
 itad:
   itad-api:

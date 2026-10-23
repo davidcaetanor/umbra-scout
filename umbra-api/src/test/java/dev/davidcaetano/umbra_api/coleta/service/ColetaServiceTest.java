@@ -1,5 +1,8 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
@@ -16,8 +19,10 @@ import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -75,10 +80,32 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     private RelogioMutavel relogio;
 
+    private ListAppender<ILoggingEvent> logsDoServico;
+
     @BeforeEach
     void reiniciarRelogio() {
         relogio = (RelogioMutavel) clock;
         relogio.avancarPara(INSTANTE_RODADA_1.toInstant());
+    }
+
+    @BeforeEach
+    void capturarLogsDoServico() {
+        logsDoServico = new ListAppender<>();
+        logsDoServico.start();
+        ((Logger) LoggerFactory.getLogger(ColetaService.class)).addAppender(logsDoServico);
+    }
+
+    @AfterEach
+    void pararDeCapturarLogsDoServico() {
+        logsDoServico.stop();
+        ((Logger) LoggerFactory.getLogger(ColetaService.class)).detachAppender(logsDoServico);
+    }
+
+    private List<String> logsQueComecamCom(String prefixo) {
+        return logsDoServico.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .filter(mensagem -> mensagem.startsWith(prefixo))
+                .toList();
     }
 
     private void avancar(java.time.Duration duracao) {
@@ -585,6 +612,63 @@ class ColetaServiceTest extends IntegrationTestBase {
         OfertaEntity oferta = ofertaPorIdentificador("111");
         assertThat(oferta.getUrl()).isEqualTo("https://loja.exemplo/antiga");
         assertThat(oferta.getAtualizadoEm().toInstant()).isEqualTo(INSTANTE_RODADA_1.toInstant());
+    }
+
+    @Test
+    void medicao_deveLogarRodadaMedidaComReconciliacaoEContagensQuandoRodadaForSaudavel() {
+        gravarRodada(Cobertura.amostra(), new Reconciliacao(3L, 3, 3), 0, List.of(
+                pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true), pecaKabum("333", 30000L, true)));
+
+        assertThat(logsQueComecamCom("Rodada medida:"))
+                .singleElement()
+                .isEqualTo("Rodada medida: fonte=KABUM_API situacao=SAUDAVEL condicoes=[] declarado=3 brutos=3 "
+                        + "distintos=3 elegiveis=3 semPreco=0 ofertasRecebidas=3");
+    }
+
+    @Test
+    void medicao_deveLogarRodadaMedidaSemColetaGravadaQuandoRodadaForRejeitada() {
+        List<OfertaColetada> ofertas = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            ofertas.add(oferta(CodigoLoja.KABUM, "peca-" + i, TipoProduto.HARDWARE, "Peça " + i,
+                    null, 10000L, true, OrigemColeta.KABUM_API));
+        }
+
+        coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, 10, 3,
+                new Reconciliacao(null, 10, 10), Cobertura.amostra()));
+
+        assertThat(logsQueComecamCom("Rodada medida:"))
+                .singleElement()
+                .isEqualTo("Rodada medida: fonte=KABUM_API situacao=REJEITADA condicoes=[SEM_PRECO_ACIMA_DO_LIMIAR] "
+                        + "declarado=null brutos=10 distintos=10 elegiveis=10 semPreco=3 ofertasRecebidas=7");
+        assertThat(logsQueComecamCom("Coleta gravada:")).isEmpty();
+    }
+
+    @Test
+    void medicao_deveContarPrecoInalteradoQuandoOfertaVoltarComOMesmoPreco() {
+        gravar(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        avancar(Duration.ofHours(6));
+        gravar(pecaKabum("111", 10000L, true), pecaKabum("222", 25000L, true));
+
+        assertThat(logsQueComecamCom("Coleta gravada:")).satisfiesExactly(
+                primeira -> assertThat(primeira).contains("2 oferta(s) unica(s), 2 produto(s) criado(s), "
+                        + "2 oferta(s) criada(s), 2 preco(s) gravado(s), 0 preco(s) inalterado(s)"),
+                segunda -> assertThat(segunda).contains("2 oferta(s) unica(s), 0 produto(s) criado(s), "
+                        + "0 oferta(s) criada(s), 1 preco(s) gravado(s), 1 preco(s) inalterado(s)"));
+    }
+
+    @Test
+    void medicao_deveSepararOfertasRecebidasDasUnicasQuandoOfertaSeRepetirNaRodada() {
+        gravar(pecaKabum("111", 10000L, true), pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+
+        assertThat(logsQueComecamCom("Rodada medida:"))
+                .singleElement()
+                .asString()
+                .contains("ofertasRecebidas=3");
+        assertThat(logsQueComecamCom("Coleta gravada:"))
+                .singleElement()
+                .asString()
+                .contains("2 oferta(s) unica(s)", "2 preco(s) gravado(s), 0 preco(s) inalterado(s)");
     }
 
     @TestConfiguration

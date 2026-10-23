@@ -2,19 +2,25 @@ package dev.davidcaetano.umbra_api.coleta.service;
 
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
+import dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties;
+import dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties.Limiares;
+import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
 import java.util.Set;
 
+@Component
 final class JulgamentoDeRodada {
 
-    static final int AMOSTRA_MINIMA = 10;
-    static final int LIMIAR_SEM_PRECO_PERCENTUAL = 20;
-    static final int MARGEM_COBERTURA_PERCENTUAL = 2;
-    static final int MARGEM_DUPLICATA_PERCENTUAL = 2;
+    private final AlarmeColetaProperties alarme;
+
+    JulgamentoDeRodada(AlarmeColetaProperties alarme) {
+        this.alarme = alarme;
+    }
 
     VereditoRodada julgar(ResultadoColeta resultado) {
 
+        Limiares limiares = alarme.limiaresDe(resultado.fonte());
         Reconciliacao reconciliacao = resultado.reconciliacao();
         Long declarado = reconciliacao.declarado();
         long brutos = reconciliacao.brutos();
@@ -28,19 +34,20 @@ final class JulgamentoDeRodada {
             condicoes.add(CondicaoDeDrift.RESPOSTA_VAZIA);
         }
 
-        if (brutos >= AMOSTRA_MINIMA && elegiveis == 0) {
+        if (brutos >= limiares.amostraMinima() && elegiveis == 0) {
             condicoes.add(CondicaoDeDrift.NENHUM_ELEGIVEL);
         }
 
-        if (elegiveis >= AMOSTRA_MINIMA && semPreco * 100 > elegiveis * LIMIAR_SEM_PRECO_PERCENTUAL) {
+        if (elegiveis >= limiares.amostraMinima()
+                && semPreco * 100 > elegiveis * limiares.limiarSemPrecoPercentual()) {
             condicoes.add(CondicaoDeDrift.SEM_PRECO_ACIMA_DO_LIMIAR);
         }
 
-        if (declarado != null && (declarado - distintos) * 100 > declarado * MARGEM_COBERTURA_PERCENTUAL) {
+        if (declarado != null && (declarado - distintos) * 100 > declarado * limiares.margemCoberturaPercentual()) {
             condicoes.add(CondicaoDeDrift.COBERTURA_ABAIXO_DO_DECLARADO);
         }
 
-        if ((brutos - distintos) * 100 > brutos * MARGEM_DUPLICATA_PERCENTUAL) {
+        if ((brutos - distintos) * 100 > brutos * limiares.margemDuplicataPercentual()) {
             condicoes.add(CondicaoDeDrift.DUPLICATA_ENTRE_PAGINAS);
         }
 
