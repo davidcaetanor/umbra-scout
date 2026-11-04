@@ -12,6 +12,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -41,6 +43,18 @@ public class MigrationConstraintsTest extends IntegrationTestBase {
                 VALUES (?, ?, ?, 'https://store.steampowered.com/app/730')
                 RETURNING id
                 """, Long.class, produtoId, lojaId, identificadorLoja);
+    }
+
+    private void inserirProdutoComNome(String nome) {
+        jdbc.update("INSERT INTO produto (tipo, nome) VALUES ('JOGO', ?)", nome);
+    }
+
+    private List<String> nomesQueCasamComOTermo(String termo) {
+        return jdbc.queryForList("""
+                SELECT nome FROM produto
+                WHERE normalizar_busca(nome) LIKE '%' || normalizar_busca(?) || '%'
+                ORDER BY nome
+                """, String.class, termo);
     }
 
     private void inserirPreco(Long ofertaId, long valorCentavos, boolean disponivel, String origemColeta) {
@@ -274,6 +288,28 @@ public class MigrationConstraintsTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveExporAExpiracaoDaOfertaMaisBarataNaViewDeMelhorOferta() {
+        Long produtoId = inserirProduto(null);
+        Long ofertaCara = inserirOferta(produtoId, lojaId("STEAM"), "steam-3");
+        Long ofertaBarataComExpiracao = inserirOferta(produtoId, lojaId("NUUVEM"), "nuuvem-3");
+        Instant expiracao = Instant.parse("2026-11-10T03:00:00Z");
+
+        inserirPreco(ofertaCara, 12000, true, "STEAM_API");
+        jdbc.update("""
+                INSERT INTO preco (oferta_id, valor_centavos, origem_coleta, expira_em)
+                VALUES (?, 8000, 'ITAD_API', ?)
+                """, ofertaBarataComExpiracao, Timestamp.from(expiracao));
+
+        List<Map<String, Object>> linhas = jdbc.queryForList("""
+                SELECT oferta_id, expira_em FROM vw_melhor_oferta_atual WHERE produto_id = ?
+                """, produtoId);
+
+        assertThat(linhas.size()).isEqualTo(1);
+        assertThat(linhas.getFirst().get("oferta_id")).isEqualTo(ofertaBarataComExpiracao);
+        assertThat(((Timestamp) linhas.getFirst().get("expira_em")).toInstant()).isEqualTo(expiracao);
+    }
+
+    @Test
     void deveExistirLinhaDaKabumEmLoja() {
         Integer total = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM loja
@@ -313,4 +349,54 @@ public class MigrationConstraintsTest extends IntegrationTestBase {
         assertThat(precoId).isNotNull();
     }
 
+    @Test
+    void normalizarBusca_deveIgnorarAcentoEMaiusculasEPreservarPontuacao() {
+        assertThat(jdbc.queryForObject("SELECT normalizar_busca(?)", String.class, "Pokémon")).isEqualTo("pokemon");
+        assertThat(jdbc.queryForObject("SELECT normalizar_busca(?)", String.class, "POKEMON")).isEqualTo("pokemon");
+        assertThat(jdbc.queryForObject("SELECT normalizar_busca(?)", String.class, "pokémon")).isEqualTo("pokemon");
+        assertThat(jdbc.queryForObject("SELECT normalizar_busca(?)", String.class, "Baldur's Gate 3"))
+                .isEqualTo("baldur's gate 3");
+        assertThat(jdbc.queryForObject("SELECT normalizar_busca(NULL)", String.class)).isNull();
+    }
+
+    @Test
+    void normalizarBusca_deveCasarPorTrechoSemAcentoNemMaiusculas() {
+        inserirProdutoComNome("Pokémon Scarlet");
+        inserirProdutoComNome("Hollow Knight");
+        inserirProdutoComNome("Pokemon Go");
+
+        assertThat(nomesQueCasamComOTermo("pokemon")).isEqualTo(List.of("Pokemon Go", "Pokémon Scarlet"));
+        assertThat(nomesQueCasamComOTermo("Pokemasoandsna")).isEqualTo(List.of());
+    }
+
+    @Test
+    void normalizarBusca_deveSerAtendidaPeloIndiceDeTrigramaSobreAMesmaExpressao() {
+        inserirProdutoComNome("Pokémon Scarlet");
+        inserirProdutoComNome("Hollow Knight");
+        inserirProdutoComNome("Pokemon Go");
+        jdbc.execute("SET LOCAL enable_seqscan = off");
+
+        String plano = String.join(System.lineSeparator(), jdbc.queryForList("""
+                EXPLAIN SELECT nome FROM produto
+                WHERE normalizar_busca(nome) LIKE '%' || normalizar_busca('pokemon') || '%'
+                """, String.class));
+
+        assertThat(plano).contains("ix_produto_nome_busca_trgm");
+    }
+
+    @Test
+    void indiceDeTrigramaSobreONomeCruNaoDeveMaisExistir() {
+        Integer total = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM pg_indexes WHERE indexname = 'ix_produto_nome_trgm'", Integer.class);
+
+        assertThat(total).isZero();
+    }
+
+    @Test
+    void normalizarBusca_deveSerDeclaradaImutavel() {
+        String volatilidade = jdbc.queryForObject(
+                "SELECT provolatile::text FROM pg_proc WHERE proname = 'normalizar_busca'", String.class);
+
+        assertThat(volatilidade).isEqualTo("i");
+    }
 }
