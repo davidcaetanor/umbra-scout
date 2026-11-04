@@ -20,6 +20,7 @@
         <archunit.version>1.5.1</archunit.version>
         <pitest.version>1.30.1</pitest.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
+        <springdoc.version>3.2.0</springdoc.version>
         <argLine></argLine>
 	</properties>
     <dependencyManagement>
@@ -64,6 +65,15 @@
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 
 		<dependency>
@@ -351,6 +361,10 @@
 								<param>dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntity</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.ClassificacaoDePreco</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.SerieDoMelhorPreco</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.IndicadoresDePreco</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.BuscaExternaService</param>
 							</targetClasses>
 							<targetTests>
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
@@ -368,6 +382,10 @@
 								<param>dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntityTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntityTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntityTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.ClassificacaoDePrecoTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.SerieDoMelhorPrecoTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.IndicadoresDePrecoTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.BuscaExternaServiceTest</param>
 							</targetTests>
 						</configuration>
 					</plugin>

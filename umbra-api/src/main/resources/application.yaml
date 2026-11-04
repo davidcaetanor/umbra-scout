@@ -4,6 +4,12 @@ spring:
   profiles:
     active: dev
 
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 20
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -28,6 +34,7 @@ management:
 logging:
   level:
     root: info
+    com.github.benmanes.caffeine.cache.LocalAsyncCache: error
 
 umbra:
   jwt:
@@ -50,6 +57,15 @@ umbra:
         margem-duplicata-percentual: 2
     gravacao:
       janela-vivacidade-dias: 90
+  busca:
+    externa:
+      teto: 20
+      janela: 5m
+      timeout-conexao: 1s
+      timeout-leitura: 1s
+      cache-ttl: 2m
+      prazo: 4s
+      maximo-resultados: 5
 
 itad:
   itad-api:
@@ -107,6 +123,8 @@ resilience4j:
         record-failure-predicate: dev.davidcaetano.umbra_api.coleta.ColetaCircuitBreakerPredicate
     instances:
       itad:
+        base-config: default
+      itad-busca:
         base-config: default
       steam:
         base-config: default
