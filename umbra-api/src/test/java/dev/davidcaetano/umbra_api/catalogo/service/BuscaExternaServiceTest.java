@@ -4,9 +4,12 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,16 +35,71 @@ class BuscaExternaServiceTest {
     private static final Duration PRAZO = Duration.ofSeconds(4);
     private static final Duration JANELA_LONGA = Duration.ofMinutes(5);
     private static final long LIMITE_DE_ESPERA_SEGUNDOS = 10;
+    private static final String AVISO_DE_PRAZO = "Busca externa passou do prazo, só o catálogo local: termo=";
 
     private static final List<JogoExterno> RESULTADO = List.of(new JogoExterno(
             "018d937f-590c-728b-ac35-38bcff85f086", "Elden Ring", null,
             List.of(new OfertaExterna(CodigoLoja.NUUVEM, "https://itad.link/elden", 24705, 27450L, (short) 10, null))));
 
     private final ExecutorService executor = Executors.newFixedThreadPool(10);
+    private final ExecutorService executorDoServico = Executors.newVirtualThreadPerTaskExecutor();
 
     @AfterEach
     void encerrarExecutor() {
         executor.shutdownNow();
+        executorDoServico.shutdownNow();
+    }
+
+    @Test
+    void portaMaisLentaQueOPrazo_buscarVoltaVazioNoPrazo_semEsperarAPorta() {
+        Duration prazo = Duration.ofMillis(200);
+        PortaFalsa porta = new PortaFalsa();
+        porta.atrasarPrimeiraChamada(prazo.multipliedBy(3));
+        BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, prazo);
+
+        long inicio = System.nanoTime();
+        List<JogoExterno> resultado = servico.buscar("elden ring");
+        long esperaMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio);
+
+        assertThat(resultado).isEmpty();
+        assertThat(esperaMs).isLessThanOrEqualTo(prazo.toMillis() + 200);
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void chamadaQuePassaDoPrazoDoDono_registraUmWarnSo_mesmoComVariasRequisicoes(CapturedOutput saida)
+            throws Exception {
+        PortaFalsa porta = new PortaFalsa();
+        CountDownLatch soltar = porta.segurarPrimeiraChamada();
+        BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, Duration.ofMillis(200));
+
+        for (int i = 0; i < 4; i++) {
+            assertThat(servico.buscar("elden ring")).isEmpty();
+        }
+        long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(LIMITE_DE_ESPERA_SEGUNDOS);
+        while (!saida.getOut().contains(AVISO_DE_PRAZO) && System.nanoTime() < limite) {
+            Thread.sleep(20);
+        }
+        Thread.sleep(300);
+        soltar.countDown();
+
+        assertThat(saida.getOut().split(Pattern.quote(AVISO_DE_PRAZO), -1)).hasSize(2);
+        assertThat(saida.getOut()).contains(AVISO_DE_PRAZO + "elden ring");
+        assertThat(porta.chamadas()).isEqualTo(1);
+    }
+
+    @Test
+    void depoisQueAPortaLentaTermina_aBuscaSeguinteVemDoCache_semChamarAPortaDeNovo() throws Exception {
+        Duration prazo = Duration.ofMillis(200);
+        PortaFalsa porta = new PortaFalsa();
+        porta.atrasarPrimeiraChamada(prazo.multipliedBy(3));
+        BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, prazo);
+
+        assertThat(servico.buscar("elden ring")).isEmpty();
+        porta.aguardarPrimeiraChamadaTerminar();
+
+        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(porta.chamadas()).isEqualTo(1);
     }
 
     @Test
@@ -139,7 +198,8 @@ class BuscaExternaServiceTest {
 
         assertThat(deQuemEspera).isEmpty();
         assertThat(esperaMs).isBetween(200L, 500L);
-        assertThat(dono.get(LIMITE_DE_ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isEqualTo(RESULTADO);
+        assertThat(dono.get(LIMITE_DE_ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isEmpty();
+        porta.aguardarPrimeiraChamadaTerminar();
         assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
         assertThat(porta.chamadas()).isEqualTo(1);
     }
@@ -201,8 +261,9 @@ class BuscaExternaServiceTest {
         assertThat(porta.chamadas()).isEqualTo(1);
     }
 
-    private static BuscaExternaService servico(BuscaExterna porta, int teto, Duration cacheTtl, Duration prazo) {
-        return new BuscaExternaService(porta, new TetoDeBuscaExterna(teto, JANELA_LONGA), cacheTtl, prazo);
+    private BuscaExternaService servico(BuscaExterna porta, int teto, Duration cacheTtl, Duration prazo) {
+        return new BuscaExternaService(porta, new TetoDeBuscaExterna(teto, JANELA_LONGA), cacheTtl, prazo,
+                executorDoServico);
     }
 
     private List<List<JogoExterno>> emParalelo(int quantidade, Supplier<List<JogoExterno>> busca) throws Exception {
@@ -236,6 +297,7 @@ class BuscaExternaServiceTest {
         private final AtomicInteger chamadas = new AtomicInteger();
         private final List<String> termos = new CopyOnWriteArrayList<>();
         private final CountDownLatch primeiraChamadaEntrou = new CountDownLatch(1);
+        private final CountDownLatch primeiraChamadaTerminou = new CountDownLatch(1);
         private volatile CountDownLatch travaDaPrimeiraChamada;
         private volatile Duration atrasoDaPrimeiraChamada;
         private volatile RuntimeException falhaDaPrimeiraChamada;
@@ -247,12 +309,20 @@ class BuscaExternaServiceTest {
             primeiraChamadaEntrou.countDown();
 
             if (chamada == 1) {
-                segurar();
-                if (falhaDaPrimeiraChamada != null) {
-                    throw falhaDaPrimeiraChamada;
+                try {
+                    segurar();
+                    if (falhaDaPrimeiraChamada != null) {
+                        throw falhaDaPrimeiraChamada;
+                    }
+                } finally {
+                    primeiraChamadaTerminou.countDown();
                 }
             }
             return RESULTADO;
+        }
+
+        void aguardarPrimeiraChamadaTerminar() throws InterruptedException {
+            assertThat(primeiraChamadaTerminou.await(LIMITE_DE_ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isTrue();
         }
 
         CountDownLatch segurarPrimeiraChamada() {

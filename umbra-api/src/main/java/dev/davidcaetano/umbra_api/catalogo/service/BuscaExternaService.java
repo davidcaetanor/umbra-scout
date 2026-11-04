@@ -3,7 +3,9 @@ package dev.davidcaetano.umbra_api.catalogo.service;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,8 +13,12 @@ import java.text.Normalizer;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
@@ -31,16 +37,20 @@ public class BuscaExternaService {
     private final TetoDeBuscaExterna teto;
     private final Duration prazo;
     private final AsyncCache<String, List<JogoExterno>> cache;
+    private final ExecutorService executor;
 
     @Autowired
     public BuscaExternaService(BuscaExterna buscaExterna, TetoDeBuscaExterna teto, BuscaProperties buscaProperties) {
-        this(buscaExterna, teto, buscaProperties.externa().cacheTtl(), buscaProperties.externa().prazo());
+        this(buscaExterna, teto, buscaProperties.externa().cacheTtl(), buscaProperties.externa().prazo(),
+                Executors.newVirtualThreadPerTaskExecutor());
     }
 
-    public BuscaExternaService(BuscaExterna buscaExterna, TetoDeBuscaExterna teto, Duration cacheTtl, Duration prazo) {
+    public BuscaExternaService(BuscaExterna buscaExterna, TetoDeBuscaExterna teto, Duration cacheTtl, Duration prazo,
+                               ExecutorService executor) {
         this.buscaExterna = buscaExterna;
         this.teto = teto;
         this.prazo = prazo;
+        this.executor = executor;
         this.cache = Caffeine.newBuilder()
                 .expireAfterWrite(cacheTtl)
                 .maximumSize(MAXIMO_DE_TERMOS_EM_CACHE)
@@ -48,40 +58,88 @@ public class BuscaExternaService {
     }
 
     public List<JogoExterno> buscar(String termo) {
-        CompletableFuture<List<JogoExterno>> novo = new CompletableFuture<List<JogoExterno>>()
-                .orTimeout(prazo.plus(MARGEM_DO_DONO).toMillis(), TimeUnit.MILLISECONDS);
-        CompletableFuture<List<JogoExterno>> existente = cache.asMap().putIfAbsent(normalizar(termo), novo);
+        String chave = normalizar(termo);
+        CompletableFuture<List<JogoExterno>> novo = new CompletableFuture<>();
+        CompletableFuture<List<JogoExterno>> doCache = entrarNoCache(chave, novo);
 
-        if (existente != null) {
-            return aguardar(existente, termo);
+        if (doCache == novo) {
+            novo.orTimeout(prazo.plus(MARGEM_DO_DONO).toMillis(), TimeUnit.MILLISECONDS)
+                    .whenComplete((resultado, erro) -> avisarSePassouDoPrazo(erro, termo));
+            iniciar(termo, novo);
         }
-        return buscarComoDono(termo, novo);
+        return aguardar(doCache, termo);
     }
 
-    private List<JogoExterno> buscarComoDono(String termo, CompletableFuture<List<JogoExterno>> futuro) {
-        try {
-            if (!teto.permite()) {
-                futuro.completeExceptionally(new BuscaExternaIndisponivelException("teto de buscas externas esgotado"));
-                log.info("Teto de buscas externas esgotado na janela, só o catálogo local: termo={}", termo);
-                return List.of();
-            }
+    @PreDestroy
+    void encerrar() {
+        executor.shutdownNow();
+    }
 
+
+    private CompletableFuture<List<JogoExterno>> entrarNoCache(String chave, CompletableFuture<List<JogoExterno>> novo) {
+        while (true) {
+            CompletableFuture<List<JogoExterno>> existente = cache.asMap().putIfAbsent(chave, novo);
+            if (existente == null) {
+                return novo;
+            }
+            if (!existente.isCompletedExceptionally()) {
+                return existente;
+            }
+            cache.asMap().remove(chave, existente);
+        }
+    }
+
+    private void iniciar(String termo, CompletableFuture<List<JogoExterno>> futuro) {
+        if (!teto.permite()) {
+            futuro.completeExceptionally(new BuscaExternaIndisponivelException("teto de buscas externas esgotado"));
+            log.info("Teto de buscas externas esgotado na janela, só o catálogo local: termo={}", termo);
+            return;
+        }
+
+        Map<String, String> contextoDoLog = MDC.getCopyOfContextMap();
+        try {
+            executor.execute(() -> comContextoDoLog(contextoDoLog, () -> chamarAPorta(termo, futuro)));
+        } catch (RuntimeException ex) {
+            futuro.completeExceptionally(ex);
+            log.error("Erro inesperado na busca externa, só o catálogo local: termo={}", termo, ex);
+        }
+    }
+
+    private void chamarAPorta(String termo, CompletableFuture<List<JogoExterno>> futuro) {
+        try {
             long inicio = System.nanoTime();
             List<JogoExterno> resultado = buscaExterna.buscar(termo);
             log.info("Busca externa no ITAD: termo={} resultados={} duracaoMs={}", termo, resultado.size(),
                     TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio));
 
             futuro.complete(resultado);
-            return resultado;
         } catch (BuscaExternaIndisponivelException ex) {
             futuro.completeExceptionally(ex);
             log.warn("Fonte da busca externa indisponível, só o catálogo local: termo={} causa={}", termo,
                     ex.getMessage());
-            return List.of();
         } catch (RuntimeException ex) {
             futuro.completeExceptionally(ex);
             log.error("Erro inesperado na busca externa, só o catálogo local: termo={}", termo, ex);
-            return List.of();
+        }
+    }
+
+    private static void avisarSePassouDoPrazo(Throwable erro, String termo) {
+        Throwable causa = erro instanceof CompletionException ? erro.getCause() : erro;
+        if (causa instanceof TimeoutException) {
+            log.warn("Busca externa passou do prazo, só o catálogo local: termo={}", termo);
+        }
+    }
+
+    private static void comContextoDoLog(Map<String, String> contexto, Runnable tarefa) {
+        if (contexto == null) {
+            MDC.clear();
+        } else {
+            MDC.setContextMap(contexto);
+        }
+        try {
+            tarefa.run();
+        } finally {
+            MDC.clear();
         }
     }
 
