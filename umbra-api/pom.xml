@@ -369,6 +369,13 @@
 								<param>dev.davidcaetano.umbra_api.catalogo.service.SerieDoMelhorPreco</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.IndicadoresDePreco</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.BuscaExternaService</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaScheduler</param>
+								<param>dev.davidcaetano.umbra_api.config.log.RequestIdFilter</param>
+								<param>dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog</param>
+								<param>dev.davidcaetano.umbra_api.comum.log.ContextoDeLog</param>
+								<param>dev.davidcaetano.umbra_api.comum.log.ChaveDeLog</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogo</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistorico</param>
 							</targetClasses>
 							<targetTests>
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
@@ -390,6 +397,13 @@
 								<param>dev.davidcaetano.umbra_api.catalogo.service.SerieDoMelhorPrecoTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.IndicadoresDePrecoTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.BuscaExternaServiceTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.ColetaSchedulerTest</param>
+								<param>dev.davidcaetano.umbra_api.config.log.RequestIdFilterTest</param>
+								<param>dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLogTest</param>
+								<param>dev.davidcaetano.umbra_api.comum.log.ContextoDeLogTest</param>
+								<param>dev.davidcaetano.umbra_api.comum.log.ChaveDeLogTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogoTest</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistoricoTest</param>
 							</targetTests>
 						</configuration>
 					</plugin>

@@ -6,6 +6,7 @@ import dev.davidcaetano.umbra_api.coleta.itad.ResolucaoDeGidFaltante;
 import dev.davidcaetano.umbra_api.coleta.properties.AgendaColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.coleta.service.VereditoRodada;
+import dev.davidcaetano.umbra_api.comum.log.ChaveDeLog;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -32,7 +33,7 @@ import java.util.function.Supplier;
 @Component
 public class ColetaScheduler {
 
-    public static final String MDC_KEY = "rodadaId";
+    public static final String MDC_KEY = ChaveDeLog.RODADA_ID.chave();
 
     private static final String CHAVE_DESCOBERTA = "umbra.coleta.agenda.descoberta";
     private static final String CHAVE_REFRESH = "umbra.coleta.agenda.refresh";
@@ -128,21 +129,25 @@ public class ColetaScheduler {
     }
 
     private void executar(String tarefa, Semaphore bloqueio, Supplier<VereditoRodada> rodada) {
-        if (!bloqueio.tryAcquire()) {
-            log.warn("Rodada ignorada: {} ja em andamento", tarefa);
-            return;
-        }
-
         try {
-            Instant inicio = clock.instant();
             MDC.put(MDC_KEY, UUID.randomUUID().toString());
-            log.info("Rodada iniciada: {}", tarefa);
-            String situacao = situacaoOuFalha(tarefa, rodada);
-            log.info("Rodada finalizada: {} situacao={} duracaoMs={}",
-                    tarefa, situacao, Duration.between(inicio, clock.instant()).toMillis());
+
+            if (!bloqueio.tryAcquire()) {
+                log.warn("Rodada ignorada: {} ja em andamento", tarefa);
+                return;
+            }
+
+            try {
+                Instant inicio = clock.instant();
+                log.info("Rodada iniciada: {}", tarefa);
+                String situacao = situacaoOuFalha(tarefa, rodada);
+                log.info("Rodada finalizada: {} situacao={} duracaoMs={}",
+                        tarefa, situacao, Duration.between(inicio, clock.instant()).toMillis());
+            } finally {
+                bloqueio.release();
+            }
         } finally {
             MDC.remove(MDC_KEY);
-            bloqueio.release();
         }
     }
 

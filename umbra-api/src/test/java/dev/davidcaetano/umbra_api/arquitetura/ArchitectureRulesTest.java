@@ -15,8 +15,12 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import dev.davidcaetano.umbra_api.UmbraApiApplication;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.coleta.ColetaScheduler;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
+import dev.davidcaetano.umbra_api.comum.log.ContextoDeLog;
+import dev.davidcaetano.umbra_api.config.log.RequestIdFilter;
 import jakarta.persistence.Entity;
+import org.slf4j.MDC;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.data.repository.Repository;
 import org.springframework.stereotype.Controller;
@@ -88,6 +92,13 @@ class ArchitectureRulesTest {
             .matching("dev.davidcaetano.umbra_api.(*)..")
             .should().beFreeOfCycles()
             .because("ciclo entre pacotes de topo impede entender ou mover um módulo sem o outro (ARCHITECTURE.md §3.3)");
+
+    @ArchTest
+    static final ArchRule mdcSoNasClassesDeCorrelacao = noClasses()
+            .that().doNotBelongToAnyOf(RequestIdFilter.class, ColetaScheduler.class, ContextoDeLog.class)
+            .should().accessTargetWhere(target(declaredIn(MDC.class)))
+            .because("chave de MDC fora dessas três classes escapa do ChaveDeLog e do allowlist do encoder, "
+                    + "e desaparece do JSON sem erro (ARCHITECTURE.md §6.3)");
 
     private static ArchCondition<JavaMethod> naoTerEntidadeNaAssinatura() {
         return new ArchCondition<>("não ter entidade JPA no tipo de retorno nem nos parâmetros") {

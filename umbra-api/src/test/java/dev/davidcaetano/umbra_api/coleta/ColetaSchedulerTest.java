@@ -1,5 +1,9 @@
 package dev.davidcaetano.umbra_api.coleta;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.coleta.itad.ItadRefresh;
 import dev.davidcaetano.umbra_api.coleta.itad.ResolucaoDeGidFaltante;
@@ -11,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -20,6 +25,7 @@ import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.SimpleTriggerContext;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -28,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -50,6 +58,7 @@ class ColetaSchedulerTest {
     private static final String CRON_KABUM = "0 45 3,15 * * *";
     private static final String CRON_REFRESH = "0 30 0,6,12,18 * * *";
     private static final String TAREFA_REFRESH = "refresh";
+    private static final long ESPERA_SEGUNDOS = 10;
 
     private final ColetaService coletaService = mock(ColetaService.class);
     private final ResolucaoDeGidFaltante resolucaoDeGidFaltante = mock(ResolucaoDeGidFaltante.class);
@@ -118,6 +127,15 @@ class ColetaSchedulerTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("umbra.coleta.agenda.refresh")
                 .hasCauseInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void deveFalharQuandoDescobertaForPedidaParaScraperForaDaAgenda() {
+        ColetaScheduler scheduler = scheduler(List.of(itad), Map.of(OrigemColeta.ITAD_API, CRON_ITAD), CRON_REFRESH);
+
+        assertThatThrownBy(() -> scheduler.executarDescoberta(steam))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Scraper sem tarefa registrada na agenda: fonte=STEAM_API");
     }
 
     @Test
@@ -313,6 +331,39 @@ class ColetaSchedulerTest {
     }
 
     @Test
+    void deveLogarRodadaIgnoradaComRodadaIdProprioQuandoBloqueioOcupado() throws Exception {
+        ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
+        CountDownLatch entrou = new CountDownLatch(1);
+        CountDownLatch soltar = new CountDownLatch(1);
+        itad.aoColetarUmaVez(() -> {
+            entrou.countDown();
+            aguardar(soltar);
+        });
+        ListAppender<ILoggingEvent> logs = capturarLogsDoScheduler();
+        Thread emAndamento = Thread.ofPlatform().start(() -> scheduler.executarDescoberta(itad));
+
+        try {
+            assertThat(entrou.await(ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isTrue();
+            scheduler.executarDescoberta(itad);
+        } finally {
+            soltar.countDown();
+            emAndamento.join(Duration.ofSeconds(ESPERA_SEGUNDOS));
+            ((Logger) LoggerFactory.getLogger(ColetaScheduler.class)).detachAppender(logs);
+        }
+
+        assertThat(logs.list)
+                .filteredOn(evento -> evento.getFormattedMessage().startsWith("Rodada ignorada"))
+                .singleElement()
+                .satisfies(evento -> {
+                    assertThat(evento.getLevel()).isEqualTo(Level.WARN);
+                    assertThat(evento.getMDCPropertyMap().get(ColetaScheduler.MDC_KEY))
+                            .isNotBlank()
+                            .isNotEqualTo(itad.rodadaIdsVistos.getFirst());
+                });
+        assertThat(MDC.get(ColetaScheduler.MDC_KEY)).isNull();
+    }
+
+    @Test
     void deveLiberarOBloqueioDepoisDeFalha() {
         ScraperFalso quebrado = new ScraperFalso(OrigemColeta.ITAD_API, new IllegalStateException("ITAD fora do ar"));
         ColetaScheduler scheduler = scheduler(List.of(quebrado, steam, kabum), agendaCompleta(), CRON_REFRESH);
@@ -348,6 +399,27 @@ class ColetaSchedulerTest {
         }
         assertThat(mockingDetails(itadRefresh).getInvocations()).hasSizeGreaterThan(refreshesAntes);
         return TAREFA_REFRESH;
+    }
+
+    private static ListAppender<ILoggingEvent> capturarLogsDoScheduler() {
+        ListAppender<ILoggingEvent> logs = new ListAppender<>() {
+            @Override
+            protected void append(ILoggingEvent evento) {
+                evento.prepareForDeferredProcessing();
+                super.append(evento);
+            }
+        };
+        logs.start();
+        ((Logger) LoggerFactory.getLogger(ColetaScheduler.class)).addAppender(logs);
+        return logs;
+    }
+
+    private static void aguardar(CountDownLatch trava) {
+        try {
+            assertThat(trava.await(ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isTrue();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private static Instant proximaExecucaoComRelogioEmUtc(TriggerTask tarefa) {

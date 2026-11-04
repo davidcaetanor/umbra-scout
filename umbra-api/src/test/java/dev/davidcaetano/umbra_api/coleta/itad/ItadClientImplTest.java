@@ -1,5 +1,10 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.core.read.ListAppender;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -15,7 +20,9 @@ import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Map;
@@ -43,6 +50,9 @@ class ItadClientImplTest extends WireMockIntegrationTestBase {
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Value("${itad.itad-api.api-key}")
+    private String chaveDeApi;
 
     private static final UUID GID_JOGO = UUID.fromString("018d937e-f8d2-7123-9942-85ddaff9efee");
     private static final String CENARIO_RETENTATIVA = "retentativa";
@@ -262,6 +272,45 @@ class ItadClientImplTest extends WireMockIntegrationTestBase {
                     assertThat(ex.status()).hasValue(400);
                     assertThat(ex.transitoria()).isFalse();
                     assertThat(ex.getMessage()).contains("country: Missing data for 'country'");
+                });
+    }
+
+    @Test
+    void erroHttp_400_deveLogarWarnComACausaEncadeada_semAChaveDeApi() {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(FIXTURE_ERRO)));
+        ListAppender<ILoggingEvent> logs = new ListAppender<>() {
+            @Override
+            protected void append(ILoggingEvent evento) {
+                evento.prepareForDeferredProcessing();
+                super.append(evento);
+            }
+        };
+        Logger logger = (Logger) LoggerFactory.getLogger(TraducaoDeErroItad.class);
+        logs.start();
+        logger.addAppender(logs);
+
+        try {
+            assertThatThrownBy(() -> itadClient.buscarDescoberta(0)).isInstanceOf(ItadApiException.class);
+        } finally {
+            logger.detachAppender(logs);
+        }
+
+        assertThat(logs.list).filteredOn(evento -> evento.getLevel() == Level.WARN).singleElement()
+                .satisfies(evento -> {
+                    IThrowableProxy erro = evento.getThrowableProxy();
+                    assertThat(erro).isNotNull();
+                    assertThat(erro.getClassName()).isEqualTo(ItadApiException.class.getName());
+                    assertThat(erro.getCause()).isNotNull();
+                    assertThat(erro.getCause().getClassName()).contains("HttpClientErrorException");
+
+                    assertThat(evento.getFormattedMessage()).doesNotContain(chaveDeApi);
+                    for (IThrowableProxy elo = erro; elo != null; elo = elo.getCause()) {
+                        assertThat(String.valueOf(elo.getMessage())).doesNotContain(chaveDeApi);
+                    }
                 });
     }
 
