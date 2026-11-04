@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.coleta.kabum;
 
+import dev.davidcaetano.umbra_api.catalogo.enums.CategoriaHardware;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
@@ -29,19 +30,19 @@ import java.util.Set;
 @Slf4j
 public class KabumScraper implements Scraper {
 
-    private static final Map<String, String> CATEGORIA_POR_PREFIXO_MENU = new LinkedHashMap<>();
+    private static final Map<String, CategoriaHardware> CATEGORIA_POR_PREFIXO_MENU = new LinkedHashMap<>();
 
     static {
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Processadores", "CPU");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placa de vídeo (VGA)", "GPU");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placas-mãe", "PLACA_MAE");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Memória RAM", "MEMORIA_RAM");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Fontes", "FONTE");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/SSD", "SSD");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Disco Rígido (HD)", "HD");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Coolers", "COOLER");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Kit Hardware", "KIT_HARDWARE");
-        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placas Interfaces", "PLACA_INTERFACE");
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Processadores", CategoriaHardware.CPU);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placa de vídeo (VGA)", CategoriaHardware.GPU);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placas-mãe", CategoriaHardware.PLACA_MAE);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Memória RAM", CategoriaHardware.MEMORIA_RAM);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Fontes", CategoriaHardware.FONTE);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/SSD", CategoriaHardware.SSD);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Disco Rígido (HD)", CategoriaHardware.HD);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Coolers", CategoriaHardware.COOLER);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Kit Hardware", CategoriaHardware.KIT_HARDWARE);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placas Interfaces", CategoriaHardware.PLACA_INTERFACE);
     }
 
     private final KabumClient kabumClient;
@@ -134,9 +135,9 @@ public class KabumScraper implements Scraper {
             return null;
         }
 
-        for (Map.Entry<String, String> entrada : CATEGORIA_POR_PREFIXO_MENU.entrySet()) {
+        for (Map.Entry<String, CategoriaHardware> entrada : CATEGORIA_POR_PREFIXO_MENU.entrySet()) {
             if (menu.startsWith(entrada.getKey())) {
-                return entrada.getValue();
+                return entrada.getValue().name();
             }
         }
 
