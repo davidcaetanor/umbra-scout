@@ -1,23 +1,14 @@
 package dev.davidcaetano.umbra_api.coleta.steam;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
-import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
-import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.comum.WireMockIntegrationTestBase;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -30,20 +21,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
-@ExtendWith(CircuitBreakerResetExtension.class)
-class SteamScraperTest extends IntegrationTestBase {
-
-    @RegisterExtension
-    static WireMockExtension WIREMOCK = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-
-    @DynamicPropertySource
-    static void configurarBaseUrlSteam(DynamicPropertyRegistry registry) {
-        registry.add("steam.steam-api.base-url", WIREMOCK::baseUrl);
-    }
+class SteamScraperTest extends WireMockIntegrationTestBase {
 
     @Autowired
     private SteamScraper steamScraper;

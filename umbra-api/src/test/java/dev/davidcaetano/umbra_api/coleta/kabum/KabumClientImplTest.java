@@ -1,27 +1,18 @@
 package dev.davidcaetano.umbra_api.coleta.kabum;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import dev.davidcaetano.umbra_api.coleta.TipoFalhaColeta;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumProdutoResponse;
-import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
-import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.comum.WireMockIntegrationTestBase;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 import java.math.BigDecimal;
 
@@ -34,20 +25,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
-@ExtendWith(CircuitBreakerResetExtension.class)
-class KabumClientImplTest extends IntegrationTestBase {
-
-    @RegisterExtension
-    static WireMockExtension WIREMOCK = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-
-    @DynamicPropertySource
-    static void configurarBaseUrlKabum(DynamicPropertyRegistry registry) {
-        registry.add("kabum.kabum-api.base-url", WIREMOCK::baseUrl);
-    }
+class KabumClientImplTest extends WireMockIntegrationTestBase {
 
     @Autowired
     private KabumClient kabumClient;

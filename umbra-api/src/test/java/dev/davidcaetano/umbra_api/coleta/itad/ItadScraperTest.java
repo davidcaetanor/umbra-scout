@@ -1,23 +1,14 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
-import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
-import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.comum.WireMockIntegrationTestBase;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 import java.util.UUID;
 
@@ -30,20 +21,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
-@ExtendWith(CircuitBreakerResetExtension.class)
-class ItadScraperTest extends IntegrationTestBase {
-
-    @RegisterExtension
-    static WireMockExtension WIREMOCK = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-
-    @DynamicPropertySource
-    static void configurarBaseUrlItad(DynamicPropertyRegistry registry) {
-        registry.add("itad.itad-api.base-url", WIREMOCK::baseUrl);
-    }
+class ItadScraperTest extends WireMockIntegrationTestBase {
 
     @Autowired
     private ItadScraper itadScraper;

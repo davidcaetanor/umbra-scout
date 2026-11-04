@@ -13,6 +13,10 @@ umbra:
     secret: test-secret
   coleta:
     contato: contato-de-teste@umbra.invalid
+  busca:
+    externa:
+      janela: 1ms
+      cache-ttl: 1ms
 
 itad:
   itad-api:

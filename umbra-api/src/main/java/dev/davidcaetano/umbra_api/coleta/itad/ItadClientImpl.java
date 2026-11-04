@@ -1,28 +1,24 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
-import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadErroResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static dev.davidcaetano.umbra_api.coleta.itad.TraducaoDeErroItad.executar;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ItadClientImpl implements ItadClient {
 
     private static final String COUNTRY = "BR";
@@ -97,42 +93,6 @@ public class ItadClientImpl implements ItadClient {
                 }));
 
         return resposta == null ? List.of() : resposta;
-    }
-
-    private <T> T executar(Supplier<T> chamada) {
-        try {
-            return chamada.get();
-        } catch (RestClientException ex) {
-            throw traduzirErro(ex);
-        }
-    }
-
-    private ItadApiException traduzirErro(RestClientException ex) {
-        ItadApiException erro = new ItadApiException(detalhe(ex), ex);
-        log.warn("{}", erro.getMessage());
-        return erro;
-    }
-
-    private static String detalhe(RestClientException ex) {
-        if (!(ex instanceof RestClientResponseException resposta)) {
-            return ex.getMessage();
-        }
-        String reasonPhrase = reasonPhraseDoCorpo(resposta);
-        if (reasonPhrase != null && !reasonPhrase.isBlank()) {
-            return reasonPhrase;
-        }
-        String corpo = resposta.getResponseBodyAsString();
-        return corpo.isBlank() ? resposta.getMessage() : corpo;
-    }
-
-    private static String reasonPhraseDoCorpo(RestClientResponseException resposta) {
-        try {
-            ItadErroResponse erro = resposta.getResponseBodyAs(ItadErroResponse.class);
-            return erro == null ? null : erro.reasonPhrase();
-        } catch (RuntimeException naoDecodificou) {
-            log.debug("Corpo de erro do ITAD nao pode ser decodificado como ItadErroResponse", naoDecodificou);
-            return null;
-        }
     }
 
     private static String juntar(List<Integer> shopIds) {
