@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.comum;
 
+import dev.davidcaetano.umbra_api.comum.dto.response.ErroDeCampoResponse;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -114,7 +114,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problema;
     }
 
-    private static Map<String, String> erroDeCampo(ObjectError erro) {
+    private static ErroDeCampoResponse erroDeCampo(ObjectError erro) {
         String campo = erro instanceof FieldError erroDeCampo ? erroDeCampo.getField() : erro.getObjectName();
 
         if (erro.contains(TypeMismatchException.class)) {
@@ -136,7 +136,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return "%s; valores aceitos: %s".formatted(MENSAGEM_VALOR_INVALIDO, aceitos);
     }
 
-    private static Map<String, String> erro(String campo, String mensagem) {
-        return Map.of("campo", campo, "mensagem", Objects.requireNonNullElse(mensagem, MENSAGEM_VALOR_INVALIDO));
+    private static ErroDeCampoResponse erro(String campo, String mensagem) {
+        return new ErroDeCampoResponse(campo, Objects.requireNonNullElse(mensagem, MENSAGEM_VALOR_INVALIDO));
     }
 }
