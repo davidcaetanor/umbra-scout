@@ -22,11 +22,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -138,14 +140,109 @@ class ProdutoControllerTest extends IntegrationTestBase {
         preco(oferta(barato, "STEAM", true), 10000, null, true, null);
 
         String json = conteudoDe(mockMvc.perform(get("/produtos")
-                .param("nome", "t212a-c5").param("ordenacao", "MENOR_PRECO")));
+                .param("nome", "t212a-c5").param("ordenacao", "menorPreco")));
 
         assertThat(ids(json)).containsExactly(barato, caro, esgotado);
     }
 
     @Test
+    void comNome_ordenacaoPorMenorPreco_deveTrazerSoQuemCasaComOTermo() throws Exception {
+        long foraDoTermo = produto("t212b-m4 Outro mais barato", "JOGO", null, true);
+        preco(oferta(foraDoTermo, "STEAM", true), 1, null, true, null);
+        long semPreco = produto("t212b-l4 A sem preco", "JOGO", null, true);
+        long caro = produto("t212b-l4 B caro", "JOGO", null, true);
+        preco(oferta(caro, "STEAM", true), 20000, null, true, null);
+        long empate1 = produto("t212b-l4 C empate", "JOGO", null, true);
+        preco(oferta(empate1, "STEAM", true), 10000, null, true, null);
+        long empate2 = produto("t212b-l4 D empate", "JOGO", null, true);
+        preco(oferta(empate2, "STEAM", true), 10000, null, true, null);
+
+        String json = conteudoDe(mockMvc.perform(get("/produtos")
+                        .param("nome", "t212b-l4").param("ordenacao", "menorPreco"))
+                .andExpect(jsonPath("$.totalElementos").value(4)));
+
+        assertThat(ids(json)).containsExactly(empate1, empate2, caro, semPreco);
+    }
+
+    @Test
+    void semNome_ordenacaoPorMenorPreco_deveDeixarSemPrecoPorUltimoEDesempatarPorId() throws Exception {
+        long semPreco1 = produto("t212b-l1 A sem preco", "JOGO", null, true);
+        long semPreco2 = produto("t212b-l1 B sem preco", "JOGO", null, true);
+        preco(oferta(semPreco2, "STEAM", true), 500, null, false, null);
+        long empate1 = produto("t212b-l1 C empate", "JOGO", null, true);
+        preco(oferta(empate1, "STEAM", true), 1, null, true, null);
+        long empate2 = produto("t212b-l1 D empate", "JOGO", null, true);
+        preco(oferta(empate2, "STEAM", true), 1, null, true, null);
+        long caro = produto("t212b-l1 E caro", "JOGO", null, true);
+        preco(oferta(caro, "STEAM", true), 2, null, true, null);
+
+        List<String> paginas = todasAsPaginas(Map.of("ordenacao", "menorPreco"));
+        List<Long> todos = paginas.stream().flatMap(json -> ids(json).stream()).toList();
+        List<Object> precos = paginas.stream()
+                .flatMap(json -> JsonPath.<List<Object>>read(json, "$.conteudo[*].melhorPreco").stream())
+                .toList();
+
+        assertThat(todos.stream().filter(List.of(semPreco1, semPreco2, empate1, empate2, caro)::contains))
+                .containsExactly(empate1, empate2, caro, semPreco1, semPreco2);
+        assertThat(precos.subList(todos.indexOf(semPreco1), precos.size())).containsOnlyNulls();
+    }
+
+    @Test
+    void semNome_comCategoria_deveTrazerSoACategoriaEContarComoOBanco() throws Exception {
+        long gpu = produto("t212b-l2 Placa", "HARDWARE", "GPU", true);
+        long gpuInativa = produto("t212b-l2 Placa inativa", "HARDWARE", "GPU", false);
+        long cpu = produto("t212b-l2 Processador", "HARDWARE", "CPU", true);
+        Long gpusAtivas = jdbc.queryForObject(
+                "SELECT count(*) FROM produto WHERE ativo AND categoria = 'GPU'", Long.class);
+
+        List<String> paginas = todasAsPaginas(Map.of("categoria", "GPU"));
+        List<Long> todos = paginas.stream().flatMap(json -> ids(json).stream()).toList();
+        List<String> categorias = paginas.stream()
+                .flatMap(json -> JsonPath.<List<String>>read(json, "$.conteudo[*].categoria").stream())
+                .toList();
+
+        assertThat(JsonPath.<Integer>read(paginas.getFirst(), "$.totalElementos")).isEqualTo(gpusAtivas.intValue());
+        assertThat(todos).hasSize(gpusAtivas.intValue()).contains(gpu).doesNotContain(gpuInativa, cpu);
+        assertThat(categorias).containsOnly("GPU");
+    }
+
+    @Test
+    void semNome_deveContarSoOsAtivosEDeixarOInativoFora() throws Exception {
+        long ativo1 = produto("t212b-l3 Ativo 1", "JOGO", null, true);
+        long ativo2 = produto("t212b-l3 Ativo 2", "HARDWARE", "SSD", true);
+        long inativo = produto("t212b-l3 Inativo", "JOGO", null, false);
+        Long ativos = jdbc.queryForObject("SELECT count(*) FROM produto WHERE ativo", Long.class);
+        Long ativosDoTeste = jdbc.queryForObject(
+                "SELECT count(*) FROM produto WHERE ativo AND nome LIKE 't212b-l3 %'", Long.class);
+
+        List<String> paginas = todasAsPaginas(Map.of());
+        List<Long> todos = paginas.stream().flatMap(json -> ids(json).stream()).toList();
+
+        assertThat(JsonPath.<Integer>read(paginas.getFirst(), "$.totalElementos")).isEqualTo(ativos.intValue());
+        assertThat(todos).hasSize(ativos.intValue()).doesNotHaveDuplicates().doesNotContain(inativo);
+        assertThat(todos.stream().filter(List.of(ativo1, ativo2, inativo)::contains))
+                .hasSize(ativosDoTeste.intValue())
+                .containsExactly(ativo1, ativo2);
+    }
+
+    @Test
     void ordenacaoInvalida_deveDevolver400() throws Exception {
         esperarParametroInvalido(mockMvc.perform(get("/produtos").param("ordenacao", "XYZ")), "ordenacao");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"nome", "menorPreco"})
+    void ordenacaoPeloCodigo_deveDevolver200(String codigo) throws Exception {
+        mockMvc.perform(get("/produtos").param("ordenacao", codigo))
+                .andExpect(status().isOk());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"MENOR_PRECO", "NOME", "menorpreco", "Nome"})
+    void ordenacaoForaDaListaBranca_deveDevolver400ListandoOsCodigosAceitos(String valor) throws Exception {
+        esperarParametroInvalido(mockMvc.perform(get("/produtos").param("ordenacao", valor)), "ordenacao")
+                .andExpect(jsonPath("$.erros[0].mensagem").value(containsString("valores aceitos: nome, menorPreco")))
+                .andExpect(jsonPath("$.erros[0].mensagem").value(not(containsString("MENOR_PRECO"))));
     }
 
     @Test
@@ -336,6 +433,19 @@ class ProdutoControllerTest extends IntegrationTestBase {
 
     private static String conteudoDe(ResultActions resposta) throws Exception {
         return resposta.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+
+    private List<String> todasAsPaginas(Map<String, String> parametros) throws Exception {
+        List<String> paginas = new ArrayList<>();
+        int totalPaginas;
+        do {
+            var requisicao = get("/produtos").param("page", String.valueOf(paginas.size()));
+            parametros.forEach(requisicao::param);
+            String json = conteudoDe(mockMvc.perform(requisicao));
+            paginas.add(json);
+            totalPaginas = JsonPath.read(json, "$.totalPaginas");
+        } while (paginas.size() < totalPaginas);
+        return paginas;
     }
 
     private static List<Long> ids(String json) {

@@ -4,6 +4,8 @@ import com.jayway.jsonpath.JsonPath;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -174,6 +176,26 @@ class HistoricoControllerTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.type").value("https://umbra.dev/erros/parametro-invalido"))
                 .andExpect(jsonPath("$.erros[0].campo").value("periodo"))
                 .andExpect(jsonPath("$.erros[0].mensagem").value(containsString("30d, 90d, 1a, tudo")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"NOVENTA_DIAS", "90D", "Tudo"})
+    void periodoPeloNomeDaConstanteOuEmOutraCaixa_deveDevolver400ListandoOsAceitos(String valor) throws Exception {
+        long id = produto("t212b-c24b Periodo fora da lista", true);
+
+        mockMvc.perform(get("/produtos/{id}/historico", id).param("periodo", valor))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type").value("https://umbra.dev/erros/parametro-invalido"))
+                .andExpect(jsonPath("$.erros[0].campo").value("periodo"))
+                .andExpect(jsonPath("$.erros[0].mensagem").value(containsString("30d, 90d, 1a, tudo")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"30d", "90d", "1a", "tudo"})
+    void periodoPeloCodigo_deveDevolver200(String codigo) throws Exception {
+        long id = produto("t212b-c24c Periodo aceito", true);
+
+        assertThat(JsonPath.<String>read(historico(id, codigo), "$.periodo")).isEqualTo(codigo);
     }
 
     @Test

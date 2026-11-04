@@ -46,8 +46,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProdutoService {
 
-    private static final String TERMO_QUE_CASA_TUDO = "";
-
     private final ProdutoRepository produtoRepository;
     private final OfertaRepository ofertaRepository;
     private final PrecoRepository precoRepository;
@@ -192,12 +190,18 @@ public class ProdutoService {
                                                          CategoriaHardware categoria,
                                                          OrdenacaoCatalogo ordenacao,
                                                          Pageable paginacao) {
-        String termoDaBusca = termo == null ? TERMO_QUE_CASA_TUDO : termo;
         String codigoCategoria = categoria == null ? null : categoria.name();
+        boolean porMenorPreco = ordenacao == OrdenacaoCatalogo.MENOR_PRECO;
 
-        return ordenacao == OrdenacaoCatalogo.MENOR_PRECO
-                ? produtoRepository.buscarCatalogoPorMenorPreco(termoDaBusca, codigoCategoria, paginacao)
-                : produtoRepository.buscarCatalogoPorNome(termoDaBusca, codigoCategoria, paginacao);
+        if (termo == null) {
+            return porMenorPreco
+                    ? produtoRepository.listarCatalogoPorMenorPreco(codigoCategoria, paginacao)
+                    : produtoRepository.listarCatalogoPorNome(codigoCategoria, paginacao);
+        }
+
+        return porMenorPreco
+                ? produtoRepository.buscarCatalogoPorMenorPreco(termo, codigoCategoria, paginacao)
+                : produtoRepository.buscarCatalogoPorNome(termo, codigoCategoria, paginacao);
     }
 
     private OfertaResponse melhorPrecoDo(ProdutoResumoProjecao produto, Instant agora) {
