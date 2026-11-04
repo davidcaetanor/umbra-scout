@@ -48,7 +48,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail tratarErroInesperado(Exception ex, HttpServletRequest request) {
-        log.error("Erro inesperado em {} {}", request.getMethod(), request.getRequestURI(), ex);
+        String metodoSanitizado = sanitizeForLog(request.getMethod());
+        String uriSanitizada = sanitizeForLog(request.getRequestURI());
+        log.error("Erro inesperado em {} {}", metodoSanitizado, uriSanitizada, ex);
 
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Ocorreu um erro inesperado. Tente novamente mais tarde.");
@@ -56,6 +58,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         problema.setTitle("Erro interno");
         problema.setInstance(URI.create(request.getRequestURI()));
         return problema;
+    }
+
+    private static String sanitizeForLog(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replace('\n', '_').replace('\r', '_');
     }
 
     @Override
