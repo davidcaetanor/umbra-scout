@@ -1,7 +1,5 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntity;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
@@ -16,16 +14,9 @@ import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada;
 import dev.davidcaetano.umbra_api.coleta.service.VereditoRodada;
-import dev.davidcaetano.umbra_api.comum.CircuitBreakerResetExtension;
-import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.comum.WireMockIntegrationTestBase;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -42,27 +33,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
-@ExtendWith(CircuitBreakerResetExtension.class)
 @Transactional
-class ItadRefreshTest extends IntegrationTestBase {
+class ItadRefreshTest extends WireMockIntegrationTestBase {
 
     private static final String GID_A = "018d0000-0000-7000-8000-0000000000a1";
     private static final String GID_B = "018d0000-0000-7000-8000-0000000000b2";
     private static final String GID_NAO_PEDIDO = "018d0000-0000-7000-8000-0000000000c3";
     private static final String PRECOS_V3 = "/games/prices/v3";
     private static final String EXPIRY_NULO = "null";
-
-    @RegisterExtension
-    static WireMockExtension WIREMOCK = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-
-    @DynamicPropertySource
-    static void configurarBaseUrlItad(DynamicPropertyRegistry registry) {
-        registry.add("itad.itad-api.base-url", WIREMOCK::baseUrl);
-    }
 
     @Autowired
     private ItadRefresh itadRefresh;
