@@ -1,13 +1,21 @@
 package dev.davidcaetano.umbra_api.catalogo.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
+import dev.davidcaetano.umbra_api.comum.log.ChaveDeLog;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
@@ -36,6 +44,9 @@ class BuscaExternaServiceTest {
     private static final Duration JANELA_LONGA = Duration.ofMinutes(5);
     private static final long LIMITE_DE_ESPERA_SEGUNDOS = 10;
     private static final String AVISO_DE_PRAZO = "Busca externa passou do prazo, só o catálogo local: termo=";
+    private static final String CHAMADA_AO_ITAD = "Busca externa no ITAD: ";
+    private static final String REQUEST_ID = ChaveDeLog.REQUEST_ID.chave();
+    private static final String ID_DA_REQUISICAO = "3f2c1a7e-9b4d-4c8a-a1e2-5d6f7a8b9c0d";
 
     private static final List<JogoExterno> RESULTADO = List.of(new JogoExterno(
             "018d937f-590c-728b-ac35-38bcff85f086", "Elden Ring", null,
@@ -44,10 +55,88 @@ class BuscaExternaServiceTest {
     private final ExecutorService executor = Executors.newFixedThreadPool(10);
     private final ExecutorService executorDoServico = Executors.newVirtualThreadPerTaskExecutor();
 
+    private final ListAppender<ILoggingEvent> logsDoServico = new ListAppender<>() {
+        @Override
+        protected void append(ILoggingEvent evento) {
+            evento.prepareForDeferredProcessing();
+            super.append(evento);
+        }
+    };
+
+    @BeforeEach
+    void capturarLogsDoServico() {
+        logsDoServico.start();
+        ((Logger) LoggerFactory.getLogger(BuscaExternaService.class)).addAppender(logsDoServico);
+    }
+
     @AfterEach
     void encerrarExecutor() {
         executor.shutdownNow();
         executorDoServico.shutdownNow();
+    }
+
+    @AfterEach
+    void pararDeCapturarLogsELimparMdc() {
+        ((Logger) LoggerFactory.getLogger(BuscaExternaService.class)).detachAppender(logsDoServico);
+        logsDoServico.stop();
+        MDC.clear();
+    }
+
+    @Test
+    void comRequestIdNoMdc_oLogDaChamadaAoItadSaiComORequestId_naThreadDaChamada() {
+        MDC.put(REQUEST_ID, ID_DA_REQUISICAO);
+        BuscaExternaService servico = servico(new PortaFalsa(), 20, CACHE_LONGO, PRAZO);
+
+        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+
+        assertThat(eventosQueComecamCom(CHAMADA_AO_ITAD)).singleElement().satisfies(evento -> {
+            assertThat(evento.getThreadName()).isNotEqualTo(Thread.currentThread().getName());
+            assertThat(evento.getMDCPropertyMap()).containsEntry(REQUEST_ID, ID_DA_REQUISICAO);
+        });
+        assertThat(MDC.get(REQUEST_ID)).isEqualTo(ID_DA_REQUISICAO);
+    }
+
+    @Test
+    void semContextoNoMdc_aBuscaLogaSemContexto_eNaoLanca() {
+        BuscaExternaService servico = servico(new PortaFalsa(), 20, CACHE_LONGO, PRAZO);
+
+        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+
+        assertThat(eventosQueComecamCom(CHAMADA_AO_ITAD)).singleElement()
+                .satisfies(evento -> assertThat(evento.getMDCPropertyMap()).isEmpty());
+    }
+
+    @Test
+    void prazoEstourado_oWarnDoPrazoSaiComORequestIdDaRequisicao() throws Exception {
+        MDC.put(REQUEST_ID, ID_DA_REQUISICAO);
+        PortaFalsa porta = new PortaFalsa();
+        CountDownLatch soltar = porta.segurarPrimeiraChamada();
+        BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, Duration.ofMillis(200));
+
+        try {
+            assertThat(servico.buscar("elden ring")).isEmpty();
+            aguardarEvento(AVISO_DE_PRAZO);
+        } finally {
+            soltar.countDown();
+        }
+
+        assertThat(eventosQueComecamCom(AVISO_DE_PRAZO)).singleElement().satisfies(evento -> {
+            assertThat(evento.getLevel()).isEqualTo(Level.WARN);
+            assertThat(evento.getThreadName()).isNotEqualTo(Thread.currentThread().getName());
+            assertThat(evento.getMDCPropertyMap()).containsEntry(REQUEST_ID, ID_DA_REQUISICAO);
+        });
+        assertThat(MDC.get(REQUEST_ID)).isEqualTo(ID_DA_REQUISICAO);
+    }
+
+    @Test
+    void tetoEsgotado_oAvisoRodaNaThreadDaRequisicao_eOMdcDelaContinuaComORequestId() {
+        BuscaExternaService servico = servico(new PortaFalsa(), 1, CACHE_LONGO, PRAZO);
+        servico.buscar("elden ring");
+        MDC.put(REQUEST_ID, ID_DA_REQUISICAO);
+
+        assertThat(servico.buscar("hollow knight")).isEmpty();
+
+        assertThat(MDC.get(REQUEST_ID)).isEqualTo(ID_DA_REQUISICAO);
     }
 
     @Test
@@ -282,6 +371,22 @@ class BuscaExternaServiceTest {
             resultados.add(futuro.get(LIMITE_DE_ESPERA_SEGUNDOS, TimeUnit.SECONDS));
         }
         return resultados;
+    }
+
+    private List<ILoggingEvent> eventosQueComecamCom(String prefixo) {
+        synchronized (logsDoServico) {
+            return logsDoServico.list.stream()
+                    .filter(evento -> evento.getFormattedMessage().startsWith(prefixo))
+                    .toList();
+        }
+    }
+
+    private void aguardarEvento(String prefixo) throws InterruptedException {
+        long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(LIMITE_DE_ESPERA_SEGUNDOS);
+        while (eventosQueComecamCom(prefixo).isEmpty()) {
+            assertThat(System.nanoTime()).as("evento de log não chegou: " + prefixo).isLessThan(limite);
+            Thread.sleep(20);
+        }
     }
 
     private static void aguardarTodasBloqueadas(List<Thread> threads) throws InterruptedException {

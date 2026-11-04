@@ -2,6 +2,7 @@ package dev.davidcaetano.umbra_api.comum;
 
 import dev.davidcaetano.umbra_api.comum.dto.response.ErroDeCampoResponse;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoNaoEncontradoException;
+import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
@@ -48,8 +49,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail tratarErroInesperado(Exception ex, HttpServletRequest request) {
-        String metodoSanitizado = sanitizeForLog(request.getMethod());
-        String uriSanitizada = sanitizeForLog(request.getRequestURI());
+        String metodoSanitizado = SanitizacaoDeLog.paraLog(request.getMethod());
+        String uriSanitizada = SanitizacaoDeLog.paraLog(request.getRequestURI());
         log.error("Erro inesperado em {} {}", metodoSanitizado, uriSanitizada, ex);
 
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -58,13 +59,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         problema.setTitle("Erro interno");
         problema.setInstance(URI.create(request.getRequestURI()));
         return problema;
-    }
-
-    private static String sanitizeForLog(String input) {
-        if (input == null) {
-            return null;
-        }
-        return input.replace('\n', '_').replace('\r', '_');
     }
 
     @Override

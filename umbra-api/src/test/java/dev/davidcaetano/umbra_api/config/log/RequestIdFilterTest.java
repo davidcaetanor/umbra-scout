@@ -74,26 +74,6 @@ class RequestIdFilterTest {
         assertIgnoradoEGerado("a".repeat(10_000));
     }
 
-    @Test
-    void sanitizarParaLogDeveRemoverCaracteresDeControle() {
-        String sanitizado = RequestIdFilter.sanitizarParaLog("/api\r\nINFO forjada\u0000\u001b[31m\u2028fim");
-
-        assertThat(sanitizado).isEqualTo("/apiINFO forjada[31mfim");
-    }
-
-    @Test
-    void sanitizarParaLogDeveLimitarComprimento() {
-        String sanitizado = RequestIdFilter.sanitizarParaLog("/" + "a".repeat(10_000));
-
-        assertThat(sanitizado).hasSize(RequestIdFilter.TAMANHO_MAXIMO_LOG);
-    }
-
-    @Test
-    void sanitizarParaLogDevePreservarUriComum() {
-        assertThat(RequestIdFilter.sanitizarParaLog("/api/ofertas?q=jogo%20bom"))
-                .isEqualTo("/api/ofertas?q=jogo%20bom");
-    }
-
     private void assertIgnoradoEGerado(String recebido) throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 

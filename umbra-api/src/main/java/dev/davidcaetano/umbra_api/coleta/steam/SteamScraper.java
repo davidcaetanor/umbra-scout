@@ -105,7 +105,7 @@ public class SteamScraper implements Scraper {
                                      FiltroMoeda filtroMoeda) {
 
         if (detalhes == null || !detalhes.success() || detalhes.data() == null) {
-            log.warn("Item Steam com detalhes ausentes: id={} detalhes={}", item.id(), detalhes);
+            log.debug("Item Steam com detalhes ausentes: id={} detalhes={}", item.id(), detalhes);
             return TriagemItem.SEM_PRECO;
         }
 
@@ -117,7 +117,7 @@ public class SteamScraper implements Scraper {
         SteamPrecoResponse overview = detalhes.data().overview();
 
         if (overview == null) {
-            log.warn("Item Steam sem bloco de preco: id={}", item.id());
+            log.debug("Item Steam sem bloco de preco: id={}", item.id());
             return TriagemItem.SEM_PRECO;
         }
 

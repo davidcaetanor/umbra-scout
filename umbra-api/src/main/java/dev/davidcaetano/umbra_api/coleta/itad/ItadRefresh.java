@@ -75,7 +75,7 @@ public class ItadRefresh {
                         : LojaItad.codigoLojaPorShopId(deal.shop().id());
 
                 if (deal.price() == null || loja.isEmpty()) {
-                    log.warn("Refresh ITAD com oferta sem valor ou com shop ausente ou nao esperado: gid={} shop={}",
+                    log.debug("Refresh ITAD com oferta sem valor ou com shop ausente ou nao esperado: gid={} shop={}",
                             chaveItad, deal.shop());
                     totalElegivel++;
                     totalSemPreco++;

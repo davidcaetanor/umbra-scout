@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.coleta.service;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -90,7 +91,13 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     @BeforeEach
     void capturarLogsDoServico() {
-        logsDoServico = new ListAppender<>();
+        logsDoServico = new ListAppender<>() {
+            @Override
+            protected void append(ILoggingEvent evento) {
+                evento.prepareForDeferredProcessing();
+                super.append(evento);
+            }
+        };
         logsDoServico.start();
         ((Logger) LoggerFactory.getLogger(ColetaService.class)).addAppender(logsDoServico);
     }
@@ -623,6 +630,28 @@ class ColetaServiceTest extends IntegrationTestBase {
                 .singleElement()
                 .isEqualTo("Rodada medida: fonte=KABUM_API situacao=SAUDAVEL condicoes=[] declarado=3 brutos=3 "
                         + "distintos=3 elegiveis=3 semPreco=0 ofertasRecebidas=3");
+    }
+
+    @Test
+    void alarme_deveSairEmWarnComFonteSituacaoCondicoesENumerosQuandoRodadaForRejeitada() {
+        List<OfertaColetada> ofertas = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            ofertas.add(oferta(CodigoLoja.KABUM, "peca-" + i, TipoProduto.HARDWARE, "Peça " + i,
+                    null, 10000L, true, OrigemColeta.KABUM_API));
+        }
+
+        coletaService.gravar(new ResultadoColeta(OrigemColeta.KABUM_API, ofertas, 10, 3,
+                new Reconciliacao(null, 10, 10), Cobertura.amostra()));
+
+        assertThat(logsDoServico.list)
+                .filteredOn(evento -> evento.getFormattedMessage().startsWith("Alarme de schema drift:"))
+                .singleElement()
+                .satisfies(evento -> {
+                    assertThat(evento.getLevel()).isEqualTo(Level.WARN);
+                    assertThat(evento.getFormattedMessage()).isEqualTo("Alarme de schema drift: fonte=KABUM_API "
+                            + "situacao=REJEITADA condicoes=[SEM_PRECO_ACIMA_DO_LIMIAR] elegiveis=10 semPreco=3 "
+                            + "declarado=null brutos=10 distintos=10");
+                });
     }
 
     @Test

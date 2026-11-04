@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <springProfile name="dev">
+        <property name="UMBRA_APPENDER" value="CONSOLE_LEGIVEL"/>
+    </springProfile>
+
+    <appender name="CONSOLE_LEGIVEL" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] [%X{requestId:-}%X{rodadaId:-}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeMdcKeyName>requestId</includeMdcKeyName>
             <includeMdcKeyName>rodadaId</includeMdcKeyName>
@@ -9,7 +19,7 @@
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="${UMBRA_APPENDER:-CONSOLE_JSON}"/>
     </root>
 
 </configuration>

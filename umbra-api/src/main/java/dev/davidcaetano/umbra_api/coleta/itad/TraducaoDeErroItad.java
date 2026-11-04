@@ -23,7 +23,7 @@ final class TraducaoDeErroItad {
 
     private static ItadApiException traduzirErro(RestClientException ex) {
         ItadApiException erro = new ItadApiException(detalhe(ex), ex);
-        log.warn("{}", erro.getMessage());
+        log.warn("Falha na chamada a fonte de coleta: {}", erro.getMessage(), erro);
         return erro;
     }
 

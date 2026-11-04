@@ -87,7 +87,7 @@ public class KabumScraper implements Scraper {
             totalElegivel++;
 
             if (atributos.priceWithDiscount() == null || atributos.price() == null) {
-                log.warn("Item Kabum elegivel sem preco: id={} menu={}", produto.id(), atributos.menu());
+                log.debug("Item Kabum elegivel sem preco: id={} menu={}", produto.id(), atributos.menu());
                 totalSemPreco++;
                 continue;
             }

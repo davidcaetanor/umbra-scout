@@ -1,5 +1,7 @@
 package dev.davidcaetano.umbra_api.config.log;
 
+import dev.davidcaetano.umbra_api.comum.log.ChaveDeLog;
+import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,24 +24,14 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestIdFilter.class);
 
-    public static final String MDC_KEY = "requestId";
+    public static final String MDC_KEY = ChaveDeLog.REQUEST_ID.chave();
     public static final String HEADER = "X-Request-Id";
     private static final Pattern UUID_PATTERN =
             Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
-    static final int TAMANHO_MAXIMO_LOG = 256;
-
 
     private String obterOuGerarRequestId(HttpServletRequest request) {
         String recebido = request.getHeader(HEADER);
         return (recebido != null && UUID_PATTERN.matcher(recebido).matches()) ? recebido : UUID.randomUUID().toString();
-    }
-
-    static String sanitizarParaLog(String valor) {
-        if (valor == null) {
-            return "";
-        }
-        String truncado = valor.length() > TAMANHO_MAXIMO_LOG ? valor.substring(0, TAMANHO_MAXIMO_LOG) : valor;
-        return truncado.replaceAll("[^\\x20-\\x7E]", "");
     }
 
     @Override
@@ -50,7 +42,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             MDC.put(MDC_KEY, requestId);
             response.setHeader(HEADER, requestId);
-            LOGGER.info("Requisição recebida: {} {}", sanitizarParaLog(request.getMethod()), sanitizarParaLog(request.getRequestURI()));
+            LOGGER.info("Requisição recebida: {} {}", SanitizacaoDeLog.paraLog(request.getMethod()), SanitizacaoDeLog.paraLog(request.getRequestURI()));
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(MDC_KEY);

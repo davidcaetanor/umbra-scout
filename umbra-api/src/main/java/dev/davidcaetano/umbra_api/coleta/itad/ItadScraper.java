@@ -97,7 +97,7 @@ public class ItadScraper implements Scraper {
                 Optional<CodigoLoja> loja = resolverLoja(deal.shop());
 
                 if (loja.isEmpty()) {
-                    log.warn("Oferta ITAD com shop ausente ou nao esperado na resposta de precos: gid={} shop={}",
+                    log.debug("Oferta ITAD com shop ausente ou nao esperado na resposta de precos: gid={} shop={}",
                             gid, deal.shop());
                     totalSemPreco++;
                     continue;
@@ -107,7 +107,7 @@ public class ItadScraper implements Scraper {
                 String identificadorLoja = identificadoresShop == null ? null : identificadoresShop.get(gid);
 
                 if (identificadorLoja == null || info == null) {
-                    log.warn("Oferta ITAD com dado inconsistente entre chamadas: gid={} shopId={} identificadorNativo={} tituloImagem={}",
+                    log.debug("Oferta ITAD com dado inconsistente entre chamadas: gid={} shopId={} identificadorNativo={} tituloImagem={}",
                             gid, deal.shop().id(), identificadorLoja, info);
                     totalSemPreco++;
                     continue;
