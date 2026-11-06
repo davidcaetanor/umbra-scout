@@ -40,7 +40,7 @@ public class UmbraPropertiesTest {
                     assertThat(context).hasFailed();
                     assertThat(context.getStartupFailure())
                             .rootCause()
-                            .hasMessageContaining("secret");
+                            .hasMessageContaining("umbra.jwt.secret");
                 });
     }
 
@@ -78,7 +78,21 @@ public class UmbraPropertiesTest {
                     assertThat(context).hasFailed();
                     assertThat(context.getStartupFailure())
                             .rootCause()
-                            .hasMessageContaining("contato");
+                            .hasMessageContaining("umbra.coleta.contato");
+                });
+    }
+
+    @Test
+    void deveFalharComContatoVazio() {
+        contextRunner
+                .withPropertyValues("umbra.jwt.secret=secret-valido",
+                        "umbra.jwt.ttl-horas=2",
+                        "umbra.coleta.contato=")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .rootCause()
+                            .hasMessageContaining("umbra.coleta.contato e obrigatorio e nao pode estar vazio");
                 });
     }
 

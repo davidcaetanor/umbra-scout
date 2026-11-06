@@ -3,15 +3,15 @@ services:
     image: postgres:18-alpine
     container_name: postgres_umbra
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${UMBRA_DB_NAME}
+      POSTGRES_USER: ${UMBRA_DB_USER}
+      POSTGRES_PASSWORD: ${UMBRA_DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
       - umbra_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${UMBRA_DB_USER} -d ${UMBRA_DB_NAME}"]
       interval: 5s
       timeout: 3s
       retries: 5

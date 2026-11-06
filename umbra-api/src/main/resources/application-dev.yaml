@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-    url: jdbc:postgresql://localhost:5433/${DB_NAME}
+    url: ${UMBRA_DB_URL}
+    username: ${UMBRA_DB_USER}
+    password: ${UMBRA_DB_PASSWORD}
 
   jpa:
     hibernate:
