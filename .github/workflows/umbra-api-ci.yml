@@ -45,6 +45,14 @@ jobs:
           path: umbra-api/target/site/jacoco/
           if-no-files-found: warn
 
+      - name: Publicar relatorio do surefire
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-umbra-api
+          path: umbra-api/target/surefire-reports/
+          if-no-files-found: warn
+
   imagem:
     needs: verify
     runs-on: ubuntu-latest
