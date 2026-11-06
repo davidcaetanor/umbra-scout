@@ -1,8 +1,6 @@
 spring:
   application:
     name: umbra-api
-  profiles:
-    active: dev
 
   data:
     web:
