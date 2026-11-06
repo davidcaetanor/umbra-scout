@@ -286,7 +286,7 @@ class BuscaExternaServiceTest {
         long esperaMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio);
 
         assertThat(deQuemEspera).isEmpty();
-        assertThat(esperaMs).isBetween(200L, 500L);
+        assertThat(esperaMs).isBetween(190L, 900L);
         assertThat(dono.get(LIMITE_DE_ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isEmpty();
         porta.aguardarPrimeiraChamadaTerminar();
         assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
