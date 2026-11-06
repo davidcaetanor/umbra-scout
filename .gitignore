@@ -1,6 +1,9 @@
 # --- Ambiente ---
 .env
 
+.claude/
+CLAUDE.md
+
 docs/*
 
 
