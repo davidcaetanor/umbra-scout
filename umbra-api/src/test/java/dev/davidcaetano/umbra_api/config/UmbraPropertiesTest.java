@@ -71,7 +71,7 @@ public class UmbraPropertiesTest {
     }
 
     @Test
-    void deveFalharComContatoAusente() {
+    void falhaComBlocoColetaAusente() {
         contextRunner
                 .withPropertyValues("umbra.jwt.secret=secret-valido", "umbra.jwt.ttl-horas=2")
                 .run(context -> {
