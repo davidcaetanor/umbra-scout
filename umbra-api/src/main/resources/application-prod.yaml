@@ -10,3 +10,25 @@ management:
 umbra:
   jwt:
     ttl-horas: ${UMBRA_JWT_TTL_HORAS:4}
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${UMBRA_DB_URL}
+    username: ${UMBRA_DB_USER}
+    password: ${UMBRA_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 2
+      connection-timeout: 3000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
