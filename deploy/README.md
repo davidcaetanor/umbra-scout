@@ -29,6 +29,12 @@ Opcionais: `UMBRA_IMAGE_TAG`, que escolhe a versão da imagem e assume `latest` 
 
 `UMBRA_DB_URL` não vai no `.env`: o compose monta a URL com o nome do serviço `postgres`, e esse valor vence qualquer um que esteja no arquivo. `SPRING_PROFILES_ACTIVE` e `TZ` também são fixados pelo compose.
 
+## Imagem no GHCR
+
+O CI publica a imagem em `ghcr.io/davidcaetanor/umbra-api` a cada push na `main`, depois do `verify` verde. Pull request só constrói e confere a imagem, sem publicar.
+
+**Pacote novo no GHCR nasce privado**, mesmo com o repositório público. Depois da primeira publicação, mude a visibilidade do pacote `umbra-api` para pública nas configurações do pacote no GitHub. É isso que deixa o servidor baixar a imagem sem autenticar no registry. Confira de uma máquina sem login no GHCR com `docker pull ghcr.io/davidcaetanor/umbra-api:latest`.
+
 ## Primeira subida
 
 ```bash
