@@ -23,6 +23,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -390,6 +391,23 @@ class BuscaExternaServiceTest {
         assertThat(teto.consumir(IP)).contains(TetoAtingido.POR_IP);
         assertThat(teto.consumir(IP)).contains(TetoAtingido.POR_IP);
         assertThat(teto.consumir(OUTRO_IP)).as("o global ainda tem uma permissão").isEmpty();
+    }
+
+    @Test
+    void ipEsgotado_voltaAPassarQuandoAJanelaRenova_semDependerDaExpiracaoDoCache() throws Exception {
+        Duration janela = Duration.ofMillis(300);
+        TetoDeBuscaExterna teto = new TetoDeBuscaExterna(1_000, 1, janela);
+        assertThat(teto.consumir(IP)).isEmpty();
+        assertThat(teto.consumir(IP)).contains(TetoAtingido.POR_IP);
+
+        long limite = System.nanoTime() + janela.multipliedBy(5).toNanos();
+        Optional<TetoAtingido> decisao = teto.consumir(IP);
+        while (decisao.isPresent() && System.nanoTime() < limite) {
+            Thread.sleep(janela.dividedBy(10));
+            decisao = teto.consumir(IP);
+        }
+
+        assertThat(decisao).as("o saldo do IP renova na janela seguinte").isEmpty();
     }
 
     @Test

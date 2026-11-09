@@ -338,6 +338,28 @@ class ItadScraperTest extends WireMockIntegrationTestBase {
     }
 
     @Test
+    void coletar_pedeCadaPaginaNoOffsetQueAAnteriorDeclarou() {
+        stubPaginaDaDescoberta(0, true, 200);
+        stubPaginaDaDescoberta(200, true, 400);
+        stubPaginaDaDescoberta(400, false, 600);
+
+        itadScraper.coletar();
+
+        assertThat(WIREMOCK.findAll(getRequestedFor(urlPathEqualTo("/deals/v2"))))
+                .extracting(requisicao -> requisicao.queryParameter("offset").firstValue())
+                .containsExactly("0", "200", "400");
+    }
+
+    private void stubPaginaDaDescoberta(int offset, boolean hasMore, int nextOffset) {
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .withQueryParam("offset", equalTo(String.valueOf(offset)))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(descobertaResponse(hasMore, nextOffset))));
+    }
+
+    @Test
     void coletar_comPaginasPorRodadaDois_fazExatamenteDuasChamadasDeDescoberta() {
         stubDescoberta(descobertaResponse(true, 200));
         ItadScraper comOrcamentoDeDuas = new ItadScraper(itadClient, new ItadColetaProperties(2));
