@@ -42,7 +42,7 @@ umbra:
     habilitada: false
     agenda:
       descoberta:
-        itad-api: "0 0 0,6,12,18 * * *"
+        itad-api: "0 5 0,6,12,18 * * *"
         steam-api: "0 15 0,6,12,18 * * *"
         kabum-api: "0 45 3,15 * * *"
       refresh: "0 30 0,6,12,18 * * *"
