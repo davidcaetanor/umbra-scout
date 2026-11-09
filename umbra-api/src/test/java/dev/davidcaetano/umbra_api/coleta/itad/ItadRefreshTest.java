@@ -41,6 +41,7 @@ class ItadRefreshTest extends WireMockIntegrationTestBase {
     private static final String GID_NAO_PEDIDO = "018d0000-0000-7000-8000-0000000000c3";
     private static final String PRECOS_V3 = "/games/prices/v3";
     private static final String EXPIRY_NULO = "null";
+    private static final int OFERTAS_DE_LASTRO = 8;
 
     @Autowired
     private ItadRefresh itadRefresh;
@@ -281,8 +282,15 @@ class ItadRefreshTest extends WireMockIntegrationTestBase {
                 jogoDoItad(CodigoLoja.STEAM, "100", GID_A, 1000L, "https://itad.link/a-antiga"),
                 jogoDoItad(CodigoLoja.STEAM, "200", GID_B, 3000L, "https://itad.link/b"));
         semear(jogoDaSteamSemChave("300", 2000L));
+        List<String> precosDoLastro = new ArrayList<>();
+        for (int i = 0; i < OFERTAS_DE_LASTRO; i++) {
+            String gid = "018d0000-0000-7000-8000-0000000f%04d".formatted(i);
+            semear(jogoDoItad(CodigoLoja.STEAM, "lastro-" + i, gid, 1000L, "https://itad.link/lastro-" + i));
+            precosDoLastro.add(precoJogoJson(gid, dealBrl(61, 1000, 1000, 0, "https://itad.link/lastro-" + i)));
+        }
+        precosDoLastro.add(precoJogoJson(GID_A, dealBrl(61, 5000, 5000, 0, "https://itad.link/a-nova")));
 
-        stubPrecos(precosResponse(precoJogoJson(GID_A, dealBrl(61, 5000, 5000, 0, "https://itad.link/a-nova"))));
+        stubPrecos(precosResponse(precosDoLastro.toArray(String[]::new)));
 
         VereditoRodada veredito = coletaService.gravar(itadRefresh.atualizar());
 

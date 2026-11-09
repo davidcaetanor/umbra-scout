@@ -59,6 +59,8 @@ umbra:
           limiar-sem-preco-percentual: 40
     gravacao:
       janela-vivacidade-dias: 90
+    ausencia:
+      teto-percentual: 20
     itad:
       paginas-por-rodada: 30
   busca:

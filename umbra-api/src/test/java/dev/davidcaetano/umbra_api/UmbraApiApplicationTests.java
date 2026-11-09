@@ -4,6 +4,7 @@ import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties.Limiares;
+import dev.davidcaetano.umbra_api.coleta.properties.AusenciaColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.GravacaoPrecoProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.ItadColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.itad.ItadBuscaClient;
@@ -45,6 +46,9 @@ class UmbraApiApplicationTests extends IntegrationTestBase {
 	private ItadColetaProperties itadColeta;
 
 	@Autowired
+	private AusenciaColetaProperties ausencia;
+
+	@Autowired
 	private RateLimiterRegistry rateLimiterRegistry;
 
 	@Test
@@ -62,6 +66,11 @@ class UmbraApiApplicationTests extends IntegrationTestBase {
 	void deveSobrescreverSoAAmostraMinimaEOLimiarSemPrecoDaSteam() {
 		assertThat(alarme.porFonte()).containsOnlyKeys(OrigemColeta.STEAM_API);
 		assertThat(alarme.limiaresDe(OrigemColeta.STEAM_API)).isEqualTo(new Limiares(5, 40, 2, 2));
+	}
+
+	@Test
+	void deveLimitarAAusenciaPorCensoA20PorCentoDoEscopo() {
+		assertThat(ausencia.tetoPercentual()).isEqualTo(20);
 	}
 
 	@Test
