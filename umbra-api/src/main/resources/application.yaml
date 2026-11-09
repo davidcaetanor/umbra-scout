@@ -67,8 +67,8 @@ umbra:
       teto-por-ip: 15
       janela: 5m
       timeout-conexao: 1s
-      timeout-leitura: 1s
-      cache-ttl: 2m
+      timeout-leitura: 2s
+      cache-ttl: 6m
       prazo: 4s
       maximo-resultados: 5
 
@@ -93,9 +93,9 @@ resilience4j:
         limit-refresh-period: 5m
         timeout-duration: 2s
       itad-busca:
-        limit-for-period: 400
+        limit-for-period: 800
         limit-refresh-period: 5m
-        timeout-duration: 2s
+        timeout-duration: 0
       steam:
         limit-for-period: 180
         limit-refresh-period: 5m

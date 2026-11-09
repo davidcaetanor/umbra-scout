@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api;
 
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaProperties.Limiares;
 import dev.davidcaetano.umbra_api.coleta.properties.GravacaoPrecoProperties;
@@ -13,11 +14,18 @@ import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
+import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -70,11 +78,24 @@ class UmbraApiApplicationTests extends IntegrationTestBase {
 		RateLimiterConfig coleta = rateLimiterRegistry.rateLimiter("itad-coleta").getRateLimiterConfig();
 		RateLimiterConfig busca = rateLimiterRegistry.rateLimiter("itad-busca").getRateLimiterConfig();
 		assertThat(coleta.getLimitForPeriod()).isEqualTo(600);
-		assertThat(busca.getLimitForPeriod()).isEqualTo(400);
-		assertThat(Stream.of(coleta, busca)).allSatisfy(config -> {
-			assertThat(config.getLimitRefreshPeriod()).isEqualTo(Duration.ofMinutes(5));
-			assertThat(config.getTimeoutDuration()).isEqualTo(Duration.ofSeconds(2));
-		});
+		assertThat(coleta.getTimeoutDuration()).isEqualTo(Duration.ofSeconds(2));
+		assertThat(busca.getLimitForPeriod()).isEqualTo(800);
+		assertThat(busca.getTimeoutDuration()).isZero();
+		assertThat(Stream.of(coleta, busca))
+				.allSatisfy(config -> assertThat(config.getLimitRefreshPeriod()).isEqualTo(Duration.ofMinutes(5)));
+	}
+
+	@Test
+	void deveDeclararABuscaExternaComOsValoresCalibrados() throws IOException {
+		List<PropertySource<?>> yamlDeProducao = new YamlPropertySourceLoader()
+				.load("application.yaml", new ClassPathResource("application.yaml"));
+		BuscaProperties.Externa externa = new Binder(ConfigurationPropertySources.from(yamlDeProducao))
+				.bind("umbra.busca", BuscaProperties.class)
+				.get()
+				.externa();
+
+		assertThat(externa).isEqualTo(new BuscaProperties.Externa(400, 15, Duration.ofMinutes(5),
+				Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofMinutes(6), Duration.ofSeconds(4), 5));
 	}
 
 	private static Stream<String> nomesDeRateLimiter(Class<?> cliente) {
