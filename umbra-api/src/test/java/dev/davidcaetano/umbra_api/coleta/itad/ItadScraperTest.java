@@ -6,10 +6,19 @@ import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
+import dev.davidcaetano.umbra_api.coleta.properties.ItadColetaProperties;
 import dev.davidcaetano.umbra_api.comum.WireMockIntegrationTestBase;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -26,7 +35,31 @@ class ItadScraperTest extends WireMockIntegrationTestBase {
     @Autowired
     private ItadScraper itadScraper;
 
+    @Autowired
+    private ItadClient itadClient;
+
     private static final String EXPIRY_NULO = "null";
+
+    private final ListAppender<ILoggingEvent> logsDoScraper = new ListAppender<>();
+
+    @BeforeEach
+    void capturarLogsDoScraper() {
+        logsDoScraper.start();
+        ((Logger) LoggerFactory.getLogger(ItadScraper.class)).addAppender(logsDoScraper);
+    }
+
+    @AfterEach
+    void pararDeCapturarLogsDoScraper() {
+        ((Logger) LoggerFactory.getLogger(ItadScraper.class)).detachAppender(logsDoScraper);
+        logsDoScraper.stop();
+    }
+
+    private List<Level> niveisDaDescoberta() {
+        return logsDoScraper.list.stream()
+                .filter(evento -> evento.getFormattedMessage().startsWith("Descoberta ITAD"))
+                .map(ILoggingEvent::getLevel)
+                .toList();
+    }
 
     // ---- fabricantes de fixture — evita repetir o mesmo bloco JSON em cada teste ----
 
@@ -285,12 +318,62 @@ class ItadScraperTest extends WireMockIntegrationTestBase {
         ResultadoColeta resultado = itadScraper.coletar();
 
         WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/deals/v2")));
+        assertThat(niveisDaDescoberta()).containsExactly(Level.WARN);
 
         assertThat(resultado.ofertas()).hasSize(2);
         assertThat(resultado.ofertas()).extracting(OfertaColetada::identificadorLoja)
                 .containsExactlyInAnyOrder("111", "222");
         assertThat(resultado.totalElegivel()).isEqualTo(2);
         assertThat(resultado.totalSemPreco()).isEqualTo(0);
+    }
+
+    @Test
+    void coletar_comOrcamentoAtingidoEHasMoreVerdadeiro_paraNoOrcamentoSemPedirAPaginaSeguinte() {
+        stubDescoberta(descobertaResponse(true, 200));
+
+        itadScraper.coletar();
+
+        WIREMOCK.verify(30, getRequestedFor(urlPathEqualTo("/deals/v2")));
+        assertThat(niveisDaDescoberta()).containsExactly(Level.INFO);
+    }
+
+    @Test
+    void coletar_comPaginasPorRodadaDois_fazExatamenteDuasChamadasDeDescoberta() {
+        stubDescoberta(descobertaResponse(true, 200));
+        ItadScraper comOrcamentoDeDuas = new ItadScraper(itadClient, new ItadColetaProperties(2));
+
+        comOrcamentoDeDuas.coletar();
+
+        WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/deals/v2")));
+    }
+
+    @Test
+    void coletar_comCatalogoTerminandoNaUltimaPaginaDoOrcamento_naoPedePaginaAlem() {
+        UUID gid = UUID.fromString("018d0000-0000-7000-8000-000000000031");
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .withQueryParam("offset", equalTo("0"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(descobertaResponse(true, 200))));
+        WIREMOCK.stubFor(get(urlPathEqualTo("/deals/v2"))
+                .withQueryParam("offset", equalTo("200"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(descobertaResponse(false, 200,
+                                jogoDescoberta(gid, "Jogo Final", "game", "https://img/f.jpg",
+                                        50, "Nuuvem", 1000, 2000, 50, EXPIRY_NULO, "https://itad.link/f")))));
+        stubLookup(50, lookupComEntrada(gid, "999"));
+        stubPrecos(precosResponse(precoJogoJson(gid, dealJson(50, "Nuuvem", 1000, 2000, 50,
+                "https://itad.link/f", EXPIRY_NULO))));
+        ItadScraper comOrcamentoDeDuas = new ItadScraper(itadClient, new ItadColetaProperties(2));
+
+        ResultadoColeta resultado = comOrcamentoDeDuas.coletar();
+
+        WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/deals/v2")));
+        assertThat(resultado.ofertas()).extracting(OfertaColetada::identificadorLoja).containsExactly("999");
+        assertThat(niveisDaDescoberta()).containsExactly(Level.WARN);
     }
 
     @Test

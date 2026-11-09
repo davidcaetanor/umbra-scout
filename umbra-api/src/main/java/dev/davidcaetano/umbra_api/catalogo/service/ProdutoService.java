@@ -59,7 +59,8 @@ public class ProdutoService {
                                         CategoriaHardware categoria,
                                         OrdenacaoCatalogo ordenacao,
                                         boolean incluirExterno,
-                                        Pageable paginacao) {
+                                        Pageable paginacao,
+                                        String ipDeOrigem) {
         Instant agora = clock.instant();
         Pageable semOrdenacaoDoCliente = PageRequest.of(paginacao.getPageNumber(), paginacao.getPageSize());
 
@@ -68,7 +69,7 @@ public class ProdutoService {
                 .map(produto -> produtoMapper.paraResumo(produto, melhorPrecoDo(produto, agora)))
                 .toList();
         List<ProdutoExternoResponse> externos = incluirExterno && semOrdenacaoDoCliente.getPageNumber() == 0
-                ? buscarForaDoCatalogo(termo, agora)
+                ? buscarForaDoCatalogo(termo, ipDeOrigem, agora)
                 : List.of();
 
         return new BuscaProdutosResponse(conteudo, locais.getNumber(), locais.getSize(),
@@ -145,8 +146,8 @@ public class ProdutoService {
         }
     }
 
-    private List<ProdutoExternoResponse> buscarForaDoCatalogo(String termo, Instant agora) {
-        List<JogoExterno> jogos = buscaExternaService.buscar(termo);
+    private List<ProdutoExternoResponse> buscarForaDoCatalogo(String termo, String ipDeOrigem, Instant agora) {
+        List<JogoExterno> jogos = buscaExternaService.buscar(termo, ipDeOrigem);
         if (jogos.isEmpty()) {
             return List.of();
         }

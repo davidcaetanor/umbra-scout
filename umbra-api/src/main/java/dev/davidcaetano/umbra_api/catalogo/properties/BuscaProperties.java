@@ -13,8 +13,11 @@ import java.time.Duration;
 public record BuscaProperties(@Valid @NotNull(message = "umbra.busca.externa é obrigatório") Externa externa) {
 
     public record Externa(
-            @Min(value = 1, message = "umbra.busca.externa.teto deve ser maior ou igual a 1")
-            int teto,
+            @Min(value = 1, message = "umbra.busca.externa.teto-global deve ser maior ou igual a 1")
+            int tetoGlobal,
+
+            @Min(value = 1, message = "umbra.busca.externa.teto-por-ip deve ser maior ou igual a 1")
+            int tetoPorIp,
 
             @NotNull(message = "umbra.busca.externa.janela é obrigatório")
             Duration janela,

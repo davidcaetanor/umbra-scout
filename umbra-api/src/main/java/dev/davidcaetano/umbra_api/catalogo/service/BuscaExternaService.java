@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
 import dev.davidcaetano.umbra_api.comum.log.ContextoDeLog;
+import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -57,7 +59,7 @@ public class BuscaExternaService {
                 .buildAsync();
     }
 
-    public List<JogoExterno> buscar(String termo) {
+    public List<JogoExterno> buscar(String termo, String ipDeOrigem) {
         String chave = normalizar(termo);
         Map<String, String> contextoDoLog = ContextoDeLog.copiar();
         CompletableFuture<List<JogoExterno>> novo = new CompletableFuture<>();
@@ -67,7 +69,7 @@ public class BuscaExternaService {
             novo.orTimeout(prazo.plus(MARGEM_DO_DONO).toMillis(), TimeUnit.MILLISECONDS)
                     .whenComplete((resultado, erro) ->
                             ContextoDeLog.comContexto(contextoDoLog, () -> avisarSePassouDoPrazo(erro, termo)));
-            iniciar(termo, novo, contextoDoLog);
+            iniciar(termo, ipDeOrigem, novo, contextoDoLog);
         }
         return aguardar(doCache, termo);
     }
@@ -91,11 +93,14 @@ public class BuscaExternaService {
         }
     }
 
-    private void iniciar(String termo, CompletableFuture<List<JogoExterno>> futuro,
+    private void iniciar(String termo, String ipDeOrigem, CompletableFuture<List<JogoExterno>> futuro,
                          Map<String, String> contextoDoLog) {
-        if (!teto.permite()) {
-            futuro.completeExceptionally(new BuscaExternaIndisponivelException("teto de buscas externas esgotado"));
-            log.info("Teto de buscas externas esgotado na janela, só o catálogo local: termo={}", termo);
+        Optional<TetoAtingido> tetoAtingido = teto.consumir(ipDeOrigem);
+        if (tetoAtingido.isPresent()) {
+            futuro.completeExceptionally(new BuscaExternaIndisponivelException(
+                    "teto de buscas externas esgotado: " + tetoAtingido.get()));
+            log.info("Teto de buscas externas esgotado na janela, só o catálogo local: teto={} termo={} ip={}",
+                    tetoAtingido.get(), termo, SanitizacaoDeLog.paraLog(ipDeOrigem));
             return;
         }
 

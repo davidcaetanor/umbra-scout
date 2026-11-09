@@ -30,7 +30,7 @@ public class ItadClientImpl implements ItadClient {
     @Override
     @Retry(name = "itad")
     @CircuitBreaker(name = "itad")
-    @RateLimiter(name = "itad")
+    @RateLimiter(name = "itad-coleta")
     public ItadDescobertaResponse buscarDescoberta(int offset) {
         return executar(() -> itadRestClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -49,7 +49,7 @@ public class ItadClientImpl implements ItadClient {
     @Override
     @Retry(name = "itad")
     @CircuitBreaker(name = "itad")
-    @RateLimiter(name = "itad")
+    @RateLimiter(name = "itad-coleta")
     public Map<UUID, List<String>> resolverIdentificadorNativo(int shopId, List<UUID> gids) {
         Map<UUID, List<String>> resposta = executar(() -> itadRestClient.post()
                 .uri("/lookup/shop/{shopId}/id/v1", shopId)
@@ -64,7 +64,7 @@ public class ItadClientImpl implements ItadClient {
     @Override
     @Retry(name = "itad")
     @CircuitBreaker(name = "itad")
-    @RateLimiter(name = "itad")
+    @RateLimiter(name = "itad-coleta")
     public Map<String, UUID> resolverGidPorIdentificador(int shopId, List<String> identificadoresItad) {
         Map<String, UUID> resposta = executar(() -> itadRestClient.post()
                 .uri("/lookup/id/shop/{shopId}/v1", shopId)
@@ -79,7 +79,7 @@ public class ItadClientImpl implements ItadClient {
     @Override
     @Retry(name = "itad")
     @CircuitBreaker(name = "itad")
-    @RateLimiter(name = "itad")
+    @RateLimiter(name = "itad-coleta")
     public List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids) {
         List<ItadPrecoJogoResponse> resposta = executar(() -> itadRestClient.post()
                 .uri(uriBuilder -> uriBuilder

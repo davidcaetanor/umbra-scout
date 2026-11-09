@@ -7,6 +7,7 @@ import ch.qos.logback.core.read.ListAppender;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
 import dev.davidcaetano.umbra_api.comum.log.ChaveDeLog;
+import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,10 @@ class BuscaExternaServiceTest {
     private static final String CHAMADA_AO_ITAD = "Busca externa no ITAD: ";
     private static final String REQUEST_ID = ChaveDeLog.REQUEST_ID.chave();
     private static final String ID_DA_REQUISICAO = "3f2c1a7e-9b4d-4c8a-a1e2-5d6f7a8b9c0d";
+    private static final String IP = "203.0.113.10";
+    private static final String OUTRO_IP = "198.51.100.20";
+    private static final int TETO_POR_IP_FOLGADO = 1_000;
+    private static final String RECUSA_DO_TETO = "Teto de buscas externas esgotado";
 
     private static final List<JogoExterno> RESULTADO = List.of(new JogoExterno(
             "018d937f-590c-728b-ac35-38bcff85f086", "Elden Ring", null,
@@ -87,7 +92,7 @@ class BuscaExternaServiceTest {
         MDC.put(REQUEST_ID, ID_DA_REQUISICAO);
         BuscaExternaService servico = servico(new PortaFalsa(), 20, CACHE_LONGO, PRAZO);
 
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
 
         assertThat(eventosQueComecamCom(CHAMADA_AO_ITAD)).singleElement().satisfies(evento -> {
             assertThat(evento.getThreadName()).isNotEqualTo(Thread.currentThread().getName());
@@ -100,7 +105,7 @@ class BuscaExternaServiceTest {
     void semContextoNoMdc_aBuscaLogaSemContexto_eNaoLanca() {
         BuscaExternaService servico = servico(new PortaFalsa(), 20, CACHE_LONGO, PRAZO);
 
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
 
         assertThat(eventosQueComecamCom(CHAMADA_AO_ITAD)).singleElement()
                 .satisfies(evento -> assertThat(evento.getMDCPropertyMap()).isEmpty());
@@ -114,7 +119,7 @@ class BuscaExternaServiceTest {
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, Duration.ofMillis(200));
 
         try {
-            assertThat(servico.buscar("elden ring")).isEmpty();
+            assertThat(servico.buscar("elden ring", IP)).isEmpty();
             aguardarEvento(AVISO_DE_PRAZO);
         } finally {
             soltar.countDown();
@@ -131,10 +136,10 @@ class BuscaExternaServiceTest {
     @Test
     void tetoEsgotado_oAvisoRodaNaThreadDaRequisicao_eOMdcDelaContinuaComORequestId() {
         BuscaExternaService servico = servico(new PortaFalsa(), 1, CACHE_LONGO, PRAZO);
-        servico.buscar("elden ring");
+        servico.buscar("elden ring", IP);
         MDC.put(REQUEST_ID, ID_DA_REQUISICAO);
 
-        assertThat(servico.buscar("hollow knight")).isEmpty();
+        assertThat(servico.buscar("hollow knight", IP)).isEmpty();
 
         assertThat(MDC.get(REQUEST_ID)).isEqualTo(ID_DA_REQUISICAO);
     }
@@ -147,7 +152,7 @@ class BuscaExternaServiceTest {
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, prazo);
 
         long inicio = System.nanoTime();
-        List<JogoExterno> resultado = servico.buscar("elden ring");
+        List<JogoExterno> resultado = servico.buscar("elden ring", IP);
         long esperaMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio);
 
         assertThat(resultado).isEmpty();
@@ -163,7 +168,7 @@ class BuscaExternaServiceTest {
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, Duration.ofMillis(200));
 
         for (int i = 0; i < 4; i++) {
-            assertThat(servico.buscar("elden ring")).isEmpty();
+            assertThat(servico.buscar("elden ring", IP)).isEmpty();
         }
         long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(LIMITE_DE_ESPERA_SEGUNDOS);
         while (!saida.getOut().contains(AVISO_DE_PRAZO) && System.nanoTime() < limite) {
@@ -184,10 +189,10 @@ class BuscaExternaServiceTest {
         porta.atrasarPrimeiraChamada(prazo.multipliedBy(3));
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, prazo);
 
-        assertThat(servico.buscar("elden ring")).isEmpty();
+        assertThat(servico.buscar("elden ring", IP)).isEmpty();
         porta.aguardarPrimeiraChamadaTerminar();
 
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
         assertThat(porta.chamadas()).isEqualTo(1);
     }
 
@@ -196,9 +201,9 @@ class BuscaExternaServiceTest {
         PortaFalsa porta = new PortaFalsa();
         BuscaExternaService servico = servico(porta, 2, CACHE_LONGO, PRAZO);
 
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
-        assertThat(servico.buscar("hollow knight")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("hollow knight", IP)).isEqualTo(RESULTADO);
 
         assertThat(porta.termos()).containsExactly("elden ring", "hollow knight");
     }
@@ -208,9 +213,9 @@ class BuscaExternaServiceTest {
         PortaFalsa porta = new PortaFalsa();
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, PRAZO);
 
-        servico.buscar("Elden Ring");
-        servico.buscar("elden ring");
-        servico.buscar("eldén  ring");
+        servico.buscar("Elden Ring", IP);
+        servico.buscar("elden ring", IP);
+        servico.buscar("eldén  ring", IP);
 
         assertThat(porta.chamadas()).isEqualTo(1);
     }
@@ -220,10 +225,10 @@ class BuscaExternaServiceTest {
         PortaFalsa porta = new PortaFalsa();
         BuscaExternaService servico = servico(porta, 1, CACHE_LONGO, PRAZO);
 
-        List<List<JogoExterno>> resultados = emParalelo(10, () -> servico.buscar("elden ring"));
+        List<List<JogoExterno>> resultados = emParalelo(10, () -> servico.buscar("elden ring", IP));
 
         assertThat(resultados).hasSize(10).allSatisfy(resultado -> assertThat(resultado).isEqualTo(RESULTADO));
-        assertThat(servico.buscar("hollow knight")).isEmpty();
+        assertThat(servico.buscar("hollow knight", IP)).isEmpty();
         assertThat(porta.chamadas()).isEqualTo(1);
     }
 
@@ -234,8 +239,8 @@ class BuscaExternaServiceTest {
         porta.falharNaPrimeiraChamada(falha);
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, PRAZO);
 
-        assertThat(servico.buscar("elden ring")).isEmpty();
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEmpty();
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
         assertThat(porta.chamadas()).isEqualTo(2);
     }
 
@@ -251,7 +256,7 @@ class BuscaExternaServiceTest {
         CountDownLatch soltar = porta.segurarPrimeiraChamada();
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, PRAZO);
 
-        Future<List<JogoExterno>> dono = executor.submit(() -> servico.buscar("elden ring"));
+        Future<List<JogoExterno>> dono = executor.submit(() -> servico.buscar("elden ring", IP));
         porta.aguardarPrimeiraChamada();
 
         List<Thread> esperando = new ArrayList<>();
@@ -259,7 +264,7 @@ class BuscaExternaServiceTest {
         for (int i = 0; i < 9; i++) {
             AtomicReference<List<JogoExterno>> resultado = new AtomicReference<>();
             resultados.add(resultado);
-            esperando.add(Thread.ofPlatform().start(() -> resultado.set(servico.buscar("elden ring"))));
+            esperando.add(Thread.ofPlatform().start(() -> resultado.set(servico.buscar("elden ring", IP))));
         }
         aguardarTodasBloqueadas(esperando);
         soltar.countDown();
@@ -278,18 +283,18 @@ class BuscaExternaServiceTest {
         porta.atrasarPrimeiraChamada(Duration.ofSeconds(1));
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, Duration.ofMillis(200));
 
-        Future<List<JogoExterno>> dono = executor.submit(() -> servico.buscar("elden ring"));
+        Future<List<JogoExterno>> dono = executor.submit(() -> servico.buscar("elden ring", IP));
         porta.aguardarPrimeiraChamada();
 
         long inicio = System.nanoTime();
-        List<JogoExterno> deQuemEspera = servico.buscar("elden ring");
+        List<JogoExterno> deQuemEspera = servico.buscar("elden ring", IP);
         long esperaMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - inicio);
 
         assertThat(deQuemEspera).isEmpty();
         assertThat(esperaMs).isBetween(190L, 900L);
         assertThat(dono.get(LIMITE_DE_ESPERA_SEGUNDOS, TimeUnit.SECONDS)).isEmpty();
         porta.aguardarPrimeiraChamadaTerminar();
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
         assertThat(porta.chamadas()).isEqualTo(1);
     }
 
@@ -300,13 +305,13 @@ class BuscaExternaServiceTest {
         CountDownLatch soltar = porta.segurarPrimeiraChamada();
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, Duration.ofMillis(200));
 
-        executor.submit(() -> servico.buscar("elden ring"));
+        executor.submit(() -> servico.buscar("elden ring", IP));
         porta.aguardarPrimeiraChamada();
 
         long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
         List<JogoExterno> ultimo = List.of();
         while (porta.chamadas() < 2 && System.nanoTime() < limite) {
-            ultimo = servico.buscar("elden ring");
+            ultimo = servico.buscar("elden ring", IP);
         }
         soltar.countDown();
 
@@ -320,13 +325,13 @@ class BuscaExternaServiceTest {
         CountDownLatch soltar = porta.segurarPrimeiraChamada();
         BuscaExternaService servico = servico(porta, 20, CACHE_LONGO, PRAZO);
 
-        executor.submit(() -> servico.buscar("elden ring"));
+        executor.submit(() -> servico.buscar("elden ring", IP));
         porta.aguardarPrimeiraChamada();
 
         AtomicReference<List<JogoExterno>> resultado = new AtomicReference<>();
         AtomicBoolean interrompidoNaSaida = new AtomicBoolean();
         Thread quemEspera = Thread.ofPlatform().start(() -> {
-            resultado.set(servico.buscar("elden ring"));
+            resultado.set(servico.buscar("elden ring", IP));
             interrompidoNaSaida.set(Thread.currentThread().isInterrupted());
         });
         aguardarTodasBloqueadas(List.of(quemEspera));
@@ -339,20 +344,91 @@ class BuscaExternaServiceTest {
     }
 
     @Test
+    void tetoPorIp_oDecimoSextoPedidoDoMesmoIpNaJanelaERecusado_eOPrimeiroDeOutroIpPassa() {
+        PortaFalsa porta = new PortaFalsa();
+        BuscaExternaService servico = servico(porta, new TetoDeBuscaExterna(400, 15, JANELA_LONGA), CACHE_LONGO,
+                PRAZO);
+
+        for (int i = 1; i <= 15; i++) {
+            assertThat(servico.buscar("termo " + i, IP)).as("pedido %d do mesmo IP", i).isEqualTo(RESULTADO);
+        }
+
+        assertThat(servico.buscar("termo 16", IP)).isEmpty();
+        assertThat(servico.buscar("termo 17", OUTRO_IP)).isEqualTo(RESULTADO);
+        assertThat(porta.chamadas()).isEqualTo(16);
+    }
+
+    @Test
+    void tetoGlobal_recusaQuandoEstoura_mesmoComOIpDentroDaCota() {
+        PortaFalsa porta = new PortaFalsa();
+        BuscaExternaService servico = servico(porta, new TetoDeBuscaExterna(2, 15, JANELA_LONGA), CACHE_LONGO,
+                PRAZO);
+
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("hollow knight", OUTRO_IP)).isEqualTo(RESULTADO);
+
+        assertThat(servico.buscar("celeste", "192.0.2.30")).isEmpty();
+        assertThat(eventosQueComecamCom(RECUSA_DO_TETO)).singleElement()
+                .satisfies(evento -> assertThat(evento.getArgumentArray()).contains(TetoAtingido.GLOBAL));
+        assertThat(porta.chamadas()).isEqualTo(2);
+    }
+
+    @Test
+    void tetoGlobalEstourado_aRecusaEDoGlobal_eNaoConsomeAPermissaoDoIp() {
+        TetoDeBuscaExterna teto = new TetoDeBuscaExterna(1, 1, JANELA_LONGA);
+        assertThat(teto.consumir(OUTRO_IP)).isEmpty();
+
+        assertThat(teto.consumir(IP)).contains(TetoAtingido.GLOBAL);
+        assertThat(teto.consumir(IP)).as("o IP ainda tem a sua permissão").contains(TetoAtingido.GLOBAL);
+    }
+
+    @Test
+    void ipSemSaldo_eRecusadoPeloTetoPorIp_semGastarOGlobal() {
+        TetoDeBuscaExterna teto = new TetoDeBuscaExterna(2, 1, JANELA_LONGA);
+        assertThat(teto.consumir(IP)).isEmpty();
+
+        assertThat(teto.consumir(IP)).contains(TetoAtingido.POR_IP);
+        assertThat(teto.consumir(IP)).contains(TetoAtingido.POR_IP);
+        assertThat(teto.consumir(OUTRO_IP)).as("o global ainda tem uma permissão").isEmpty();
+    }
+
+    @Test
+    void recusaDoTeto_saiEmInfo_nomeiaOTeto_eLevaOIpSanitizado() {
+        String ipComQuebraDeLinha = IP + "\r\nFORJADO";
+        BuscaExternaService servico = servico(new PortaFalsa(), new TetoDeBuscaExterna(400, 1, JANELA_LONGA),
+                CACHE_LONGO, PRAZO);
+        servico.buscar("elden ring", ipComQuebraDeLinha);
+
+        assertThat(servico.buscar("hollow knight", ipComQuebraDeLinha)).isEmpty();
+
+        assertThat(eventosQueComecamCom(RECUSA_DO_TETO)).singleElement().satisfies(evento -> {
+            assertThat(evento.getLevel()).isEqualTo(Level.INFO);
+            assertThat(evento.getArgumentArray())
+                    .contains(TetoAtingido.POR_IP, SanitizacaoDeLog.paraLog(ipComQuebraDeLinha))
+                    .doesNotContain(ipComQuebraDeLinha);
+            assertThat(evento.getFormattedMessage()).doesNotContain("\r", "\n");
+        });
+    }
+
+    @Test
     void construidoPelasPropriedades_deveUsarTtlEPrazoDelas() {
         PortaFalsa porta = new PortaFalsa();
         BuscaProperties propriedades = new BuscaProperties(new BuscaProperties.Externa(
-                20, JANELA_LONGA, Duration.ofSeconds(1), Duration.ofSeconds(1), CACHE_LONGO, PRAZO, 5));
+                20, 15, JANELA_LONGA, Duration.ofSeconds(1), Duration.ofSeconds(1), CACHE_LONGO, PRAZO, 5));
         BuscaExternaService servico = new BuscaExternaService(porta, new TetoDeBuscaExterna(propriedades), propriedades);
 
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
-        assertThat(servico.buscar("elden ring")).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
+        assertThat(servico.buscar("elden ring", IP)).isEqualTo(RESULTADO);
         assertThat(porta.chamadas()).isEqualTo(1);
     }
 
     private BuscaExternaService servico(BuscaExterna porta, int teto, Duration cacheTtl, Duration prazo) {
-        return new BuscaExternaService(porta, new TetoDeBuscaExterna(teto, JANELA_LONGA), cacheTtl, prazo,
-                executorDoServico);
+        return servico(porta, new TetoDeBuscaExterna(teto, TETO_POR_IP_FOLGADO, JANELA_LONGA), cacheTtl, prazo);
+    }
+
+    private BuscaExternaService servico(BuscaExterna porta, TetoDeBuscaExterna teto, Duration cacheTtl,
+                                        Duration prazo) {
+        return new BuscaExternaService(porta, teto, cacheTtl, prazo, executorDoServico);
     }
 
     private List<List<JogoExterno>> emParalelo(int quantidade, Supplier<List<JogoExterno>> busca) throws Exception {

@@ -14,6 +14,7 @@ import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoDescobertoRes
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadLojaResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadOfertaPrecoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
+import dev.davidcaetano.umbra_api.coleta.properties.ItadColetaProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ItadScraper implements Scraper {
 
-    private static final int PAGINAS_POR_RODADA = 30;
     private static final int TAMANHO_LOTE = 200;
 
     private final ItadClient itadClient;
+    private final ItadColetaProperties itadColetaProperties;
 
     @Override
     public OrigemColeta fonte() {
@@ -140,28 +141,24 @@ public class ItadScraper implements Scraper {
     }
 
     private List<ItadJogoDescobertoResponse> buscarTodaDescoberta() {
+        int orcamento = itadColetaProperties.paginasPorRodada();
         List<ItadJogoDescobertoResponse> todos = new ArrayList<>();
-
         int offset = 0;
-        int pagina = 0;
 
-        while (true) {
-            if (pagina >= PAGINAS_POR_RODADA) {
-                log.warn("Descoberta ITAD atingiu o orcamento de {} paginas da rodada, parando com hasMore ainda verdadeiro (offset={})",
-                        PAGINAS_POR_RODADA, offset);
-                break;
-            }
-
+        for (int pagina = 1; pagina <= orcamento; pagina++) {
             ItadDescobertaResponse resposta = itadClient.buscarDescoberta(offset);
             todos.addAll(resposta.list());
-            pagina++;
 
             if (!resposta.hasMore()) {
-                break;
+                log.warn("Descoberta ITAD sem hasMore em {} de {} paginas do orcamento: catalogo encolheu ou o endpoint mudou de semantica (itens={})",
+                        pagina, orcamento, todos.size());
+                return todos;
             }
             offset = resposta.nextOffset();
         }
 
+        log.info("Descoberta ITAD leu as {} paginas do orcamento: itens={} offsetAlcancado={}",
+                orcamento, todos.size(), offset);
         return todos;
     }
 

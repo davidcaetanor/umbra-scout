@@ -27,6 +27,7 @@ class BuscaExternaConcorrenciaTest extends WireMockIntegrationTestBase {
 
     private static final String FIXTURE_BUSCA = fixture("wiremock/itad/games-search-v1-elden-ring.json");
     private static final String FIXTURE_PRECOS = fixture("wiremock/itad/games-prices-v3-elden-ring.json");
+    private static final String IP = "203.0.113.10";
     private static final int THREADS = 20;
     private static final long LIMITE_DE_ESPERA_SEGUNDOS = 10;
 
@@ -45,7 +46,7 @@ class BuscaExternaConcorrenciaTest extends WireMockIntegrationTestBase {
         stubBusca("t212c-conc-um", 300);
         stubPrecos();
 
-        List<List<JogoExterno>> resultados = disparar(THREADS, () -> buscaExternaService.buscar("t212c-conc-um"));
+        List<List<JogoExterno>> resultados = disparar(THREADS, () -> buscaExternaService.buscar("t212c-conc-um", IP));
 
         WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/games/search/v1")));
         WIREMOCK.verify(1, postRequestedFor(urlPathEqualTo("/games/prices/v3")));
@@ -58,12 +59,12 @@ class BuscaExternaConcorrenciaTest extends WireMockIntegrationTestBase {
         WIREMOCK.stubFor(get(urlPathEqualTo("/games/search/v1"))
                 .willReturn(aResponse().withStatus(500).withFixedDelay(300)));
 
-        List<List<JogoExterno>> resultados = disparar(THREADS, () -> buscaExternaService.buscar("t212c-conc-500"));
+        List<List<JogoExterno>> resultados = disparar(THREADS, () -> buscaExternaService.buscar("t212c-conc-500", IP));
 
         WIREMOCK.verify(1, getRequestedFor(urlPathEqualTo("/games/search/v1")));
         assertThat(resultados).hasSize(THREADS).allSatisfy(resultado -> assertThat(resultado).isEmpty());
 
-        assertThat(buscaExternaService.buscar("t212c-conc-500")).isEmpty();
+        assertThat(buscaExternaService.buscar("t212c-conc-500", IP)).isEmpty();
         WIREMOCK.verify(2, getRequestedFor(urlPathEqualTo("/games/search/v1")));
     }
 
@@ -90,7 +91,7 @@ class BuscaExternaConcorrenciaTest extends WireMockIntegrationTestBase {
 
     private Callable<Long> terminarEm(String termo) {
         return () -> {
-            assertThat(buscaExternaService.buscar(termo)).isNotEmpty();
+            assertThat(buscaExternaService.buscar(termo, IP)).isNotEmpty();
             return System.nanoTime();
         };
     }

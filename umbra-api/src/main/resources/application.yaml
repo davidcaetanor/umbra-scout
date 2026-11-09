@@ -55,9 +55,12 @@ umbra:
         margem-duplicata-percentual: 2
     gravacao:
       janela-vivacidade-dias: 90
+    itad:
+      paginas-por-rodada: 30
   busca:
     externa:
-      teto: 20
+      teto-global: 400
+      teto-por-ip: 15
       janela: 5m
       timeout-conexao: 1s
       timeout-leitura: 1s
@@ -81,8 +84,12 @@ kabum:
 resilience4j:
   ratelimiter:
     instances:
-      itad:
-        limit-for-period: 1000
+      itad-coleta:
+        limit-for-period: 600
+        limit-refresh-period: 5m
+        timeout-duration: 2s
+      itad-busca:
+        limit-for-period: 400
         limit-refresh-period: 5m
         timeout-duration: 2s
       steam:
