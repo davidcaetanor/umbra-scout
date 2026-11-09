@@ -46,8 +46,14 @@ class UmbraApiApplicationTests extends IntegrationTestBase {
 	@Test
 	void deveCarregarOsLimiaresEAJanelaDeVivacidadeComOsValoresDeHoje() {
 		assertThat(alarme.limiaresDe(OrigemColeta.KABUM_API)).isEqualTo(new Limiares(10, 20, 2, 2));
-		assertThat(alarme.porFonte()).isEmpty();
+		assertThat(alarme.limiaresDe(OrigemColeta.ITAD_API)).isEqualTo(new Limiares(10, 20, 2, 2));
 		assertThat(gravacao.janelaVivacidadeDias()).isEqualTo(90);
+	}
+
+	@Test
+	void deveSobrescreverSoAAmostraMinimaEOLimiarSemPrecoDaSteam() {
+		assertThat(alarme.porFonte()).containsOnlyKeys(OrigemColeta.STEAM_API);
+		assertThat(alarme.limiaresDe(OrigemColeta.STEAM_API)).isEqualTo(new Limiares(5, 40, 2, 2));
 	}
 
 	@Test
