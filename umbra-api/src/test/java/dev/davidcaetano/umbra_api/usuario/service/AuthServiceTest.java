@@ -1,12 +1,16 @@
 package dev.davidcaetano.umbra_api.usuario.service;
 
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.usuario.CredenciaisInvalidasException;
 import dev.davidcaetano.umbra_api.usuario.EmailJaCadastradoException;
 import dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.request.LoginRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.response.TokenResponse;
 import dev.davidcaetano.umbra_api.usuario.dto.response.UsuarioResponse;
 import dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntity;
 import dev.davidcaetano.umbra_api.usuario.mapper.UsuarioMapperImpl;
 import dev.davidcaetano.umbra_api.usuario.repository.UsuarioRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,12 +21,21 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Proxy;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -46,6 +59,17 @@ class AuthServiceTest extends IntegrationTestBase {
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
     private final Clock clock = Clock.fixed(AGORA, ZoneOffset.UTC);
+    private static final SecretKey CHAVE =
+            new SecretKeySpec("k".repeat(32).getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+    private final JwtService jwtService = new JwtService(
+            NimbusJwtEncoder.withSecretKey(CHAVE).algorithm(MacAlgorithm.HS256).build(), "umbra-api",
+            Duration.ofHours(6), clock);
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -89,7 +113,7 @@ class AuthServiceTest extends IntegrationTestBase {
                 OffsetDateTime.ofInstant(AGORA, ZoneOffset.UTC)));
         AuthService servicoQueNaoViuOOutroCadastro =
                 new AuthService(repositorioQueNaoEncontraEmail(), new UsuarioMapperImpl(), passwordEncoder,
-                        cep -> Optional.empty(), clock);
+                        cep -> Optional.empty(), jwtService, clock);
 
         assertThatThrownBy(() -> servicoQueNaoViuOOutroCadastro.cadastrar(cadastro(EMAIL, "Xanisvaldo")))
                 .isInstanceOf(EmailJaCadastradoException.class);
@@ -163,13 +187,61 @@ class AuthServiceTest extends IntegrationTestBase {
         assertThat(cepsConsultados).isEmpty();
     }
 
+    @Test
+    void loginValido_deveEmitirTokenDoUsuarioComValidadeConfigurada() {
+        UsuarioResponse usuario = authService.cadastrar(cadastro(EMAIL, "Xanisvaldo"));
+
+        TokenResponse token = authService.entrar(new LoginRequest("Usuario_Xanisvaldo@Exemplo.com", SENHA));
+
+        assertThat(token.tipo()).isEqualTo("Bearer");
+        assertThat(token.expiraEm()).isEqualTo(OffsetDateTime.ofInstant(AGORA.plus(Duration.ofHours(6)), ZoneOffset.UTC));
+        Jwt jwt = NimbusJwtDecoder.withSecretKey(CHAVE).macAlgorithm(MacAlgorithm.HS256).build().decode(token.token());
+        assertThat(jwt.getSubject()).isEqualTo(usuario.id().toString());
+        assertThat(jwt.getClaims()).doesNotContainKey("email");
+    }
+
+    @Test
+    void senhaErrada_deveRecusarComCredenciaisInvalidas() {
+        authService.cadastrar(cadastro(EMAIL, "Xanisvaldo"));
+
+        assertThatThrownBy(() -> authService.entrar(new LoginRequest(EMAIL, "senha-errada-do-teste")))
+                .isInstanceOf(CredenciaisInvalidasException.class)
+                .hasMessage("Email ou senha inválidos.");
+    }
+
+    @Test
+    void emailDesconhecido_deveRecusarComAMesmaMensagemDaSenhaErrada() {
+        assertThatThrownBy(() -> authService.entrar(new LoginRequest("ninguem@exemplo.com", SENHA)))
+                .isInstanceOf(CredenciaisInvalidasException.class)
+                .hasMessage("Email ou senha inválidos.");
+    }
+
+    @Test
+    void contaSemSenha_deveRecusarLoginPorSenha() {
+        usuarioRepository.saveAndFlush(UsuarioEntity.comDiscord(EMAIL, "123456789", "Xanisvaldo",
+                OffsetDateTime.ofInstant(AGORA, ZoneOffset.UTC)));
+
+        assertThatThrownBy(() -> authService.entrar(new LoginRequest(EMAIL, SENHA)))
+                .isInstanceOf(CredenciaisInvalidasException.class);
+    }
+
+    @Test
+    void contaInativa_deveRecusarMesmoComSenhaCerta() {
+        UsuarioResponse usuario = authService.cadastrar(cadastro(EMAIL, "Xanisvaldo"));
+        jdbc.update("UPDATE usuario SET ativo = false WHERE id = ?", usuario.id());
+        entityManager.clear();
+
+        assertThatThrownBy(() -> authService.entrar(new LoginRequest(EMAIL, SENHA)))
+                .isInstanceOf(CredenciaisInvalidasException.class);
+    }
+
     private AuthService servico(ConsultaDeCep consultaDeCep) {
         ConsultaDeCep registrandoConsultas = cep -> {
             cepsConsultados.add(cep);
             return consultaDeCep.consultar(cep);
         };
         return new AuthService(usuarioRepository, new UsuarioMapperImpl(), passwordEncoder, registrandoConsultas,
-                clock);
+                jwtService, clock);
     }
 
     private static CadastroRequest cadastro(String email, String nomeExibicao) {

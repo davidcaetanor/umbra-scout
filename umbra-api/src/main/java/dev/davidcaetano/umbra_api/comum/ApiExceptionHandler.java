@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api.comum;
 
 import dev.davidcaetano.umbra_api.comum.dto.response.ErroDeCampoResponse;
+import dev.davidcaetano.umbra_api.comum.excecao.NaoAutenticadoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoEmConflitoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoNaoEncontradoException;
 import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
@@ -58,6 +59,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problema.setType(TIPO_RECURSO_EM_CONFLITO);
         problema.setTitle("Recurso em conflito");
+        problema.setInstance(URI.create(request.getRequestURI()));
+        return problema;
+    }
+
+    @ExceptionHandler(NaoAutenticadoException.class)
+    public ProblemDetail tratarCredencialRecusada(NaoAutenticadoException ex, HttpServletRequest request) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problema.setType(TIPO_NAO_AUTENTICADO);
+        problema.setTitle("Não autenticado");
         problema.setInstance(URI.create(request.getRequestURI()));
         return problema;
     }

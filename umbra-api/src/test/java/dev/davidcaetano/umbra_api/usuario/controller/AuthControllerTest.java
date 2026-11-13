@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,7 +48,7 @@ class AuthControllerTest extends WireMockIntegrationTestBase {
 
     @BeforeEach
     void montarMockMvc() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(contexto).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(contexto).apply(springSecurity()).build();
     }
 
     @Test

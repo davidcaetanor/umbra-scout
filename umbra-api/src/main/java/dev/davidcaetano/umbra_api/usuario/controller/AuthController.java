@@ -1,6 +1,8 @@
 package dev.davidcaetano.umbra_api.usuario.controller;
 
 import dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.request.LoginRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.response.TokenResponse;
 import dev.davidcaetano.umbra_api.usuario.dto.response.UsuarioResponse;
 import dev.davidcaetano.umbra_api.usuario.service.AuthService;
 import jakarta.validation.Valid;
@@ -23,5 +25,10 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UsuarioResponse cadastrar(@Valid @RequestBody CadastroRequest cadastro) {
         return authService.cadastrar(cadastro);
+    }
+
+    @PostMapping("/login")
+    public TokenResponse entrar(@Valid @RequestBody LoginRequest login) {
+        return authService.entrar(login);
     }
 }

@@ -2,6 +2,7 @@ package dev.davidcaetano.umbra_api.config;
 
 import dev.davidcaetano.umbra_api.config.seguranca.ProblemDetailAccessDeniedHandler;
 import dev.davidcaetano.umbra_api.config.seguranca.ProblemDetailAuthenticationEntryPoint;
+import dev.davidcaetano.umbra_api.usuario.service.JwtService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,8 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Duration;
 
 @Configuration
 public class SecurityConfig {
@@ -29,8 +32,10 @@ public class SecurityConfig {
     private static final MacAlgorithm ALGORITMO_DO_TOKEN = MacAlgorithm.HS256;
 
     private final SecretKey chaveDoToken;
+    private final Duration validadeDoToken;
 
     public SecurityConfig(UmbraProperties umbraProperties) {
+        this.validadeDoToken = Duration.ofHours(umbraProperties.jwt().ttlHoras());
         this.chaveDoToken = new SecretKeySpec(umbraProperties.jwt().secret().getBytes(StandardCharsets.UTF_8),
                 ALGORITMO_DO_TOKEN.getName());
     }
@@ -38,6 +43,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
+            JwtService jwtService,
             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         var entryPoint = new ProblemDetailAuthenticationEntryPoint(handlerExceptionResolver);
         var accessDeniedHandler = new ProblemDetailAccessDeniedHandler(handlerExceptionResolver);
@@ -56,13 +62,18 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(recurso -> recurso
-                        .jwt(jwt -> jwt.decoder(jwtDecoder()))
+                        .jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtService::autenticar))
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .exceptionHandling(excecao -> excecao
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .build();
+    }
+
+    @Bean
+    public JwtService jwtService(JwtEncoder jwtEncoder, Clock clock) {
+        return new JwtService(jwtEncoder, EMISSOR_DO_TOKEN, validadeDoToken, clock);
     }
 
     @Bean
