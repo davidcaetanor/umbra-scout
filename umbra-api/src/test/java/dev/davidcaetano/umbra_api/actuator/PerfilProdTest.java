@@ -54,14 +54,15 @@ class PerfilProdTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "/actuator/env",
-            "/actuator/configprops",
-            "/actuator/heapdump",
-            "/v3/api-docs",
-            "/swagger-ui/index.html"
-    })
-    void naoDeveExporRotaForaDoHealth(String rota) {
+    @ValueSource(strings = {"/actuator/env", "/actuator/configprops", "/actuator/heapdump"})
+    void naoDeveExporActuatorForaDoHealthSemToken(String rota) {
+        assertThat(restTemplate.getForEntity(rota, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/v3/api-docs", "/swagger-ui/index.html"})
+    void naoDeveExporDocumentacaoDaApi(String rota) {
         assertThat(restTemplate.getForEntity(rota, String.class).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }

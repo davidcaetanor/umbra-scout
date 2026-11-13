@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -35,6 +37,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private static final URI TIPO_RECURSO_NAO_ENCONTRADO = URI.create("https://umbra.dev/erros/recurso-nao-encontrado");
     private static final URI TIPO_RECURSO_EM_CONFLITO = URI.create("https://umbra.dev/erros/recurso-em-conflito");
     private static final URI TIPO_PARAMETRO_INVALIDO = URI.create("https://umbra.dev/erros/parametro-invalido");
+    private static final URI TIPO_NAO_AUTENTICADO = URI.create("https://umbra.dev/erros/nao-autenticado");
+    private static final URI TIPO_ACESSO_NEGADO = URI.create("https://umbra.dev/erros/acesso-negado");
     private static final URI TIPO_ERRO_INTERNO = URI.create("https://umbra.dev/erros/erro-interno");
 
     private static final String TITULO_PARAMETRO_INVALIDO = "Parâmetro inválido";
@@ -54,6 +58,26 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problema.setType(TIPO_RECURSO_EM_CONFLITO);
         problema.setTitle("Recurso em conflito");
+        problema.setInstance(URI.create(request.getRequestURI()));
+        return problema;
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail tratarNaoAutenticado(AuthenticationException ex, HttpServletRequest request) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+                "É preciso estar autenticado para acessar este recurso.");
+        problema.setType(TIPO_NAO_AUTENTICADO);
+        problema.setTitle("Não autenticado");
+        problema.setInstance(URI.create(request.getRequestURI()));
+        return problema;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail tratarAcessoNegado(AccessDeniedException ex, HttpServletRequest request) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+                "Você não tem permissão para acessar este recurso.");
+        problema.setType(TIPO_ACESSO_NEGADO);
+        problema.setTitle("Acesso negado");
         problema.setInstance(URI.create(request.getRequestURI()));
         return problema;
     }
