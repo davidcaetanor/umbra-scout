@@ -1,0 +1,22 @@
+meta {
+  name: Usuario sem token
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/usuarios/eu
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+  res.body.type: eq https://umbra.dev/erros/nao-autenticado
+}
+
+tests {
+  test("desafia o cliente com Bearer", function () {
+    expect(res.getHeader("www-authenticate")).to.equal("Bearer");
+  });
+}

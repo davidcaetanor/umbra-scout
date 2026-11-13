@@ -1,0 +1,21 @@
+meta {
+  name: Buscar por nome
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/produtos?nome=elden&ordenacao=menorPreco
+  body: none
+  auth: none
+}
+
+params:query {
+  nome: elden
+  ordenacao: menorPreco
+}
+
+assert {
+  res.status: eq 200
+  res.body.conteudo: isArray
+}

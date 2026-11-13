@@ -1,0 +1,20 @@
+meta {
+  name: Buscar com ordenacao invalida
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/produtos?ordenacao=MENOR_PRECO
+  body: none
+  auth: none
+}
+
+params:query {
+  ordenacao: MENOR_PRECO
+}
+
+assert {
+  res.status: eq 400
+  res.body.type: eq https://umbra.dev/erros/parametro-invalido
+}

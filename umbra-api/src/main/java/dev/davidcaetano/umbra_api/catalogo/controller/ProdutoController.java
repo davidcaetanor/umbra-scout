@@ -27,7 +27,6 @@ public class ProdutoController {
     @GetMapping
     public BuscaProdutosResponse buscar(@Valid @ModelAttribute BuscaProdutoRequest busca, Pageable paginacao,
                                         HttpServletRequest requisicao) {
-        // Sem proxy na frente, X-Forwarded-For vem do cliente e não é confiável; a T5.3 o trata com proxies declarados.
         String ipDeOrigem = requisicao.getRemoteAddr();
         return produtoService.buscar(busca.nome(), busca.categoria(), busca.ordenacao(), busca.incluirExterno(),
                 paginacao, ipDeOrigem);

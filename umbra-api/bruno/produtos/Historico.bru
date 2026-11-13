@@ -1,0 +1,22 @@
+meta {
+  name: Historico
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/produtos/{{produtoId}}/historico?periodo=90d
+  body: none
+  auth: none
+}
+
+params:query {
+  periodo: 90d
+}
+
+assert {
+  res.status: eq 200
+  res.body.periodo: eq 90d
+  res.body.melhorPreco: isArray
+  res.body.porLoja: isArray
+}

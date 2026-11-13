@@ -1,0 +1,19 @@
+meta {
+  name: Usuario com token adulterado
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/usuarios/eu
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}x
+}
+
+assert {
+  res.status: eq 401
+}

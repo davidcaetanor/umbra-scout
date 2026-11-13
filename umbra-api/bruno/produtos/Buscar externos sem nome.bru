@@ -1,0 +1,19 @@
+meta {
+  name: Buscar externos sem nome
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/produtos?incluirExterno=true
+  body: none
+  auth: none
+}
+
+params:query {
+  incluirExterno: true
+}
+
+assert {
+  res.status: eq 400
+}

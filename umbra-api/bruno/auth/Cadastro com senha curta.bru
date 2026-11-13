@@ -1,0 +1,24 @@
+meta {
+  name: Cadastro com senha curta
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/cadastro
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "senha-curta@umbra.invalid",
+    "senha": "curta12",
+    "nomeExibicao": "Senha curta"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.type: eq https://umbra.dev/erros/parametro-invalido
+}

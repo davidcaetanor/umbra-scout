@@ -1,0 +1,21 @@
+meta {
+  name: Usuario autenticado
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/usuarios/eu
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.email: eq {{emailDoTeste}}
+  res.body.senhaHash: isUndefined
+}
