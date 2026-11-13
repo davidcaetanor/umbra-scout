@@ -3,8 +3,11 @@ package dev.davidcaetano.umbra_api.usuario.controller;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
+@ExtendWith(OutputCaptureExtension.class)
 class AuthControllerTest extends IntegrationTestBase {
 
     private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
@@ -99,6 +103,20 @@ class AuthControllerTest extends IntegrationTestBase {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erros[*].campo").value(hasItem("email")))
                 .andExpect(jsonPath("$.erros[*].campo").value(not(hasItem("senha"))));
+    }
+
+    @Test
+    void cadastroAceitoERecusado_naoDevemLevarASenhaNemOHashAoLog(CapturedOutput saida) throws Exception {
+        cadastrar(EMAIL, SENHA, "Xanisvaldo").andExpect(status().isCreated());
+        cadastrar("outro@exemplo.com", "curta12", "Outro").andExpect(status().isBadRequest());
+        cadastrar(EMAIL, "senha-do-conflito", "Xanisvaldo").andExpect(status().isConflict());
+
+        String hash = jdbc.queryForObject("SELECT senha_hash FROM usuario WHERE email = ?", String.class, EMAIL);
+        assertThat(saida.getAll())
+                .doesNotContain(SENHA)
+                .doesNotContain("curta12")
+                .doesNotContain("senha-do-conflito")
+                .doesNotContain(hash);
     }
 
     private ResultActions cadastrar(String email, String senha, String nomeExibicao) throws Exception {
