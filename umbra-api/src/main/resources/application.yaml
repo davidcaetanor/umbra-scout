@@ -87,6 +87,11 @@ kabum:
   kabum-api:
     base-url: https://servicespub.prod.api.aws.grupokabum.com.br
 
+viacep:
+  base-url: https://viacep.com.br
+  timeout-conexao: 1s
+  timeout-leitura: 2s
+
 resilience4j:
   ratelimiter:
     instances:

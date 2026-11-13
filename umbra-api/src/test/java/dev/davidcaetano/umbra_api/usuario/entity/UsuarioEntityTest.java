@@ -8,7 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UsuarioEntityTest {
-
+
+
     private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
     private static final OffsetDateTime AGORA = OffsetDateTime.parse("2026-11-13T12:00:00Z");
 
@@ -68,5 +69,43 @@ class UsuarioEntityTest {
         assertThatThrownBy(() -> UsuarioEntity.comSenha(null, "hash", "Xanisvaldo", AGORA))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("email");
+    }
+
+    @Test
+    void informarCepComRegiaoDeveGuardarOsTresCampos() {
+        UsuarioEntity usuario = UsuarioEntity.comSenha(EMAIL, "hash", "Xanisvaldo", AGORA);
+
+        usuario.informarCepComRegiao("01310100", "São Paulo", "SP");
+
+        assertThat(usuario.getCep()).isEqualTo("01310100");
+        assertThat(usuario.getCidade()).isEqualTo("São Paulo");
+        assertThat(usuario.getUf()).isEqualTo("SP");
+    }
+
+    @Test
+    void informarCepSemRegiaoDeveLimparCidadeEUf() {
+        UsuarioEntity usuario = UsuarioEntity.comSenha(EMAIL, "hash", "Xanisvaldo", AGORA);
+        usuario.informarCepComRegiao("01310100", "São Paulo", "SP");
+
+        usuario.informarCep("99999999");
+
+        assertThat(usuario.getCep()).isEqualTo("99999999");
+        assertThat(usuario.getCidade()).isNull();
+        assertThat(usuario.getUf()).isNull();
+    }
+
+    @Test
+    void deveRecusarRegiaoIncompleta() {
+        UsuarioEntity usuario = UsuarioEntity.comSenha(EMAIL, "hash", "Xanisvaldo", AGORA);
+
+        assertThatThrownBy(() -> usuario.informarCepComRegiao("01310100", null, "SP"))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("cidade");
+        assertThatThrownBy(() -> usuario.informarCepComRegiao("01310100", "São Paulo", " "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("uf");
+        assertThatThrownBy(() -> usuario.informarCep(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("cep");
     }
 }

@@ -10,6 +10,7 @@ import dev.davidcaetano.umbra_api.coleta.properties.GravacaoPrecoProperties;
 import dev.davidcaetano.umbra_api.coleta.properties.ItadColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.steam.properties.SteamProperties;
 import dev.davidcaetano.umbra_api.config.UmbraProperties;
+import dev.davidcaetano.umbra_api.usuario.viacep.properties.ViaCepProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,7 +18,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @SpringBootApplication
 @EnableConfigurationProperties({UmbraProperties.class, ItadProperties.class, SteamProperties.class, KabumProperties.class,
         AgendaColetaProperties.class, AlarmeColetaProperties.class, GravacaoPrecoProperties.class,
-        ItadColetaProperties.class, AusenciaColetaProperties.class, BuscaProperties.class})
+        ItadColetaProperties.class, AusenciaColetaProperties.class, BuscaProperties.class,
+        ViaCepProperties.class})
 public class UmbraApiApplication {
 
     static void main(String[] args) {
