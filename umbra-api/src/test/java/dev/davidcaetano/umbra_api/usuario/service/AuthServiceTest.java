@@ -2,7 +2,10 @@ package dev.davidcaetano.umbra_api.usuario.service;
 
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import dev.davidcaetano.umbra_api.usuario.EmailJaCadastradoException;
+import dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.response.UsuarioResponse;
 import dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntity;
+import dev.davidcaetano.umbra_api.usuario.mapper.UsuarioMapperImpl;
 import dev.davidcaetano.umbra_api.usuario.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,14 +44,16 @@ class AuthServiceTest extends IntegrationTestBase {
 
     @BeforeEach
     void criarServico() {
-        authService = new AuthService(usuarioRepository, passwordEncoder, clock);
+        authService = new AuthService(usuarioRepository, new UsuarioMapperImpl(), passwordEncoder, clock);
     }
 
     @Test
     void deveCadastrarComEmailNormalizadoESenhaEmHash() {
-        UsuarioEntity usuario = authService.cadastrar(" David@Exemplo.com ", SENHA, "David");
+        UsuarioResponse usuario = authService.cadastrar(cadastro("David@Exemplo.com", "David"));
 
-        UsuarioEntity gravado = usuarioRepository.findById(usuario.getId()).orElseThrow();
+        assertThat(usuario.email()).isEqualTo("david@exemplo.com");
+        assertThat(usuario.nomeExibicao()).isEqualTo("David");
+        UsuarioEntity gravado = usuarioRepository.findById(usuario.id()).orElseThrow();
         assertThat(gravado.getEmail()).isEqualTo("david@exemplo.com");
         assertThat(gravado.getNomeExibicao()).isEqualTo("David");
         assertThat(gravado.getSenhaHash()).isNotEqualTo(SENHA);
@@ -59,9 +64,9 @@ class AuthServiceTest extends IntegrationTestBase {
 
     @Test
     void deveRecusarEmailJaCadastradoIgnorandoMaiusculas() {
-        authService.cadastrar("david@exemplo.com", SENHA, "David");
+        authService.cadastrar(cadastro("david@exemplo.com", "David"));
 
-        assertThatThrownBy(() -> authService.cadastrar("DAVID@exemplo.com", SENHA, "Outro"))
+        assertThatThrownBy(() -> authService.cadastrar(cadastro("DAVID@exemplo.com", "Outro")))
                 .isInstanceOf(EmailJaCadastradoException.class);
         assertThat(usuarioRepository.count()).isEqualTo(1);
     }
@@ -71,17 +76,21 @@ class AuthServiceTest extends IntegrationTestBase {
         usuarioRepository.saveAndFlush(UsuarioEntity.comSenha("david@exemplo.com", "hash", "David",
                 OffsetDateTime.ofInstant(AGORA, ZoneOffset.UTC)));
         AuthService servicoQueNaoViuOOutroCadastro =
-                new AuthService(repositorioQueNaoEncontraEmail(), passwordEncoder, clock);
+                new AuthService(repositorioQueNaoEncontraEmail(), new UsuarioMapperImpl(), passwordEncoder, clock);
 
-        assertThatThrownBy(() -> servicoQueNaoViuOOutroCadastro.cadastrar("david@exemplo.com", SENHA, "David"))
+        assertThatThrownBy(() -> servicoQueNaoViuOOutroCadastro.cadastrar(cadastro("david@exemplo.com", "David")))
                 .isInstanceOf(EmailJaCadastradoException.class);
     }
 
     @Test
     void deveRepassarViolacaoQueNaoEDoEmailUnico() {
-        assertThatThrownBy(() -> authService.cadastrar("sem-arroba", SENHA, "David"))
+        assertThatThrownBy(() -> authService.cadastrar(cadastro("sem-arroba", "David")))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_email");
+    }
+
+    private static CadastroRequest cadastro(String email, String nomeExibicao) {
+        return new CadastroRequest(email, SENHA, nomeExibicao);
     }
 
     private UsuarioRepository repositorioQueNaoEncontraEmail() {

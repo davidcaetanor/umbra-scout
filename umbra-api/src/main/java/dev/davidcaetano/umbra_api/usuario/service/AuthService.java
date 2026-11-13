@@ -1,7 +1,10 @@
 package dev.davidcaetano.umbra_api.usuario.service;
 
 import dev.davidcaetano.umbra_api.usuario.EmailJaCadastradoException;
+import dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.response.UsuarioResponse;
 import dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntity;
+import dev.davidcaetano.umbra_api.usuario.mapper.UsuarioMapper;
 import dev.davidcaetano.umbra_api.usuario.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
@@ -20,22 +23,23 @@ public class AuthService {
     private static final String RESTRICAO_EMAIL_UNICO = "uq_usuario_email";
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioMapper usuarioMapper;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
     @Transactional
-    public UsuarioEntity cadastrar(String email, String senha, String nomeExibicao) {
-        String emailNormalizado = UsuarioEntity.normalizarEmail(email);
+    public UsuarioResponse cadastrar(CadastroRequest cadastro) {
+        String emailNormalizado = UsuarioEntity.normalizarEmail(cadastro.email());
 
         if (usuarioRepository.existsByEmail(emailNormalizado)) {
             throw new EmailJaCadastradoException();
         }
 
-        UsuarioEntity usuario = UsuarioEntity.comSenha(emailNormalizado, passwordEncoder.encode(senha),
-                nomeExibicao, OffsetDateTime.now(clock));
+        UsuarioEntity usuario = UsuarioEntity.comSenha(emailNormalizado, passwordEncoder.encode(cadastro.senha()),
+                cadastro.nomeExibicao(), OffsetDateTime.now(clock));
 
         try {
-            return usuarioRepository.saveAndFlush(usuario);
+            return usuarioMapper.paraResponse(usuarioRepository.saveAndFlush(usuario));
         } catch (DataIntegrityViolationException ex) {
             if (violouEmailUnico(ex)) {
                 throw new EmailJaCadastradoException();
