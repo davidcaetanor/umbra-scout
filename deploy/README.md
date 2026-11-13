@@ -15,7 +15,6 @@ Produção: `docker-compose.prod.yaml` (o da raiz é desenvolvimento). Requer Do
 | `UMBRA_JWT_TTL_HORAS`               | não         | `6`         |
 | `UMBRA_CORS_ORIGENS`                | não         | nenhuma     |
 | `UMBRA_IMAGE_TAG`                   | não         | `latest`    |
-| `UMBRA_API_BIND`                    | não         | `127.0.0.1` |
 | `UMBRA_COLETA_HABILITADA`           | não         | `false`     |
 | `UMBRA_COLETA_AGENDA_RODADAINICIAL` | não         | `false`     |
 
@@ -24,6 +23,20 @@ Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_JWT_SE
 `UMBRA_CORS_ORIGENS` lista, separadas por vírgula, as origens do frontend autorizadas a chamar a API pelo navegador (`https://host` ou `https://host:porta`, sem curinga). Sem ela, nenhuma origem externa é aceita.
 
 `UMBRA_DB_URL`, `SPRING_PROFILES_ACTIVE=prod` e `TZ` já vêm no compose.
+
+## HTTPS
+
+A API escuta só em `127.0.0.1:8080` e não deve ser exposta em HTTP: login e token trafegam por ela. Na frente dela fica um proxy reverso com HTTPS no mesmo host, por exemplo o Caddy:
+
+```
+api.exemplo.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+O perfil `prod` confia no `X-Forwarded-For` apenas quando a conexão vem do próprio host, então o IP do cliente usado nos limites por IP é o informado pelo proxy, e um cabeçalho enviado direto de fora é ignorado.
+
+O projeto do compose se chama `umbra`; o volume do banco mantém o nome `deploy_umbra_pgdata`, de instalações anteriores ao nome explícito.
 
 Permissão: `chmod 700` no diretório e `chmod 600` no `.env`.
 
