@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AuthControllerTest extends IntegrationTestBase {
 
+    private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
     private static final String SENHA = "senha-forte-do-teste";
     private static final String TIPO_PARAMETRO_INVALIDO = "https://umbra.dev/erros/parametro-invalido";
     private static final String TIPO_RECURSO_EM_CONFLITO = "https://umbra.dev/erros/recurso-em-conflito";
@@ -45,27 +46,26 @@ class AuthControllerTest extends IntegrationTestBase {
 
     @Test
     void cadastroValido_deveResponder201ComOUsuarioSemSenhaNemHash() throws Exception {
-        String corpo = cadastrar("David@Exemplo.com", SENHA, "David")
+        String corpo = cadastrar("Usuario_Xanisvaldo@Exemplo.com", SENHA, "Xanisvaldo")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.email").value("david@exemplo.com"))
-                .andExpect(jsonPath("$.nomeExibicao").value("David"))
+                .andExpect(jsonPath("$.email").value(EMAIL))
+                .andExpect(jsonPath("$.nomeExibicao").value("Xanisvaldo"))
                 .andExpect(jsonPath("$.criadoEm").isString())
                 .andExpect(jsonPath("$.senha").doesNotExist())
                 .andExpect(jsonPath("$.senhaHash").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
 
-        String hash = jdbc.queryForObject("SELECT senha_hash FROM usuario WHERE email = 'david@exemplo.com'",
-                String.class);
+        String hash = jdbc.queryForObject("SELECT senha_hash FROM usuario WHERE email = ?", String.class, EMAIL);
         assertThat(hash).startsWith("$2a$12$");
         assertThat(corpo).doesNotContain(SENHA).doesNotContain(hash);
     }
 
     @Test
     void emailDuplicado_deveResponder409EmProblemDetail() throws Exception {
-        cadastrar("david@exemplo.com", SENHA, "David").andExpect(status().isCreated());
+        cadastrar(EMAIL, SENHA, "Xanisvaldo").andExpect(status().isCreated());
 
-        cadastrar("DAVID@exemplo.com", "outra-senha-forte", "Outro")
+        cadastrar("USUARIO_XANISVALDO@exemplo.com", "outra-senha-forte", "Outro")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.type").value(TIPO_RECURSO_EM_CONFLITO))
                 .andExpect(jsonPath("$.status").value(409))
@@ -76,7 +76,7 @@ class AuthControllerTest extends IntegrationTestBase {
 
     @Test
     void senhaFraca_deveResponder400SemEcoarASenhaENaoGravar() throws Exception {
-        String corpo = cadastrar("david@exemplo.com", "curta12", "David")
+        String corpo = cadastrar(EMAIL, "curta12", "Xanisvaldo")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.type").value(TIPO_PARAMETRO_INVALIDO))
                 .andExpect(jsonPath("$.erros[*].campo").value(hasItem("senha")))
@@ -88,14 +88,14 @@ class AuthControllerTest extends IntegrationTestBase {
 
     @Test
     void senhaAcimaDoLimiteDoBcrypt_deveResponder400EmVezDe500() throws Exception {
-        cadastrar("david@exemplo.com", "a".repeat(73), "David")
+        cadastrar(EMAIL, "a".repeat(73), "Xanisvaldo")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erros[*].campo").value(hasItem("senhaDentroDoLimiteDoBcrypt")));
     }
 
     @Test
     void emailInvalido_deveResponder400NoCampoEmail() throws Exception {
-        cadastrar("sem-arroba", SENHA, "David")
+        cadastrar("sem-arroba", SENHA, "Xanisvaldo")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erros[*].campo").value(hasItem("email")))
                 .andExpect(jsonPath("$.erros[*].campo").value(not(hasItem("senha"))));

@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class AuthServiceTest extends IntegrationTestBase {
 
+    private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
     private static final Instant AGORA = Instant.parse("2026-11-13T15:00:00Z");
     private static final String SENHA = "senha-forte-de-teste";
 
@@ -49,13 +50,13 @@ class AuthServiceTest extends IntegrationTestBase {
 
     @Test
     void deveCadastrarComEmailNormalizadoESenhaEmHash() {
-        UsuarioResponse usuario = authService.cadastrar(cadastro("David@Exemplo.com", "David"));
+        UsuarioResponse usuario = authService.cadastrar(cadastro("Usuario_Xanisvaldo@Exemplo.com", "Xanisvaldo"));
 
-        assertThat(usuario.email()).isEqualTo("david@exemplo.com");
-        assertThat(usuario.nomeExibicao()).isEqualTo("David");
+        assertThat(usuario.email()).isEqualTo(EMAIL);
+        assertThat(usuario.nomeExibicao()).isEqualTo("Xanisvaldo");
         UsuarioEntity gravado = usuarioRepository.findById(usuario.id()).orElseThrow();
-        assertThat(gravado.getEmail()).isEqualTo("david@exemplo.com");
-        assertThat(gravado.getNomeExibicao()).isEqualTo("David");
+        assertThat(gravado.getEmail()).isEqualTo(EMAIL);
+        assertThat(gravado.getNomeExibicao()).isEqualTo("Xanisvaldo");
         assertThat(gravado.getSenhaHash()).isNotEqualTo(SENHA);
         assertThat(passwordEncoder.matches(SENHA, gravado.getSenhaHash())).isTrue();
         assertThat(gravado.getDiscordId()).isNull();
@@ -64,27 +65,27 @@ class AuthServiceTest extends IntegrationTestBase {
 
     @Test
     void deveRecusarEmailJaCadastradoIgnorandoMaiusculas() {
-        authService.cadastrar(cadastro("david@exemplo.com", "David"));
+        authService.cadastrar(cadastro(EMAIL, "Xanisvaldo"));
 
-        assertThatThrownBy(() -> authService.cadastrar(cadastro("DAVID@exemplo.com", "Outro")))
+        assertThatThrownBy(() -> authService.cadastrar(cadastro("USUARIO_XANISVALDO@exemplo.com", "Outro")))
                 .isInstanceOf(EmailJaCadastradoException.class);
         assertThat(usuarioRepository.count()).isEqualTo(1);
     }
 
     @Test
     void deveTraduzirViolacaoDoEmailUnicoQuandoOutroCadastroGravouPrimeiro() {
-        usuarioRepository.saveAndFlush(UsuarioEntity.comSenha("david@exemplo.com", "hash", "David",
+        usuarioRepository.saveAndFlush(UsuarioEntity.comSenha(EMAIL, "hash", "Xanisvaldo",
                 OffsetDateTime.ofInstant(AGORA, ZoneOffset.UTC)));
         AuthService servicoQueNaoViuOOutroCadastro =
                 new AuthService(repositorioQueNaoEncontraEmail(), new UsuarioMapperImpl(), passwordEncoder, clock);
 
-        assertThatThrownBy(() -> servicoQueNaoViuOOutroCadastro.cadastrar(cadastro("david@exemplo.com", "David")))
+        assertThatThrownBy(() -> servicoQueNaoViuOOutroCadastro.cadastrar(cadastro(EMAIL, "Xanisvaldo")))
                 .isInstanceOf(EmailJaCadastradoException.class);
     }
 
     @Test
     void deveRepassarViolacaoQueNaoEDoEmailUnico() {
-        assertThatThrownBy(() -> authService.cadastrar(cadastro("sem-arroba", "David")))
+        assertThatThrownBy(() -> authService.cadastrar(cadastro("sem-arroba", "Xanisvaldo")))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_email");
     }

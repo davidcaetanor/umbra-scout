@@ -18,7 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 class UsuarioRepositoryTest extends IntegrationTestBase {
-
+
+    private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
     private static final OffsetDateTime AGORA = OffsetDateTime.parse("2026-11-13T12:00:00Z");
 
     private static final String INSERT = """
@@ -34,17 +35,17 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
 
     @Test
     void deveGravarUsuarioComSenhaEEncontrarPeloEmail() {
-        usuarioRepository.saveAndFlush(UsuarioEntity.comSenha("David@Exemplo.com", "hash", "David", AGORA));
+        usuarioRepository.saveAndFlush(UsuarioEntity.comSenha("Usuario_Xanisvaldo@Exemplo.com", "hash", "Xanisvaldo", AGORA));
 
-        assertThat(usuarioRepository.existsByEmail("david@exemplo.com")).isTrue();
+        assertThat(usuarioRepository.existsByEmail(EMAIL)).isTrue();
         assertThat(usuarioRepository.existsByEmail("outro@exemplo.com")).isFalse();
     }
 
     @Test
     void deveRecusarEmailDuplicado() {
-        usuarioRepository.saveAndFlush(UsuarioEntity.comSenha("david@exemplo.com", "hash", "David", AGORA));
+        usuarioRepository.saveAndFlush(UsuarioEntity.comSenha(EMAIL, "hash", "Xanisvaldo", AGORA));
 
-        UsuarioEntity duplicado = UsuarioEntity.comDiscord("DAVID@exemplo.com", "123", "Outro", AGORA);
+        UsuarioEntity duplicado = UsuarioEntity.comDiscord("USUARIO_XANISVALDO@exemplo.com", "123", "Outro", AGORA);
 
         assertThatThrownBy(() -> usuarioRepository.saveAndFlush(duplicado))
                 .isInstanceOf(DataIntegrityViolationException.class)
@@ -53,14 +54,14 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
 
     @Test
     void deveRecusarEmailComMaiusculaGravadoSemNormalizar() {
-        assertThatThrownBy(() -> inserir("David@exemplo.com", "hash", null, null, null, null))
+        assertThatThrownBy(() -> inserir("Usuario_Xanisvaldo@exemplo.com", "hash", null, null, null, null))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_email");
     }
 
     @Test
     void deveRecusarUsuarioSemNenhumaCredencial() {
-        assertThatThrownBy(() -> inserir("david@exemplo.com", null, null, null, null, null))
+        assertThatThrownBy(() -> inserir(EMAIL, null, null, null, null, null))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_credencial");
     }
@@ -77,7 +78,7 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
     @Test
     void deveGravarUsuarioSoComGoogle() {
         UsuarioEntity usuario = usuarioRepository.saveAndFlush(
-                UsuarioEntity.comGoogle("david@exemplo.com", "108234567890", "David", AGORA));
+                UsuarioEntity.comGoogle(EMAIL, "108234567890", "Xanisvaldo", AGORA));
 
         assertThat(usuarioRepository.findById(usuario.getId()))
                 .get()
@@ -96,21 +97,21 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
 
     @Test
     void deveRecusarCidadeSemCep() {
-        assertThatThrownBy(() -> inserir("david@exemplo.com", "hash", null, null, "Sao Paulo", "SP"))
+        assertThatThrownBy(() -> inserir(EMAIL, "hash", null, null, "Sao Paulo", "SP"))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_endereco");
     }
 
     @Test
     void deveRecusarCepForaDoFormato() {
-        assertThatThrownBy(() -> inserir("david@exemplo.com", "hash", null, "01310-10", null, null))
+        assertThatThrownBy(() -> inserir(EMAIL, "hash", null, "01310-10", null, null))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_cep");
     }
 
     @Test
     void deveRecusarUfMinuscula() {
-        assertThatThrownBy(() -> inserir("david@exemplo.com", "hash", null, "01310100", "Sao Paulo", "sp"))
+        assertThatThrownBy(() -> inserir(EMAIL, "hash", null, "01310100", "Sao Paulo", "sp"))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_uf");
     }

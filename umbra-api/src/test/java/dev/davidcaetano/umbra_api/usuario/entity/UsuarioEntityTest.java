@@ -8,17 +8,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UsuarioEntityTest {
-
+
+    private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
     private static final OffsetDateTime AGORA = OffsetDateTime.parse("2026-11-13T12:00:00Z");
 
     @Test
     void comSenhaDeveNormalizarEmailParaMinusculoSemEspacos() {
-        UsuarioEntity usuario = UsuarioEntity.comSenha("  David@Exemplo.COM ", "hash", "David", AGORA);
+        UsuarioEntity usuario = UsuarioEntity.comSenha("  Usuario_Xanisvaldo@Exemplo.COM ", "hash", "Xanisvaldo", AGORA);
 
-        assertThat(usuario.getEmail()).isEqualTo("david@exemplo.com");
+        assertThat(usuario.getEmail()).isEqualTo(EMAIL);
         assertThat(usuario.getSenhaHash()).isEqualTo("hash");
         assertThat(usuario.getDiscordId()).isNull();
-        assertThat(usuario.getNomeExibicao()).isEqualTo("David");
+        assertThat(usuario.getNomeExibicao()).isEqualTo("Xanisvaldo");
         assertThat(usuario.isAtivo()).isTrue();
         assertThat(usuario.getCriadoEm()).isEqualTo(AGORA);
         assertThat(usuario.getAtualizadoEm()).isEqualTo(AGORA);
@@ -26,7 +27,7 @@ class UsuarioEntityTest {
 
     @Test
     void comDiscordDeveCriarSemSenha() {
-        UsuarioEntity usuario = UsuarioEntity.comDiscord("david@exemplo.com", "123456789", "David", AGORA);
+        UsuarioEntity usuario = UsuarioEntity.comDiscord(EMAIL, "123456789", "Xanisvaldo", AGORA);
 
         assertThat(usuario.getDiscordId()).isEqualTo("123456789");
         assertThat(usuario.getSenhaHash()).isNull();
@@ -35,7 +36,7 @@ class UsuarioEntityTest {
 
     @Test
     void comGoogleDeveCriarSemSenhaESemDiscord() {
-        UsuarioEntity usuario = UsuarioEntity.comGoogle("david@exemplo.com", "108234567890", "David", AGORA);
+        UsuarioEntity usuario = UsuarioEntity.comGoogle(EMAIL, "108234567890", "Xanisvaldo", AGORA);
 
         assertThat(usuario.getGoogleId()).isEqualTo("108234567890");
         assertThat(usuario.getSenhaHash()).isNull();
@@ -44,27 +45,27 @@ class UsuarioEntityTest {
 
     @Test
     void deveRecusarCredencialAusente() {
-        assertThatThrownBy(() -> UsuarioEntity.comSenha("david@exemplo.com", null, "David", AGORA))
+        assertThatThrownBy(() -> UsuarioEntity.comSenha(EMAIL, null, "Xanisvaldo", AGORA))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("senhaHash");
-        assertThatThrownBy(() -> UsuarioEntity.comDiscord("david@exemplo.com", " ", "David", AGORA))
+        assertThatThrownBy(() -> UsuarioEntity.comDiscord(EMAIL, " ", "Xanisvaldo", AGORA))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("discordId");
-        assertThatThrownBy(() -> UsuarioEntity.comGoogle("david@exemplo.com", null, "David", AGORA))
+        assertThatThrownBy(() -> UsuarioEntity.comGoogle(EMAIL, null, "Xanisvaldo", AGORA))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("googleId");
     }
 
     @Test
     void deveRecusarNomeExibicaoVazio() {
-        assertThatThrownBy(() -> UsuarioEntity.comSenha("david@exemplo.com", "hash", "  ", AGORA))
+        assertThatThrownBy(() -> UsuarioEntity.comSenha(EMAIL, "hash", "  ", AGORA))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nomeExibicao");
     }
 
     @Test
     void deveRecusarEmailAusente() {
-        assertThatThrownBy(() -> UsuarioEntity.comSenha(null, "hash", "David", AGORA))
+        assertThatThrownBy(() -> UsuarioEntity.comSenha(null, "hash", "Xanisvaldo", AGORA))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("email");
     }
