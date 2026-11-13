@@ -380,6 +380,8 @@
 								<param>dev.davidcaetano.umbra_api.comum.log.ChaveDeLog</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogo</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistorico</param>
+								<param>dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntity</param>
+								<param>dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest</param>
 							</targetClasses>
 							<targetTests>
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
@@ -408,6 +410,8 @@
 								<param>dev.davidcaetano.umbra_api.comum.log.ChaveDeLogTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogoTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistoricoTest</param>
+								<param>dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntityTest</param>
+								<param>dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequestTest</param>
 							</targetTests>
 						</configuration>
 					</plugin>
