@@ -18,6 +18,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -159,5 +160,92 @@ class PrecoRepositoryTest extends IntegrationTestBase {
         PrecoEntity relido = precoRepository.findById(id).orElseThrow();
 
         assertThat(relido.getExpiraEm().toInstant()).isEqualTo(expiraEm.toInstant());
+    }
+
+    @Test
+    void precedencia_deveDevolverObservacaoDaOrigemAutoritativaDentroDaCadenciaMesmoSendoMaisVelha() {
+        OffsetDateTime agora = OffsetDateTime.now();
+        PrecoEntity daSteam = precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 29900L, null, null, true,
+                OrigemColeta.STEAM_API, null, agora.minusHours(1)));
+        precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoIdAtualDa(oferta)).isEqualTo(daSteam.getId());
+    }
+
+    @Test
+    void precedencia_deveCairNaRecenciaQuandoObservacaoAutoritativaDeJogoPassarDaCadencia() {
+        OffsetDateTime agora = OffsetDateTime.now();
+        precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 29900L, null, null, true,
+                OrigemColeta.STEAM_API, null, agora.minusHours(7)));
+        PrecoEntity doItad = precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoIdAtualDa(oferta)).isEqualTo(doItad.getId());
+    }
+
+    @Test
+    void precedencia_deveManterObservacaoAutoritativaDeHardwareDentroDaCadenciaDeDozeHoras() {
+        OfertaEntity hardware = ofertaDaLoja(CodigoLoja.STEAM, TipoProduto.HARDWARE, "hw-11h");
+        OffsetDateTime agora = OffsetDateTime.now();
+        PrecoEntity daSteam = precoRepository.saveAndFlush(PrecoEntity.novo(hardware, 29900L, null, null, true,
+                OrigemColeta.STEAM_API, null, agora.minusHours(11)));
+        precoRepository.saveAndFlush(PrecoEntity.novo(hardware, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoIdAtualDa(hardware)).isEqualTo(daSteam.getId());
+    }
+
+    @Test
+    void precedencia_deveCairNaRecenciaQuandoObservacaoAutoritativaDeHardwarePassarDaCadencia() {
+        OfertaEntity hardware = ofertaDaLoja(CodigoLoja.STEAM, TipoProduto.HARDWARE, "hw-13h");
+        OffsetDateTime agora = OffsetDateTime.now();
+        precoRepository.saveAndFlush(PrecoEntity.novo(hardware, 29900L, null, null, true,
+                OrigemColeta.STEAM_API, null, agora.minusHours(13)));
+        PrecoEntity doItad = precoRepository.saveAndFlush(PrecoEntity.novo(hardware, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoIdAtualDa(hardware)).isEqualTo(doItad.getId());
+    }
+
+    @Test
+    void precedencia_deveResolverPorRecenciaQuandoLojaNaoTiverOrigemAutoritativa() {
+        OfertaEntity daNuuvem = ofertaDaLoja(CodigoLoja.NUUVEM, TipoProduto.JOGO, "nuuvem-1");
+        OffsetDateTime agora = OffsetDateTime.now();
+        precoRepository.saveAndFlush(PrecoEntity.novo(daNuuvem, 29900L, null, null, true,
+                OrigemColeta.NUUVEM_API, null, agora.minusHours(1)));
+        PrecoEntity doItad = precoRepository.saveAndFlush(PrecoEntity.novo(daNuuvem, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoIdAtualDa(daNuuvem)).isEqualTo(doItad.getId());
+    }
+
+    @Test
+    void ultimoPorOrigem_deveIgnorarObservacaoMaisRecenteDeOutraOrigem() {
+        OffsetDateTime agora = OffsetDateTime.now();
+        precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 29900L, null, null, true,
+                OrigemColeta.STEAM_API, null, agora.minusHours(1)));
+        precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoRepository.findUltimoPrecoPorOfertaIdInEOrigem(List.of(oferta.getId()), OrigemColeta.STEAM_API))
+                .singleElement()
+                .extracting(UltimoPrecoProjecao::getValorCentavos)
+                .isEqualTo(29900L);
+    }
+
+    private OfertaEntity ofertaDaLoja(CodigoLoja codigoLoja, TipoProduto tipo, String identificadorLoja) {
+        LojaEntity loja = lojaRepository.findByCodigo(codigoLoja).orElseThrow();
+        ProdutoEntity produto = produtoRepository.saveAndFlush(ProdutoEntity.novo(tipo,
+                new DadosProduto("Produto " + identificadorLoja, "Acao", null, null), PRIMEIRA_COLETA));
+        return ofertaRepository.saveAndFlush(OfertaEntity.nova(
+                produto, loja, identificadorLoja, "https://loja.exemplo/" + identificadorLoja, PRIMEIRA_COLETA));
+    }
+
+    private long precoIdAtualDa(OfertaEntity alvo) {
+        Object precoId = em.createNativeQuery("SELECT preco_id FROM vw_preco_atual WHERE oferta_id = :ofertaId")
+                .setParameter("ofertaId", alvo.getId())
+                .getSingleResult();
+        return ((Number) precoId).longValue();
     }
 }
