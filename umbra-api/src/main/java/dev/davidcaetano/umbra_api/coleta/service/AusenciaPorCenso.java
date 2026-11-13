@@ -8,12 +8,14 @@ import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
+import dev.davidcaetano.umbra_api.coleta.properties.AusenciaColetaProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,16 +27,19 @@ class AusenciaPorCenso {
     private final OfertaRepository ofertaRepository;
     private final TransactionTemplate transactionTemplate;
     private final RegraDeGravacaoDePreco regraDeGravacaoDePreco;
+    private final AusenciaColetaProperties ausenciaColetaProperties;
 
     AusenciaPorCenso(PrecoRepository precoRepository,
                      OfertaRepository ofertaRepository,
                      TransactionTemplate transactionTemplate,
-                     RegraDeGravacaoDePreco regraDeGravacaoDePreco) {
+                     RegraDeGravacaoDePreco regraDeGravacaoDePreco,
+                     AusenciaColetaProperties ausenciaColetaProperties) {
 
         this.precoRepository = precoRepository;
         this.ofertaRepository = ofertaRepository;
         this.transactionTemplate = transactionTemplate;
         this.regraDeGravacaoDePreco = regraDeGravacaoDePreco;
+        this.ausenciaColetaProperties = ausenciaColetaProperties;
     }
 
     void concluir(ResultadoColeta resultado, VereditoRodada veredito, OffsetDateTime agora) {
@@ -70,6 +75,14 @@ class AusenciaPorCenso {
                         ausente.getValorCentavos(), false, agora.toInstant()))
                 .toList();
 
+        int tetoPercentual = ausenciaColetaProperties.tetoPercentual();
+        if (passaDoTeto(aMarcar.size(), conhecidas.size(), tetoPercentual)) {
+            log.warn("Ausencia por censo acima do teto, nada marcado: fonte={} seriamMarcadas={} ofertasConhecidasNoEscopo={} percentual={} tetoPercentual={}",
+                    resultado.fonte(), aMarcar.size(), conhecidas.size(),
+                    String.format(Locale.ROOT, "%.1f", aMarcar.size() * 100.0 / conhecidas.size()), tetoPercentual);
+            return;
+        }
+
         transactionTemplate.executeWithoutResult(status -> aMarcar.forEach(ausente ->
                 precoRepository.save(PrecoEntity.novo(ofertaRepository.getReferenceById(ausente.getOfertaId()),
                         ausente.getValorCentavos(), null, null, false, resultado.fonte(), null, agora))));
@@ -78,6 +91,11 @@ class AusenciaPorCenso {
                 resultado.fonte(), conhecidas.size(), aMarcar.size());
     }
 
+
+    // Estritamente maior: uma rodada que marca exatamente o teto ainda grava.
+    private static boolean passaDoTeto(int aMarcar, int conhecidas, int tetoPercentual) {
+        return (long) aMarcar * 100 > (long) tetoPercentual * conhecidas;
+    }
 
     static boolean rodadaViuTudoQuantoPretendia(ResultadoColeta resultado, VereditoRodada veredito) {
         Reconciliacao reconciliacao = resultado.reconciliacao();

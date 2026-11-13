@@ -53,15 +53,24 @@ umbra:
         limiar-sem-preco-percentual: 20
         margem-cobertura-percentual: 2
         margem-duplicata-percentual: 2
+      por-fonte:
+        steam-api:
+          amostra-minima: 5
+          limiar-sem-preco-percentual: 40
     gravacao:
       janela-vivacidade-dias: 90
+    ausencia:
+      teto-percentual: 20
+    itad:
+      paginas-por-rodada: 30
   busca:
     externa:
-      teto: 20
+      teto-global: 400
+      teto-por-ip: 15
       janela: 5m
       timeout-conexao: 1s
-      timeout-leitura: 1s
-      cache-ttl: 2m
+      timeout-leitura: 2s
+      cache-ttl: 6m
       prazo: 4s
       maximo-resultados: 5
 
@@ -81,10 +90,14 @@ kabum:
 resilience4j:
   ratelimiter:
     instances:
-      itad:
-        limit-for-period: 1000
+      itad-coleta:
+        limit-for-period: 600
         limit-refresh-period: 5m
         timeout-duration: 2s
+      itad-busca:
+        limit-for-period: 800
+        limit-refresh-period: 5m
+        timeout-duration: 0
       steam:
         limit-for-period: 180
         limit-refresh-period: 5m

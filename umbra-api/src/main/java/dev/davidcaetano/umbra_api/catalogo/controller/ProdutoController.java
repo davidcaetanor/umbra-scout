@@ -6,6 +6,7 @@ import dev.davidcaetano.umbra_api.catalogo.dto.response.HistoricoResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.ProdutoResponse;
 import dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistorico;
 import dev.davidcaetano.umbra_api.catalogo.service.ProdutoService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -24,9 +25,12 @@ public class ProdutoController {
     private final ProdutoService produtoService;
 
     @GetMapping
-    public BuscaProdutosResponse buscar(@Valid @ModelAttribute BuscaProdutoRequest busca, Pageable paginacao) {
+    public BuscaProdutosResponse buscar(@Valid @ModelAttribute BuscaProdutoRequest busca, Pageable paginacao,
+                                        HttpServletRequest requisicao) {
+        // Sem proxy na frente, X-Forwarded-For vem do cliente e não é confiável; a T5.3 o trata com proxies declarados.
+        String ipDeOrigem = requisicao.getRemoteAddr();
         return produtoService.buscar(busca.nome(), busca.categoria(), busca.ordenacao(), busca.incluirExterno(),
-                paginacao);
+                paginacao, ipDeOrigem);
     }
 
     @GetMapping("/{id}")

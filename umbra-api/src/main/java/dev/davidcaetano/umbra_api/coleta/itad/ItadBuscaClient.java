@@ -25,7 +25,7 @@ public class ItadBuscaClient {
     private final RestClient itadBuscaRestClient;
 
     @CircuitBreaker(name = "itad-busca")
-    @RateLimiter(name = "itad")
+    @RateLimiter(name = "itad-busca")
     public List<ItadJogoBuscaResponse> buscarJogos(String termo) {
         List<ItadJogoBuscaResponse> resposta = executar(() -> itadBuscaRestClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -41,7 +41,7 @@ public class ItadBuscaClient {
     }
 
     @CircuitBreaker(name = "itad-busca")
-    @RateLimiter(name = "itad")
+    @RateLimiter(name = "itad-busca")
     public List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids) {
         List<ItadPrecoJogoResponse> resposta = executar(() -> itadBuscaRestClient.post()
                 .uri(uriBuilder -> uriBuilder

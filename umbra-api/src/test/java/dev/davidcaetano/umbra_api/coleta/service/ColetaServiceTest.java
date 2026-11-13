@@ -41,6 +41,7 @@ import java.time.ZoneId;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -54,6 +55,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 class ColetaServiceTest extends IntegrationTestBase {
 
     private static final OffsetDateTime INSTANTE_RODADA_1 = OffsetDateTime.parse("2026-06-01T09:00:00-03:00");
+    private static final int OFERTAS_DE_LASTRO = 8;
 
     @Autowired
     private ColetaService coletaService;
@@ -100,12 +102,14 @@ class ColetaServiceTest extends IntegrationTestBase {
         };
         logsDoServico.start();
         ((Logger) LoggerFactory.getLogger(ColetaService.class)).addAppender(logsDoServico);
+        ((Logger) LoggerFactory.getLogger(AusenciaPorCenso.class)).addAppender(logsDoServico);
     }
 
     @AfterEach
     void pararDeCapturarLogsDoServico() {
         logsDoServico.stop();
         ((Logger) LoggerFactory.getLogger(ColetaService.class)).detachAppender(logsDoServico);
+        ((Logger) LoggerFactory.getLogger(AusenciaPorCenso.class)).detachAppender(logsDoServico);
     }
 
     private List<String> logsQueComecamCom(String prefixo) {
@@ -180,6 +184,22 @@ class ColetaServiceTest extends IntegrationTestBase {
             pecas.add(pecaKabum("peca-" + i, 10000L, true));
         }
         return pecas;
+    }
+
+    private OfertaColetada[] comLastroDaKabum(OfertaColetada... ofertas) {
+        List<OfertaColetada> comLastro = new ArrayList<>(List.of(ofertas));
+        for (int i = 0; i < OFERTAS_DE_LASTRO; i++) {
+            comLastro.add(pecaKabum("lastro-" + i, 10000L, true));
+        }
+        return comLastro.toArray(OfertaColetada[]::new);
+    }
+
+    private List<OfertaColetada> lastroDaSteam() {
+        List<OfertaColetada> lastro = new ArrayList<>();
+        for (int i = 0; i < OFERTAS_DE_LASTRO; i++) {
+            lastro.add(jogoNaSteam("lastro-" + i, "gid-lastro-" + i, 1000L));
+        }
+        return lastro;
     }
 
     private List<PrecoEntity> precosDa(String identificadorLoja) {
@@ -421,12 +441,12 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     @Test
     void ausencia_deveMarcarIndisponivelComUltimoValorQuandoOfertaNaoVoltarEmCensoLimpo() {
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         avancar(Duration.ofHours(6));
         OffsetDateTime instanteRodada2 = OffsetDateTime.now(clock);
 
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         List<PrecoEntity> precosDaAusente = precosDa("222");
         assertThat(precosDaAusente).hasSize(2);
@@ -444,10 +464,10 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     @Test
     void ausencia_deveTirarOfertaAusenteDaMelhorOfertaAtualEManterAQueVoltou() {
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         assertThat(ofertasNaMelhorOfertaAtual())
                 .contains(ofertaPorIdentificador("111").getId())
@@ -456,13 +476,13 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     @Test
     void ausencia_deveVoltarParaMelhorOfertaAtualQuandoReaparecerPeloMesmoPreco() {
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         List<PrecoEntity> precosDaQueVoltou = precosDa("222");
         assertThat(precosDaQueVoltou).hasSize(3);
@@ -473,13 +493,13 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     @Test
     void ausencia_naoDeveGravarLinhaNovaQuandoOfertaContinuarAusenteNaRodadaSeguinte() {
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         assertThat(precosDa("222")).hasSize(2);
     }
@@ -545,10 +565,10 @@ class ColetaServiceTest extends IntegrationTestBase {
     void ausencia_naoDeveTocarOfertaDeLojaForaDoCenso() {
         gravar(oferta(CodigoLoja.STEAM, "730", TipoProduto.JOGO, "Counter-Strike 2",
                 "gid-cs2", 8990L, true, OrigemColeta.STEAM_API));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         assertThat(precosDa("730")).hasSize(1);
         assertThat(precosDa("222")).hasSize(2);
@@ -567,10 +587,10 @@ class ColetaServiceTest extends IntegrationTestBase {
 
     @Test
     void ausencia_deveManterOfertaAtivaQuandoMarcarIndisponivel() {
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true)));
 
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true));
+        gravarCensoLimpoDaKabum(comLastroDaKabum(pecaKabum("111", 10000L, true)));
 
         assertThat(precosDa("222").getLast().isDisponivel()).isFalse();
         assertThat(ofertaPorIdentificador("222").isAtiva()).isTrue();
@@ -585,15 +605,52 @@ class ColetaServiceTest extends IntegrationTestBase {
                 oferta(CodigoLoja.STEAM, "400", TipoProduto.JOGO, "Jogo Sem Chave",
                         null, 4000L, true, OrigemColeta.STEAM_API));
 
+        gravar(lastroDaSteam().toArray(OfertaColetada[]::new));
+
         avancar(Duration.ofHours(6));
-        gravarCensoLimpoDosProdutosDaSteam(Set.of("gid-coberto-ausente", "gid-coberto-presente"),
-                jogoNaSteam("200", "gid-coberto-presente", 2000L));
+        Set<String> cobertos = new HashSet<>(Set.of("gid-coberto-ausente", "gid-coberto-presente"));
+        List<OfertaColetada> presentes = new ArrayList<>(List.of(jogoNaSteam("200", "gid-coberto-presente", 2000L)));
+        lastroDaSteam().forEach(lastro -> {
+            cobertos.add(lastro.chaveItad());
+            presentes.add(lastro);
+        });
+        gravarCensoLimpoDosProdutosDaSteam(cobertos, presentes.toArray(OfertaColetada[]::new));
 
         assertThat(precosDa("100")).hasSize(2);
         assertThat(precosDa("100").getLast().isDisponivel()).isFalse();
         assertThat(precosDa("200")).hasSize(1);
         assertThat(precosDa("300")).hasSize(1);
         assertThat(precosDa("400")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_acimaDoTeto_naoDeveMarcarNenhumaOferta_eDeveAvisarEmWarn() {
+        gravarCensoLimpoDaKabum(pecasKabum(10).toArray(OfertaColetada[]::new));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecasKabum(7).toArray(OfertaColetada[]::new));
+
+        assertThat(List.of("peca-7", "peca-8", "peca-9"))
+                .allSatisfy(ausente -> assertThat(precosDa(ausente)).hasSize(1));
+        assertThat(logsDoServico.list)
+                .filteredOn(evento -> evento.getLevel() == Level.WARN
+                        && evento.getLoggerName().equals(AusenciaPorCenso.class.getName()))
+                .singleElement()
+                .satisfies(evento -> assertThat(evento.getArgumentArray())
+                        .contains(OrigemColeta.KABUM_API, 3, 10, "30.0", 20));
+    }
+
+    @Test
+    void ausencia_exatamenteNoTeto_aindaDeveMarcar() {
+        gravarCensoLimpoDaKabum(pecasKabum(10).toArray(OfertaColetada[]::new));
+
+        avancar(Duration.ofHours(6));
+        gravarCensoLimpoDaKabum(pecasKabum(8).toArray(OfertaColetada[]::new));
+
+        assertThat(List.of("peca-8", "peca-9")).allSatisfy(ausente -> {
+            assertThat(precosDa(ausente)).hasSize(2);
+            assertThat(precosDa(ausente).getLast().isDisponivel()).isFalse();
+        });
     }
 
     @Test
