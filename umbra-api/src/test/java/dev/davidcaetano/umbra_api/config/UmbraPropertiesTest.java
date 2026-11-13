@@ -58,6 +58,32 @@ public class UmbraPropertiesTest {
     }
 
     @Test
+    void semOrigemDeCors_deveSubirSemNenhumaOrigemPermitida() {
+        contextRunner.withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO)
+                .run(context -> assertThat(context.getBean(UmbraProperties.class).cors().origens()).isEmpty());
+    }
+
+    @Test
+    void origensDeCorsSeparadasPorVirgula_devemVirarLista() {
+        contextRunner.withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO,
+                        "umbra.cors.origens=https://umbra.exemplo.com,http://localhost:4200")
+                .run(context -> assertThat(context.getBean(UmbraProperties.class).cors().origens())
+                        .containsExactly("https://umbra.exemplo.com", "http://localhost:4200"));
+    }
+
+    @Test
+    void origemDeCorsComCuringa_deveFalharNaSubida() {
+        contextRunner.withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO,
+                        "umbra.cors.origens=*")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .rootCause()
+                            .hasMessageContaining("umbra.cors.origens");
+                });
+    }
+
+    @Test
     void deveFalharComTTLInvalido() {
         contextRunner
                 .withPropertyValues(SEGREDO_VALIDO,

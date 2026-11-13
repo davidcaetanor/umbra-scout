@@ -8,6 +8,8 @@ spring:
     hibernate:
       ddl-auto: validate
 umbra:
+  cors:
+    origens: http://localhost:4200
   jwt:
     ttl-horas: 1
     secret: segredo-de-teste-com-pelo-menos-32-bytes
