@@ -6,5 +6,8 @@ public record UsuarioResponse(
         Long id,
         String email,
         String nomeExibicao,
+        String cep,
+        String cidade,
+        String uf,
         OffsetDateTime criadoEm) {
 }

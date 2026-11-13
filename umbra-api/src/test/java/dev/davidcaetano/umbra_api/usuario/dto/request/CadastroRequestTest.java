@@ -34,7 +34,7 @@ class CadastroRequestTest {
 
     @Test
     void deveAceitarCadastroValidoERemoverEspacosDasPontas() {
-        CadastroRequest request = new CadastroRequest("  usuario_xanisvaldo@exemplo.com ", SENHA, " Xanisvaldo ");
+        CadastroRequest request = cadastro("  usuario_xanisvaldo@exemplo.com ", SENHA, " Xanisvaldo ");
 
         assertThat(validador.validate(request)).isEmpty();
         assertThat(request.email()).isEqualTo(EMAIL);
@@ -43,14 +43,14 @@ class CadastroRequestTest {
 
     @Test
     void deveRecusarSenhaComMenosDe8Caracteres() {
-        assertThat(camposInvalidos(new CadastroRequest(EMAIL, "1234567", "Xanisvaldo")))
+        assertThat(camposInvalidos(cadastro(EMAIL, "1234567", "Xanisvaldo")))
                 .containsExactly("senha");
     }
 
     @Test
     void deveAceitarSenhaDe72BytesERecusarDe73() {
-        assertThat(camposInvalidos(new CadastroRequest(EMAIL, "a".repeat(72), "Xanisvaldo"))).isEmpty();
-        assertThat(camposInvalidos(new CadastroRequest(EMAIL, "a".repeat(73), "Xanisvaldo")))
+        assertThat(camposInvalidos(cadastro(EMAIL, "a".repeat(72), "Xanisvaldo"))).isEmpty();
+        assertThat(camposInvalidos(cadastro(EMAIL, "a".repeat(73), "Xanisvaldo")))
                 .containsExactly("senhaDentroDoLimiteDoBcrypt");
     }
 
@@ -58,33 +58,67 @@ class CadastroRequestTest {
     void deveContarOLimiteDaSenhaEmBytesENaoEmCaracteres() {
         String trintaESeteCaracteresComDoisBytesCada = "ç".repeat(37);
 
-        assertThat(camposInvalidos(new CadastroRequest(EMAIL, trintaESeteCaracteresComDoisBytesCada,
+        assertThat(camposInvalidos(cadastro(EMAIL, trintaESeteCaracteresComDoisBytesCada,
                 "Xanisvaldo"))).containsExactly("senhaDentroDoLimiteDoBcrypt");
     }
 
     @Test
     void deveRecusarEmailInvalidoENomeVazio() {
-        assertThat(camposInvalidos(new CadastroRequest("sem-arroba", SENHA, "  ")))
+        assertThat(camposInvalidos(cadastro("sem-arroba", SENHA, "  ")))
                 .containsExactlyInAnyOrder("email", "nomeExibicao");
     }
 
     @Test
     void deveRecusarCamposAusentes() {
-        assertThat(camposInvalidos(new CadastroRequest(null, null, null)))
+        assertThat(camposInvalidos(cadastro(null, null, null)))
                 .containsExactlyInAnyOrder("email", "senha", "nomeExibicao");
     }
 
     @Test
     void deveRecusarNomeExibicaoComMaisDe60Caracteres() {
-        assertThat(camposInvalidos(new CadastroRequest(EMAIL, SENHA, "a".repeat(61))))
+        assertThat(camposInvalidos(cadastro(EMAIL, SENHA, "a".repeat(61))))
                 .containsExactly("nomeExibicao");
     }
 
     @Test
     void toStringNaoDeveExporASenha() {
-        assertThat(new CadastroRequest(EMAIL, SENHA, "Xanisvaldo").toString())
+        assertThat(cadastro(EMAIL, SENHA, "Xanisvaldo").toString())
                 .contains(EMAIL)
                 .doesNotContain(SENHA);
+    }
+
+    @Test
+    void deveNormalizarCepComHifenPontoEEspacos() {
+        assertThat(cadastroComCep(" 01.310-100 ").cep()).isEqualTo("01310100");
+        assertThat(camposInvalidos(cadastroComCep("01310-100"))).isEmpty();
+    }
+
+    @Test
+    void deveTratarCepAusenteOuSoComMascaraComoNaoInformado() {
+        assertThat(cadastroComCep(null).cep()).isNull();
+        assertThat(cadastroComCep(" - ").cep()).isNull();
+        assertThat(camposInvalidos(cadastroComCep(" - "))).isEmpty();
+    }
+
+    @Test
+    void deveRecusarCepForaDoFormatoDepoisDeNormalizar() {
+        assertThat(camposInvalidos(cadastroComCep("0131010"))).containsExactly("cep");
+        assertThat(camposInvalidos(cadastroComCep("013101000"))).containsExactly("cep");
+        assertThat(camposInvalidos(cadastroComCep("abcde-fgh"))).containsExactly("cep");
+        assertThat(camposInvalidos(cadastroComCep("01310/100"))).containsExactly("cep");
+    }
+
+    @Test
+    void toStringNaoDeveExporOCep() {
+        assertThat(cadastroComCep("01310100").toString()).doesNotContain("01310100");
+    }
+
+    private static CadastroRequest cadastro(String email, String senha, String nomeExibicao) {
+        return new CadastroRequest(email, senha, nomeExibicao, null);
+    }
+
+    private static CadastroRequest cadastroComCep(String cep) {
+        return new CadastroRequest(EMAIL, SENHA, "Xanisvaldo", cep);
     }
 
     private static Set<String> camposInvalidos(CadastroRequest request) {

@@ -9,10 +9,13 @@ import dev.davidcaetano.umbra_api.usuario.mapper.UsuarioMapperImpl;
 import dev.davidcaetano.umbra_api.usuario.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,17 +26,23 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
+@ExtendWith(OutputCaptureExtension.class)
 class AuthServiceTest extends IntegrationTestBase {
 
     private static final String EMAIL = "usuario_xanisvaldo@exemplo.com";
     private static final Instant AGORA = Instant.parse("2026-11-13T15:00:00Z");
     private static final String SENHA = "senha-forte-de-teste";
+    private static final String CEP = "01310100";
+    private static final RegiaoDoCep REGIAO = new RegiaoDoCep("São Paulo", "SP");
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
     private final Clock clock = Clock.fixed(AGORA, ZoneOffset.UTC);
@@ -41,11 +50,13 @@ class AuthServiceTest extends IntegrationTestBase {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    private final List<String> cepsConsultados = new ArrayList<>();
+
     private AuthService authService;
 
     @BeforeEach
     void criarServico() {
-        authService = new AuthService(usuarioRepository, new UsuarioMapperImpl(), passwordEncoder, clock);
+        authService = servico(cep -> Optional.of(REGIAO));
     }
 
     @Test
@@ -77,7 +88,8 @@ class AuthServiceTest extends IntegrationTestBase {
         usuarioRepository.saveAndFlush(UsuarioEntity.comSenha(EMAIL, "hash", "Xanisvaldo",
                 OffsetDateTime.ofInstant(AGORA, ZoneOffset.UTC)));
         AuthService servicoQueNaoViuOOutroCadastro =
-                new AuthService(repositorioQueNaoEncontraEmail(), new UsuarioMapperImpl(), passwordEncoder, clock);
+                new AuthService(repositorioQueNaoEncontraEmail(), new UsuarioMapperImpl(), passwordEncoder,
+                        cep -> Optional.empty(), clock);
 
         assertThatThrownBy(() -> servicoQueNaoViuOOutroCadastro.cadastrar(cadastro(EMAIL, "Xanisvaldo")))
                 .isInstanceOf(EmailJaCadastradoException.class);
@@ -90,8 +102,82 @@ class AuthServiceTest extends IntegrationTestBase {
                 .hasMessageContaining("ck_usuario_email");
     }
 
+    @Test
+    void cepEncontrado_deveGravarCidadeEUfEDevolverNaResposta() {
+        UsuarioResponse usuario = authService.cadastrar(cadastroComCep(CEP));
+
+        assertThat(usuario.cep()).isEqualTo(CEP);
+        assertThat(usuario.cidade()).isEqualTo("São Paulo");
+        assertThat(usuario.uf()).isEqualTo("SP");
+        UsuarioEntity gravado = usuarioRepository.findById(usuario.id()).orElseThrow();
+        assertThat(gravado.getCep()).isEqualTo(CEP);
+        assertThat(gravado.getCidade()).isEqualTo("São Paulo");
+        assertThat(gravado.getUf()).isEqualTo("SP");
+    }
+
+    @Test
+    void cepInexistente_deveCadastrarComCepSemCidadeNemUf(CapturedOutput saida) {
+        UsuarioResponse usuario = servico(cep -> Optional.empty()).cadastrar(cadastroComCep("99999999"));
+
+        UsuarioEntity gravado = usuarioRepository.findById(usuario.id()).orElseThrow();
+        assertThat(gravado.getCep()).isEqualTo("99999999");
+        assertThat(gravado.getCidade()).isNull();
+        assertThat(gravado.getUf()).isNull();
+        assertThat(saida.getAll()).doesNotContain("Consulta de CEP indisponível");
+    }
+
+    @Test
+    void consultaIndisponivel_deveCadastrarSemCidadeNemUfELogarWarnSemOCep(CapturedOutput saida) {
+        AuthService servicoSemViaCep = servico(cep -> {
+            throw new ConsultaDeCepIndisponivelException("ViaCEP indisponível: ResourceAccessException");
+        });
+
+        UsuarioResponse usuario = servicoSemViaCep.cadastrar(cadastroComCep(CEP));
+
+        UsuarioEntity gravado = usuarioRepository.findById(usuario.id()).orElseThrow();
+        assertThat(gravado.getCep()).isEqualTo(CEP);
+        assertThat(gravado.getCidade()).isNull();
+        assertThat(gravado.getUf()).isNull();
+        assertThat(saida.getAll())
+                .contains("WARN")
+                .contains("ViaCEP indisponível: ResourceAccessException")
+                .doesNotContain(CEP);
+    }
+
+    @Test
+    void semCep_naoDeveConsultar() {
+        UsuarioResponse usuario = authService.cadastrar(cadastro(EMAIL, "Xanisvaldo"));
+
+        assertThat(cepsConsultados).isEmpty();
+        assertThat(usuario.cep()).isNull();
+        assertThat(usuario.cidade()).isNull();
+        assertThat(usuario.uf()).isNull();
+    }
+
+    @Test
+    void emailJaCadastrado_naoDeveConsultarOCep() {
+        authService.cadastrar(cadastro(EMAIL, "Xanisvaldo"));
+
+        assertThatThrownBy(() -> authService.cadastrar(cadastroComCep(CEP)))
+                .isInstanceOf(EmailJaCadastradoException.class);
+        assertThat(cepsConsultados).isEmpty();
+    }
+
+    private AuthService servico(ConsultaDeCep consultaDeCep) {
+        ConsultaDeCep registrandoConsultas = cep -> {
+            cepsConsultados.add(cep);
+            return consultaDeCep.consultar(cep);
+        };
+        return new AuthService(usuarioRepository, new UsuarioMapperImpl(), passwordEncoder, registrandoConsultas,
+                clock);
+    }
+
     private static CadastroRequest cadastro(String email, String nomeExibicao) {
-        return new CadastroRequest(email, SENHA, nomeExibicao);
+        return new CadastroRequest(email, SENHA, nomeExibicao, null);
+    }
+
+    private static CadastroRequest cadastroComCep(String cep) {
+        return new CadastroRequest(EMAIL, SENHA, "Xanisvaldo", cep);
     }
 
     private UsuarioRepository repositorioQueNaoEncontraEmail() {

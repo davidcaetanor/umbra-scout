@@ -80,6 +80,18 @@ public class UsuarioEntity {
         return usuario;
     }
 
+    public void informarCep(String cep) {
+        this.cep = obrigatorio(cep, "cep");
+        this.cidade = null;
+        this.uf = null;
+    }
+
+    public void informarCepComRegiao(String cep, String cidade, String uf) {
+        this.cep = obrigatorio(cep, "cep");
+        this.cidade = obrigatorio(cidade, "cidade");
+        this.uf = obrigatorio(uf, "uf");
+    }
+
     public static String normalizarEmail(String email) {
         return obrigatorio(email, "email").toLowerCase(Locale.ROOT);
     }
