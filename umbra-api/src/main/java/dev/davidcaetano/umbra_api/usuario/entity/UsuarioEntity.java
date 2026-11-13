@@ -34,6 +34,8 @@ public class UsuarioEntity {
 
     private String discordId;
 
+    private String googleId;
+
     @Column(nullable = false)
     private String nomeExibicao;
 
@@ -68,6 +70,13 @@ public class UsuarioEntity {
                                            OffsetDateTime dataHoraAgora) {
         UsuarioEntity usuario = novo(email, nomeExibicao, dataHoraAgora);
         usuario.discordId = obrigatorio(discordId, "discordId");
+        return usuario;
+    }
+
+    public static UsuarioEntity comGoogle(String email, String googleId, String nomeExibicao,
+                                          OffsetDateTime dataHoraAgora) {
+        UsuarioEntity usuario = novo(email, nomeExibicao, dataHoraAgora);
+        usuario.googleId = obrigatorio(googleId, "googleId");
         return usuario;
     }
 

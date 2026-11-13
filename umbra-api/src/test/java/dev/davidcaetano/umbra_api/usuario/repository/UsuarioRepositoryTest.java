@@ -22,8 +22,8 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
     private static final OffsetDateTime AGORA = OffsetDateTime.parse("2026-11-13T12:00:00Z");
 
     private static final String INSERT = """
-            INSERT INTO usuario (email, senha_hash, discord_id, nome_exibicao, cep, cidade, uf)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO usuario (email, senha_hash, discord_id, google_id, nome_exibicao, cep, cidade, uf)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     @Autowired
@@ -59,7 +59,7 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void deveRecusarUsuarioSemSenhaESemDiscord() {
+    void deveRecusarUsuarioSemNenhumaCredencial() {
         assertThatThrownBy(() -> inserir("david@exemplo.com", null, null, null, null, null))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_credencial");
@@ -72,6 +72,26 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
         assertThatThrownBy(() -> inserir("b@exemplo.com", null, "123", null, null, null))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("uq_usuario_discord");
+    }
+
+    @Test
+    void deveGravarUsuarioSoComGoogle() {
+        UsuarioEntity usuario = usuarioRepository.saveAndFlush(
+                UsuarioEntity.comGoogle("david@exemplo.com", "108234567890", "David", AGORA));
+
+        assertThat(usuarioRepository.findById(usuario.getId()))
+                .get()
+                .extracting(UsuarioEntity::getGoogleId)
+                .isEqualTo("108234567890");
+    }
+
+    @Test
+    void deveRecusarGoogleDuplicado() {
+        inserirComGoogle("a@exemplo.com", "108234567890");
+
+        assertThatThrownBy(() -> inserirComGoogle("b@exemplo.com", "108234567890"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("uq_usuario_google");
     }
 
     @Test
@@ -96,6 +116,10 @@ class UsuarioRepositoryTest extends IntegrationTestBase {
     }
 
     private void inserir(String email, String senhaHash, String discordId, String cep, String cidade, String uf) {
-        jdbcTemplate.update(INSERT, email, senhaHash, discordId, "Nome", cep, cidade, uf);
+        jdbcTemplate.update(INSERT, email, senhaHash, discordId, null, "Nome", cep, cidade, uf);
+    }
+
+    private void inserirComGoogle(String email, String googleId) {
+        jdbcTemplate.update(INSERT, email, null, null, googleId, "Nome", null, null, null);
     }
 }

@@ -30,6 +30,16 @@ class UsuarioEntityTest {
 
         assertThat(usuario.getDiscordId()).isEqualTo("123456789");
         assertThat(usuario.getSenhaHash()).isNull();
+        assertThat(usuario.getGoogleId()).isNull();
+    }
+
+    @Test
+    void comGoogleDeveCriarSemSenhaESemDiscord() {
+        UsuarioEntity usuario = UsuarioEntity.comGoogle("david@exemplo.com", "108234567890", "David", AGORA);
+
+        assertThat(usuario.getGoogleId()).isEqualTo("108234567890");
+        assertThat(usuario.getSenhaHash()).isNull();
+        assertThat(usuario.getDiscordId()).isNull();
     }
 
     @Test
@@ -40,6 +50,9 @@ class UsuarioEntityTest {
         assertThatThrownBy(() -> UsuarioEntity.comDiscord("david@exemplo.com", " ", "David", AGORA))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("discordId");
+        assertThatThrownBy(() -> UsuarioEntity.comGoogle("david@exemplo.com", null, "David", AGORA))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("googleId");
     }
 
     @Test
