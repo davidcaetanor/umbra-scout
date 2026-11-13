@@ -1,6 +1,8 @@
 package dev.davidcaetano.umbra_api.config;
 
+import com.jayway.jsonpath.JsonPath;
 import dev.davidcaetano.umbra_api.comum.WireMockIntegrationTestBase;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,9 +20,11 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -37,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Transactional
 @ExtendWith(OutputCaptureExtension.class)
 class SecurityConfigTest extends WireMockIntegrationTestBase {
 
@@ -138,6 +143,44 @@ class SecurityConfigTest extends WireMockIntegrationTestBase {
     void escritaEmRotaDeCatalogo_naoDeveSerPublica() throws Exception {
         mockMvc.perform(post("/produtos").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void loginAceito_naoDeveDevolverCookieNemCriarSessao() throws Exception {
+        MvcResult login = entrarComUsuarioNovo();
+
+        assertThat(login.getResponse().getHeaders(HttpHeaders.SET_COOKIE)).isEmpty();
+        assertThat(login.getRequest().getSession(false)).isNull();
+    }
+
+    @Test
+    void requisicaoAutenticada_naoDeveDevolverCookieNemCriarSessao() throws Exception {
+        String token = JsonPath.read(entrarComUsuarioNovo().getResponse().getContentAsString(), "$.token");
+
+        MvcResult autenticada = comToken(get("/usuarios/eu"), token).andExpect(status().isOk()).andReturn();
+
+        assertThat(autenticada.getResponse().getHeaders(HttpHeaders.SET_COOKIE)).isEmpty();
+        assertThat(autenticada.getRequest().getSession(false)).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Authorization", "access_token", "token"})
+    void tokenValidoSoEmCookie_deveResponder401(String nomeDoCookie) throws Exception {
+        String token = JsonPath.read(entrarComUsuarioNovo().getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(get("/usuarios/eu").cookie(new Cookie(nomeDoCookie, token)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    private MvcResult entrarComUsuarioNovo() throws Exception {
+        String credenciais = """
+                {"email": "guarda@exemplo.com", "senha": "senha-forte-do-teste", "nomeExibicao": "Guarda"}
+                """;
+        mockMvc.perform(post("/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content(credenciais))
+                .andExpect(status().isCreated());
+        return mockMvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON).content(credenciais))
+                .andExpect(status().isOk())
+                .andReturn();
     }
 
     private ResultActions comToken(MockHttpServletRequestBuilder requisicao, String token) throws Exception {
