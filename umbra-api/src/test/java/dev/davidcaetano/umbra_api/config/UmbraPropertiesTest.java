@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class UmbraPropertiesTest {
 
+    private static final String SEGREDO_VALIDO = "umbra.jwt.secret=" + "s".repeat(32);
     private static final String CONTATO_VALIDO = "umbra.coleta.contato=contato-de-teste@umbra.invalid";
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
@@ -26,7 +27,7 @@ public class UmbraPropertiesTest {
     @Test
     void deveSubirComConfigValida() {
         contextRunner.withPropertyValues(
-                        "umbra.jwt.secret=secret-testzando",
+                        SEGREDO_VALIDO,
                         "umbra.jwt.ttl-horas=2",
                         CONTATO_VALIDO)
                 .run(context -> assertThat(context).hasNotFailed());
@@ -45,9 +46,47 @@ public class UmbraPropertiesTest {
     }
 
     @Test
+    void deveFalharComSecretAbaixoDe256Bits() {
+        contextRunner
+                .withPropertyValues("umbra.jwt.secret=" + "s".repeat(31), "umbra.jwt.ttl-horas=2", CONTATO_VALIDO)
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .rootCause()
+                            .hasMessageContaining("umbra.jwt.secret deve ter pelo menos 32 caracteres");
+                });
+    }
+
+    @Test
+    void semOrigemDeCors_deveSubirSemNenhumaOrigemPermitida() {
+        contextRunner.withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO)
+                .run(context -> assertThat(context.getBean(UmbraProperties.class).cors().origens()).isEmpty());
+    }
+
+    @Test
+    void origensDeCorsSeparadasPorVirgula_devemVirarLista() {
+        contextRunner.withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO,
+                        "umbra.cors.origens=https://umbra.exemplo.com,http://localhost:4200")
+                .run(context -> assertThat(context.getBean(UmbraProperties.class).cors().origens())
+                        .containsExactly("https://umbra.exemplo.com", "http://localhost:4200"));
+    }
+
+    @Test
+    void origemDeCorsComCuringa_deveFalharNaSubida() {
+        contextRunner.withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO,
+                        "umbra.cors.origens=*")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .rootCause()
+                            .hasMessageContaining("umbra.cors.origens");
+                });
+    }
+
+    @Test
     void deveFalharComTTLInvalido() {
         contextRunner
-                .withPropertyValues("umbra.jwt.secret=secret-valido",
+                .withPropertyValues(SEGREDO_VALIDO,
                         "umbra.jwt.ttl-horas=0",
                         CONTATO_VALIDO)
                 .run(context -> {
@@ -73,7 +112,7 @@ public class UmbraPropertiesTest {
     @Test
     void falhaComBlocoColetaAusente() {
         contextRunner
-                .withPropertyValues("umbra.jwt.secret=secret-valido", "umbra.jwt.ttl-horas=2")
+                .withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2")
                 .run(context -> {
                     assertThat(context).hasFailed();
                     assertThat(context.getStartupFailure())
@@ -85,7 +124,7 @@ public class UmbraPropertiesTest {
     @Test
     void deveFalharComContatoVazio() {
         contextRunner
-                .withPropertyValues("umbra.jwt.secret=secret-valido",
+                .withPropertyValues(SEGREDO_VALIDO,
                         "umbra.jwt.ttl-horas=2",
                         "umbra.coleta.contato=")
                 .run(context -> {
@@ -99,7 +138,7 @@ public class UmbraPropertiesTest {
     @Test
     void deveFalharComContatoQueNaoEhEmail() {
         contextRunner
-                .withPropertyValues("umbra.jwt.secret=secret-valido",
+                .withPropertyValues(SEGREDO_VALIDO,
                         "umbra.jwt.ttl-horas=2",
                         "umbra.coleta.contato=nao-eh-email")
                 .run(context -> {

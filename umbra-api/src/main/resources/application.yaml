@@ -36,7 +36,7 @@ logging:
 
 umbra:
   jwt:
-    ttl-horas: 2
+    ttl-horas: ${UMBRA_JWT_TTL_HORAS:6}
   coleta:
     contato: ${UMBRA_COLETA_CONTATO}
     habilitada: false

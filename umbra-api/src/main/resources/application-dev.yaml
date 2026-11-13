@@ -23,6 +23,8 @@ management:
       show-details: always
 
 umbra:
+  cors:
+    origens: http://localhost:4200
   jwt:
-    secret: dev-secret
+    secret: dev-nao-usar-em-producao-segredo-local-de-desenvolvimento
 

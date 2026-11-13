@@ -8,9 +8,11 @@ spring:
     hibernate:
       ddl-auto: validate
 umbra:
+  cors:
+    origens: http://localhost:4200
   jwt:
     ttl-horas: 1
-    secret: test-secret
+    secret: segredo-de-teste-com-pelo-menos-32-bytes
   coleta:
     contato: contato-de-teste@umbra.invalid
   busca:
