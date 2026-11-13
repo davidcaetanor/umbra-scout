@@ -1,0 +1,19 @@
+meta {
+  name: Historico com periodo invalido
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/produtos/{{produtoId}}/historico?periodo=90D
+  body: none
+  auth: none
+}
+
+params:query {
+  periodo: 90D
+}
+
+assert {
+  res.status: eq 400
+}

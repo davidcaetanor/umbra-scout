@@ -1,0 +1,16 @@
+meta {
+  name: Produto inexistente
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/produtos/999999999
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+  res.body.type: eq https://umbra.dev/erros/recurso-nao-encontrado
+}

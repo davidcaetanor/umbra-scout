@@ -14,6 +14,9 @@ umbra-api/.idea/
 umbra-api/*.iml
 umbra-api/.factorypath
 umbra-api/HELP.md
+umbra-api/bruno/environments/*
+!umbra-api/bruno/environments/Local.bru
+umbra-api/bruno/.env
 
 # --- umbra-web 
 umbra-web/node_modules/

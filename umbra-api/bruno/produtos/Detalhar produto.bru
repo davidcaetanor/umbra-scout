@@ -1,0 +1,17 @@
+meta {
+  name: Detalhar produto
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/produtos/{{produtoId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq {{produtoId}}
+  res.body.ofertas: isArray
+}

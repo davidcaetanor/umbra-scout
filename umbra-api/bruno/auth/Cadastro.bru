@@ -1,0 +1,33 @@
+meta {
+  name: Cadastro
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/cadastro
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{emailDoTeste}}",
+    "senha": "{{senhaDoTeste}}",
+    "nomeExibicao": "Conta de teste do Bruno"
+  }
+}
+
+script:pre-request {
+  const sufixo = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  bru.setVar("emailDoTeste", "bruno-" + sufixo + "@umbra.invalid");
+  bru.setVar("senhaDoTeste", "senha-" + sufixo + "-" + Math.random().toString(36).slice(2, 10));
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isNumber
+  res.body.email: eq {{emailDoTeste}}
+  res.body.senha: isUndefined
+  res.body.senhaHash: isUndefined
+}

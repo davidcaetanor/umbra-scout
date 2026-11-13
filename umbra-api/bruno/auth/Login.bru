@@ -1,0 +1,31 @@
+meta {
+  name: Login
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{emailDoTeste}}",
+    "senha": "{{senhaDoTeste}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("token", res.body.token);
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.tipo: eq Bearer
+  res.body.token: isString
+  res.body.expiraEm: isString
+}

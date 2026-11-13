@@ -1,0 +1,10 @@
+docs {
+  Contrato da API do Umbra, com uma requisição por caso e asserções sobre status e corpo.
+
+  Rode na ordem da coleção: auth cria uma conta de teste e guarda o token que usuarios usa.
+  A conta de teste usa email no domínio umbra.invalid e senha gerados a cada execução; nada
+  disso fica gravado em arquivo. Em ambiente compartilhado, apague as contas de teste depois
+  (DELETE FROM usuario WHERE email LIKE '%@umbra.invalid').
+
+  Só o ambiente Local é versionado. Outros ambientes ficam fora do repositório.
+}

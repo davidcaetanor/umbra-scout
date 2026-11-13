@@ -1,0 +1,24 @@
+meta {
+  name: Login com senha errada
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{emailDoTeste}}",
+    "senha": "senha-errada-de-proposito"
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.type: eq https://umbra.dev/erros/nao-autenticado
+  res.body.detail: eq Email ou senha inválidos.
+}

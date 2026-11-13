@@ -1,0 +1,24 @@
+meta {
+  name: Cadastro com email duplicado
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/cadastro
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{emailDoTeste}}",
+    "senha": "{{senhaDoTeste}}",
+    "nomeExibicao": "Conta de teste do Bruno"
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.type: eq https://umbra.dev/erros/recurso-em-conflito
+}
