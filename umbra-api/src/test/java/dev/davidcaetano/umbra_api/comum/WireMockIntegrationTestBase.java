@@ -30,6 +30,7 @@ public abstract class WireMockIntegrationTestBase extends IntegrationTestBase {
         registry.add("itad.itad-api.base-url", WIREMOCK::baseUrl);
         registry.add("steam.steam-api.base-url", WIREMOCK::baseUrl);
         registry.add("kabum.kabum-api.base-url", WIREMOCK::baseUrl);
+        registry.add("viacep.base-url", WIREMOCK::baseUrl);
     }
 
     @BeforeEach
