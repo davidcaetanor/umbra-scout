@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.actuator;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -8,10 +9,16 @@ import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -30,7 +37,10 @@ import static org.assertj.core.api.Assertions.assertThat;
         "UMBRA_DB_USER=usuario-nao-usado",
         "UMBRA_DB_PASSWORD=senha-nao-usada"
 })
+@Import(PerfilProdTest.EcoDoIpDeOrigem.class)
 class PerfilProdTest {
+
+    private static final String ROTA_DO_ECO = "/produtos/eco-do-ip-de-origem-do-teste";
 
     @Container
     @ServiceConnection
@@ -65,5 +75,30 @@ class PerfilProdTest {
     void naoDeveExporDocumentacaoDaApi(String rota) {
         assertThat(restTemplate.getForEntity(rota, String.class).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void atrasDoProxyLocal_deveUsarOIpDoClienteInformadoNoXForwardedFor() {
+        HttpHeaders cabecalhos = new HttpHeaders();
+        cabecalhos.set("X-Forwarded-For", "203.0.113.7");
+
+        String ipDeOrigem = restTemplate.exchange(ROTA_DO_ECO, HttpMethod.GET, new HttpEntity<>(cabecalhos),
+                String.class).getBody();
+
+        assertThat(ipDeOrigem).isEqualTo("203.0.113.7");
+    }
+
+    @Test
+    void semXForwardedFor_deveUsarOEnderecoDaConexao() {
+        assertThat(restTemplate.getForEntity(ROTA_DO_ECO, String.class).getBody()).isEqualTo("127.0.0.1");
+    }
+
+    @RestController
+    static class EcoDoIpDeOrigem {
+
+        @GetMapping(ROTA_DO_ECO)
+        String ipDeOrigem(HttpServletRequest requisicao) {
+            return requisicao.getRemoteAddr();
+        }
     }
 }
