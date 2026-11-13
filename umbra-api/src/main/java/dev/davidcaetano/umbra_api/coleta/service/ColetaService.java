@@ -6,6 +6,7 @@ import dev.davidcaetano.umbra_api.catalogo.entity.OfertaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.PrecoEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
+import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
 import dev.davidcaetano.umbra_api.catalogo.repository.LojaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.PrecoRepository;
@@ -222,7 +223,8 @@ public class ColetaService {
     private boolean devePersistirPreco(boolean ofertaNova, Long ofertaId, OfertaColetada ofertaColetada,
                                         ContextoDoChunk contexto, OffsetDateTime agora) {
 
-        UltimoPrecoProjecao ultimoPreco = contexto.ultimoPrecoPorOferta().get(ofertaId);
+        UltimoPrecoProjecao ultimoPreco = contexto.ultimoPrecoPorSerie()
+                .get(new SerieDePreco(ofertaId, ofertaColetada.origemColeta()));
         UltimoPreco ultimoPrecoConhecido = ultimoPreco == null ? null
                 : new UltimoPreco(ultimoPreco.getValorCentavos(), ultimoPreco.isDisponivel(), ultimoPreco.getColetadoEm());
 
@@ -248,10 +250,13 @@ public class ColetaService {
 
         Map<String, ProdutoEntity> produtosPorChaveItad = carregarProdutosPorChaveItad(chavesItad);
 
-        List<Long> idsDasOfertasExistentes = ofertasExistentes.values().stream().map(OfertaEntity::getId).toList();
-        Map<Long, UltimoPrecoProjecao> ultimoPrecoPorOferta = carregarUltimoPreco(idsDasOfertasExistentes);
+        Map<OrigemColeta, Set<Long>> idsDasOfertasExistentesPorOrigem = todasAsOfertas.stream()
+                .filter(oferta -> ofertasExistentes.containsKey(chaveDa(oferta, lojasPorCodigo)))
+                .collect(Collectors.groupingBy(OfertaColetada::origemColeta, Collectors.mapping(
+                        oferta -> ofertasExistentes.get(chaveDa(oferta, lojasPorCodigo)).getId(), Collectors.toSet())));
+        Map<SerieDePreco, UltimoPrecoProjecao> ultimoPrecoPorSerie = carregarUltimoPreco(idsDasOfertasExistentesPorOrigem);
 
-        return new ContextoDoChunk(lojasPorCodigo, ofertasExistentes, produtosPorChaveItad, ultimoPrecoPorOferta);
+        return new ContextoDoChunk(lojasPorCodigo, ofertasExistentes, produtosPorChaveItad, ultimoPrecoPorSerie);
     }
 
     private Map<ChaveOferta, OfertaEntity> carregarOfertasExistentes(Map<Short, List<String>> identificadoresPorLoja) {
@@ -282,17 +287,23 @@ public class ColetaService {
         return produtosPorChaveItad;
     }
 
-    private Map<Long, UltimoPrecoProjecao> carregarUltimoPreco(List<Long> idsDasOfertas) {
+    private Map<SerieDePreco, UltimoPrecoProjecao> carregarUltimoPreco(Map<OrigemColeta, Set<Long>> idsDasOfertasPorOrigem) {
 
-        Map<Long, UltimoPrecoProjecao> ultimoPrecoPorOferta = new HashMap<>();
+        Map<SerieDePreco, UltimoPrecoProjecao> ultimoPrecoPorSerie = new HashMap<>();
 
-        for (List<Long> bloco : emBlocos(idsDasOfertas, TAMANHO_BLOCO_CONSULTA)) {
-            for (UltimoPrecoProjecao projecao : precoRepository.findUltimoPrecoPorOfertaIdIn(bloco)) {
-                ultimoPrecoPorOferta.put(projecao.getOfertaId(), projecao);
+        for (Map.Entry<OrigemColeta, Set<Long>> idsDaOrigem : idsDasOfertasPorOrigem.entrySet()) {
+            for (List<Long> bloco : emBlocos(idsDaOrigem.getValue(), TAMANHO_BLOCO_CONSULTA)) {
+                for (UltimoPrecoProjecao projecao : precoRepository.findUltimoPrecoPorOfertaIdInEOrigem(bloco, idsDaOrigem.getKey())) {
+                    ultimoPrecoPorSerie.put(new SerieDePreco(projecao.getOfertaId(), idsDaOrigem.getKey()), projecao);
+                }
             }
         }
 
-        return ultimoPrecoPorOferta;
+        return ultimoPrecoPorSerie;
+    }
+
+    private static ChaveOferta chaveDa(OfertaColetada oferta, Map<CodigoLoja, LojaEntity> lojasPorCodigo) {
+        return new ChaveOferta(lojaObrigatoria(lojasPorCodigo, oferta.loja()).getId(), oferta.identificadorLoja());
     }
 
     private static LojaEntity lojaObrigatoria(Map<CodigoLoja, LojaEntity> lojasPorCodigo, CodigoLoja codigo) {
@@ -322,7 +333,7 @@ public class ColetaService {
     private record ContextoDoChunk(Map<CodigoLoja, LojaEntity> lojasPorCodigo,
                                     Map<ChaveOferta, OfertaEntity> ofertasExistentes,
                                     Map<String, ProdutoEntity> produtosPorChaveItad,
-                                    Map<Long, UltimoPrecoProjecao> ultimoPrecoPorOferta) {
+                                    Map<SerieDePreco, UltimoPrecoProjecao> ultimoPrecoPorSerie) {
 
         LojaEntity lojaPorCodigo(CodigoLoja codigo) {
             return lojaObrigatoria(lojasPorCodigo, codigo);
@@ -330,6 +341,9 @@ public class ColetaService {
     }
 
     private record ChaveOferta(Short lojaId, String identificadorLoja) {
+    }
+
+    private record SerieDePreco(Long ofertaId, OrigemColeta origem) {
     }
 
     private record ResolucaoProduto(ProdutoEntity produto, boolean criado) {

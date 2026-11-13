@@ -303,6 +303,36 @@ class ColetaServiceTest extends IntegrationTestBase {
     }
 
     @Test
+    void duasOrigens_naoDevemGravarQuandoCadaUmaRepetirOProprioValor() {
+        gravarEldenRing(29900L, OrigemColeta.STEAM_API);
+        avancar(Duration.ofHours(1));
+        gravarEldenRing(20394L, OrigemColeta.ITAD_API);
+        avancar(Duration.ofHours(1));
+        gravarEldenRing(29900L, OrigemColeta.STEAM_API);
+        avancar(Duration.ofHours(1));
+        gravarEldenRing(20394L, OrigemColeta.ITAD_API);
+
+        assertThat(precosDa("1245620")).extracting(PrecoEntity::getValorCentavos).containsExactly(29900L, 20394L);
+    }
+
+    @Test
+    void duasOrigens_deveGravarQuandoAMesmaOrigemMudarOProprioValor() {
+        gravarEldenRing(29900L, OrigemColeta.STEAM_API);
+        avancar(Duration.ofHours(1));
+        gravarEldenRing(20394L, OrigemColeta.ITAD_API);
+        avancar(Duration.ofHours(1));
+        gravarEldenRing(27900L, OrigemColeta.STEAM_API);
+
+        assertThat(precosDa("1245620")).extracting(PrecoEntity::getValorCentavos)
+                .containsExactly(29900L, 20394L, 27900L);
+    }
+
+    private void gravarEldenRing(long valorCentavos, OrigemColeta origemColeta) {
+        gravar(oferta(CodigoLoja.STEAM, "1245620", TipoProduto.JOGO, "Elden Ring",
+                "gid-elden-ring", valorCentavos, true, origemColeta));
+    }
+
+    @Test
     void deveGravarPrecoQuandoApenasDisponibilidadeMudar() {
         gravar(oferta(CodigoLoja.STEAM, "730", TipoProduto.JOGO, "Counter-Strike 2",
                 "gid-cs2", 8990L, true, OrigemColeta.STEAM_API));

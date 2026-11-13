@@ -18,6 +18,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -217,6 +218,20 @@ class PrecoRepositoryTest extends IntegrationTestBase {
                 OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
 
         assertThat(precoIdAtualDa(daNuuvem)).isEqualTo(doItad.getId());
+    }
+
+    @Test
+    void ultimoPorOrigem_deveIgnorarObservacaoMaisRecenteDeOutraOrigem() {
+        OffsetDateTime agora = OffsetDateTime.now();
+        precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 29900L, null, null, true,
+                OrigemColeta.STEAM_API, null, agora.minusHours(1)));
+        precoRepository.saveAndFlush(PrecoEntity.novo(oferta, 20394L, null, null, true,
+                OrigemColeta.ITAD_API, null, agora.minusMinutes(10)));
+
+        assertThat(precoRepository.findUltimoPrecoPorOfertaIdInEOrigem(List.of(oferta.getId()), OrigemColeta.STEAM_API))
+                .singleElement()
+                .extracting(UltimoPrecoProjecao::getValorCentavos)
+                .isEqualTo(29900L);
     }
 
     private OfertaEntity ofertaDaLoja(CodigoLoja codigoLoja, TipoProduto tipo, String identificadorLoja) {
