@@ -1,3 +1,5 @@
+name: umbra
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -28,7 +30,7 @@ services:
       TZ: America/Sao_Paulo
       UMBRA_DB_URL: jdbc:postgresql://postgres:5432/${UMBRA_DB_NAME}
     ports:
-      - "${UMBRA_API_BIND:-127.0.0.1}:8080:8080"
+      - "127.0.0.1:8080:8080"
     mem_limit: 1536m
     logging:
       driver: json-file
@@ -55,3 +57,4 @@ services:
 
 volumes:
   umbra_pgdata:
+    name: deploy_umbra_pgdata

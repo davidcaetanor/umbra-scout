@@ -7,6 +7,9 @@ management:
     health:
       show-details: never
 
+server:
+  forward-headers-strategy: native
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
