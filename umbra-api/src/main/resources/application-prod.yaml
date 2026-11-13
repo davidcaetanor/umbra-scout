@@ -7,10 +7,6 @@ management:
     health:
       show-details: never
 
-umbra:
-  jwt:
-    ttl-horas: ${UMBRA_JWT_TTL_HORAS:4}
-
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver

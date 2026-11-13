@@ -10,7 +10,7 @@ spring:
 umbra:
   jwt:
     ttl-horas: 1
-    secret: test-secret
+    secret: segredo-de-teste-com-pelo-menos-32-bytes
   coleta:
     contato: contato-de-teste@umbra.invalid
   busca:

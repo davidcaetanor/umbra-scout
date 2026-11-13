@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("prod")
 @TestPropertySource(properties = {
-        "umbra.jwt.secret=segredo-de-teste-do-perfil-prod",
+        "umbra.jwt.secret=segredo-de-teste-do-perfil-prod-com-32-bytes",
         "umbra.coleta.contato=contato-de-teste@umbra.invalid",
         "itad.itad-api.api-key=chave-fake-de-teste-nunca-usada-de-verdade",
         "UMBRA_DB_URL=jdbc:postgresql://localhost:1/nao-usada",

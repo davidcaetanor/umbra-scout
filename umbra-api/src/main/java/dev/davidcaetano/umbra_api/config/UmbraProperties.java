@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -17,6 +18,7 @@ public record UmbraProperties(
 
     public record UmbraJWT(
             @NotBlank(message = "umbra.jwt.secret é obrigatório e não pode estar vazio!")
+            @Size(min = 32, message = "umbra.jwt.secret deve ter pelo menos 32 caracteres (256 bits)")
             String secret,
 
             @Min(value = 1, message = "umbra.jwt.ttl-horas deve ser maior ou igual a 1")

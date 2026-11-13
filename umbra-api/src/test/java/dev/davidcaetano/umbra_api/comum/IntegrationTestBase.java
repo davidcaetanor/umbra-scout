@@ -6,7 +6,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @TestPropertySource(properties = {
         "umbra.coleta.contato=contato-de-teste@umbra.invalid",
-        "umbra.jwt.secret=test-secret"
+        "umbra.jwt.secret=segredo-de-teste-com-pelo-menos-32-bytes"
 })
 public abstract class IntegrationTestBase {
 

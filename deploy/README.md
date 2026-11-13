@@ -12,13 +12,13 @@ Produção: `docker-compose.prod.yaml` (o da raiz é desenvolvimento). Requer Do
 | `UMBRA_JWT_SECRET`                  | sim         | —           |
 | `UMBRA_COLETA_CONTATO`              | sim         | —           |
 | `ITAD_API_KEY`                      | sim         | —           |
-| `UMBRA_JWT_TTL_HORAS`               | não         | `4`         |
+| `UMBRA_JWT_TTL_HORAS`               | não         | `6`         |
 | `UMBRA_IMAGE_TAG`                   | não         | `latest`    |
 | `UMBRA_API_BIND`                    | não         | `127.0.0.1` |
 | `UMBRA_COLETA_HABILITADA`           | não         | `false`     |
 | `UMBRA_COLETA_AGENDA_RODADAINICIAL` | não         | `false`     |
 
-Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_COLETA_CONTATO` tem que ser um email válido: ele vai no `User-Agent` da coleta.
+Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_JWT_SECRET` precisa de pelo menos 32 caracteres (256 bits). `UMBRA_COLETA_CONTATO` tem que ser um email válido: ele vai no `User-Agent` da coleta.
 
 `UMBRA_DB_URL`, `SPRING_PROFILES_ACTIVE=prod` e `TZ` já vêm no compose.
 
