@@ -24,6 +24,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -195,7 +196,11 @@ class AuthServiceTest extends IntegrationTestBase {
 
         assertThat(token.tipo()).isEqualTo("Bearer");
         assertThat(token.expiraEm()).isEqualTo(OffsetDateTime.ofInstant(AGORA.plus(Duration.ofHours(6)), ZoneOffset.UTC));
-        Jwt jwt = NimbusJwtDecoder.withSecretKey(CHAVE).macAlgorithm(MacAlgorithm.HS256).build().decode(token.token());
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(CHAVE).macAlgorithm(MacAlgorithm.HS256).build();
+        JwtTimestampValidator validadeNoInstanteDoTeste = new JwtTimestampValidator();
+        validadeNoInstanteDoTeste.setClock(Clock.fixed(AGORA, ZoneOffset.UTC));
+        decoder.setJwtValidator(validadeNoInstanteDoTeste);
+        Jwt jwt = decoder.decode(token.token());
         assertThat(jwt.getSubject()).isEqualTo(usuario.id().toString());
         assertThat(jwt.getClaims()).doesNotContainKey("email");
     }
