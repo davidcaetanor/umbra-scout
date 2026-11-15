@@ -1,0 +1,22 @@
+meta {
+  name: Troca de codigo invalido
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/auth/oauth2/token
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "codigo": "codigo-que-nunca-foi-emitido"
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.type: eq https://umbra.dev/erros/nao-autenticado
+}

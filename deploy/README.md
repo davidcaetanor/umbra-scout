@@ -6,12 +6,17 @@ Produção: `docker-compose.prod.yaml` (o da raiz é desenvolvimento). Requer Do
 
 | Variável                            | Obrigatória | Padrão      |
 | :---------------------------------- | :---------- | :---------- |
-| `UMBRA_DB_NAME`                     | sim         | —           |
-| `UMBRA_DB_USER`                     | sim         | —           |
-| `UMBRA_DB_PASSWORD`                 | sim         | —           |
-| `UMBRA_JWT_SECRET`                  | sim         | —           |
-| `UMBRA_COLETA_CONTATO`              | sim         | —           |
-| `ITAD_API_KEY`                      | sim         | —           |
+| `UMBRA_DB_NAME`                     | sim         | nenhum      |
+| `UMBRA_DB_USER`                     | sim         | nenhum      |
+| `UMBRA_DB_PASSWORD`                 | sim         | nenhum      |
+| `UMBRA_JWT_SECRET`                  | sim         | nenhum      |
+| `UMBRA_COLETA_CONTATO`              | sim         | nenhum      |
+| `ITAD_API_KEY`                      | sim         | nenhum      |
+| `DISCORD_CLIENT_ID`                 | sim         | nenhum      |
+| `DISCORD_CLIENT_SECRET`             | sim         | nenhum      |
+| `GOOGLE_CLIENT_ID`                  | sim         | nenhum      |
+| `GOOGLE_CLIENT_SECRET`              | sim         | nenhum      |
+| `UMBRA_LOGIN_RETORNO_FRONT`         | sim         | nenhum      |
 | `UMBRA_JWT_TTL_HORAS`               | não         | `6`         |
 | `UMBRA_CORS_ORIGENS`                | não         | nenhuma     |
 | `UMBRA_IMAGE_TAG`                   | não         | `latest`    |
@@ -21,6 +26,8 @@ Produção: `docker-compose.prod.yaml` (o da raiz é desenvolvimento). Requer Do
 Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_JWT_SECRET` precisa de pelo menos 32 caracteres (256 bits). `UMBRA_COLETA_CONTATO` tem que ser um email válido: ele vai no `User-Agent` da coleta.
 
 `UMBRA_CORS_ORIGENS` lista, separadas por vírgula, as origens do frontend autorizadas a chamar a API pelo navegador (`https://host` ou `https://host:porta`, sem curinga). Sem ela, nenhuma origem externa é aceita.
+
+Login com Discord e Google: as credenciais vêm da aplicação registrada em cada provedor, que precisa aceitar como endereço de retorno `https://<host da API>/login/oauth2/code/discord` e `https://<host da API>/login/oauth2/code/google`. `UMBRA_LOGIN_RETORNO_FRONT` é a URL da tela do frontend que recebe `?codigo=` ou `?erro=` ao fim do login e troca o código pelo token em `POST /auth/oauth2/token`.
 
 `UMBRA_DB_URL`, `SPRING_PROFILES_ACTIVE=prod` e `TZ` já vêm no compose.
 
