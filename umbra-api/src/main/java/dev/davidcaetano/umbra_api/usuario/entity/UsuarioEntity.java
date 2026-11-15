@@ -80,6 +80,16 @@ public class UsuarioEntity {
         return usuario;
     }
 
+    public void vincularDiscord(String discordId, OffsetDateTime dataHoraAgora) {
+        this.discordId = obrigatorio(discordId, "discordId");
+        this.atualizadoEm = Objects.requireNonNull(dataHoraAgora, "dataHoraAgora é obrigatório");
+    }
+
+    public void vincularGoogle(String googleId, OffsetDateTime dataHoraAgora) {
+        this.googleId = obrigatorio(googleId, "googleId");
+        this.atualizadoEm = Objects.requireNonNull(dataHoraAgora, "dataHoraAgora é obrigatório");
+    }
+
     public void informarCep(String cep) {
         this.cep = obrigatorio(cep, "cep");
         this.cidade = null;
