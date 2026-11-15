@@ -31,6 +31,10 @@ public abstract class WireMockIntegrationTestBase extends IntegrationTestBase {
         registry.add("steam.steam-api.base-url", WIREMOCK::baseUrl);
         registry.add("kabum.kabum-api.base-url", WIREMOCK::baseUrl);
         registry.add("viacep.base-url", WIREMOCK::baseUrl);
+        registry.add("spring.security.oauth2.client.provider.discord.token-uri",
+                () -> WIREMOCK.baseUrl() + "/api/oauth2/token");
+        registry.add("spring.security.oauth2.client.provider.discord.user-info-uri",
+                () -> WIREMOCK.baseUrl() + "/api/users/@me");
     }
 
     @BeforeEach

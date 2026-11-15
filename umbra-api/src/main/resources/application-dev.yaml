@@ -25,6 +25,8 @@ management:
 umbra:
   cors:
     origens: http://localhost:4200
+  login-externo:
+    retorno-front: http://localhost:4200/login/callback
   jwt:
     secret: dev-nao-usar-em-producao-segredo-local-de-desenvolvimento
 
