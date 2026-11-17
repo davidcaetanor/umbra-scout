@@ -20,10 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/produtos")
 @RequiredArgsConstructor
-public class ProdutoController {
+public class ProdutoController implements ProdutoApi {
 
     private final ProdutoService produtoService;
 
+    @Override
     @GetMapping
     public BuscaProdutosResponse buscar(@Valid @ModelAttribute BuscaProdutoRequest busca, Pageable paginacao,
                                         HttpServletRequest requisicao) {
@@ -32,11 +33,13 @@ public class ProdutoController {
                 paginacao, ipDeOrigem);
     }
 
+    @Override
     @GetMapping("/{id}")
     public ProdutoResponse detalhar(@PathVariable Long id) {
         return produtoService.detalhar(id);
     }
 
+    @Override
     @GetMapping("/{id}/historico")
     public HistoricoResponse historico(@PathVariable Long id,
                                        @RequestParam(defaultValue = "90d") PeriodoHistorico periodo) {

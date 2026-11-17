@@ -24,10 +24,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping("/monitoramentos")
 @RequiredArgsConstructor
-public class MonitoramentoController {
+public class MonitoramentoController implements MonitoramentoApi {
 
     private final MonitoramentoService monitoramentoService;
 
+    @Override
     @PostMapping
     public ResponseEntity<MonitoramentoResponse> criar(@AuthenticationPrincipal UsuarioAutenticado usuario,
                                                        @Valid @RequestBody CriarMonitoramentoRequest pedido) {
@@ -37,17 +38,20 @@ public class MonitoramentoController {
                 .body(criado);
     }
 
+    @Override
     @GetMapping
     public MonitoramentosResponse listar(@AuthenticationPrincipal UsuarioAutenticado usuario, Pageable paginacao) {
         return monitoramentoService.listar(usuario, paginacao);
     }
 
+    @Override
     @PatchMapping("/{id}")
     public MonitoramentoResponse alterar(@AuthenticationPrincipal UsuarioAutenticado usuario, @PathVariable Long id,
                                          @Valid @RequestBody AlterarMonitoramentoRequest pedido) {
         return monitoramentoService.alterar(usuario, id, pedido);
     }
 
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> apagar(@AuthenticationPrincipal UsuarioAutenticado usuario, @PathVariable Long id) {
         monitoramentoService.apagar(usuario, id);
