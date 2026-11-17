@@ -43,7 +43,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MonitoramentoService {
 
-    private static final String RESTRICAO_DE_UNICIDADE = "uq_monit_usuario_produto";
+    static final String RESTRICAO_DE_UNICIDADE = "uq_monit_usuario_produto";
 
     private final MonitoramentoRepository monitoramentoRepository;
     private final UsuarioRepository usuarioRepository;

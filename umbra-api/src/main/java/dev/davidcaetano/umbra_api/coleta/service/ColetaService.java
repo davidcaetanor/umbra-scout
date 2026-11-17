@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class ColetaService {
 
     private static final int TAMANHO_BLOCO_CONSULTA = 1000;
-    private static final List<String> RESTRICOES_DE_IDENTIDADE = List.of("uq_produto_chave_itad", "uq_produto_loja");
+    static final List<String> RESTRICOES_DE_IDENTIDADE = List.of("uq_produto_chave_itad", "uq_oferta_loja");
 
     private final ProdutoRepository produtoRepository;
     private final OfertaRepository ofertaRepository;
