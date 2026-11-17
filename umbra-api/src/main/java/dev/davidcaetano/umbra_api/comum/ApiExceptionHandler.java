@@ -5,6 +5,7 @@ import dev.davidcaetano.umbra_api.comum.excecao.NaoAutenticadoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoEmConflitoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoNaoEncontradoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RegraDeNegocioVioladaException;
+import dev.davidcaetano.umbra_api.comum.excecao.ServicoIndisponivelException;
 import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private static final URI TIPO_PARAMETRO_INVALIDO = URI.create("https://umbra.dev/erros/parametro-invalido");
     private static final URI TIPO_NAO_AUTENTICADO = URI.create("https://umbra.dev/erros/nao-autenticado");
     private static final URI TIPO_ACESSO_NEGADO = URI.create("https://umbra.dev/erros/acesso-negado");
+    private static final URI TIPO_SERVICO_INDISPONIVEL = URI.create("https://umbra.dev/erros/servico-indisponivel");
     private static final URI TIPO_ERRO_INTERNO = URI.create("https://umbra.dev/erros/erro-interno");
 
     private static final String TITULO_PARAMETRO_INVALIDO = "Parâmetro inválido";
@@ -101,6 +103,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         problema.setTitle("Acesso negado");
         problema.setInstance(URI.create(request.getRequestURI()));
         return problema;
+    }
+
+    @ExceptionHandler(ServicoIndisponivelException.class)
+    public ResponseEntity<ProblemDetail> tratarServicoIndisponivel(ServicoIndisponivelException ex,
+                                                                   HttpServletRequest request) {
+        log.warn("Servico indisponivel em {} {}: {}", SanitizacaoDeLog.paraLog(request.getMethod()),
+                SanitizacaoDeLog.paraLog(request.getRequestURI()), ex.getMessage(), ex.getCause());
+
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problema.setType(TIPO_SERVICO_INDISPONIVEL);
+        problema.setTitle("Serviço indisponível");
+        problema.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.tentarDeNovoEm().toSeconds()))
+                .body(problema);
     }
 
     @ExceptionHandler(Exception.class)
