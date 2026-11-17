@@ -99,6 +99,9 @@ umbra:
       maximo-resultados: 5
   monitoramento:
     dias-para-descontinuado: 180
+    externo:
+      prazo: 8s
+      tentar-de-novo-em: 60s
 
 itad:
   itad-api:
@@ -127,6 +130,10 @@ resilience4j:
         timeout-duration: 2s
       itad-busca:
         limit-for-period: 800
+        limit-refresh-period: 5m
+        timeout-duration: 0
+      itad-materializacao:
+        limit-for-period: 20
         limit-refresh-period: 5m
         timeout-duration: 0
       steam:

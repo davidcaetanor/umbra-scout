@@ -1,7 +1,9 @@
 package dev.davidcaetano.umbra_api.monitoramento.service;
 
+import dev.davidcaetano.umbra_api.catalogo.JogoExternoRecusadoException;
 import dev.davidcaetano.umbra_api.catalogo.ProdutoNaoEncontradoException;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.OfertaResponse;
+import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaAtualProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
@@ -28,12 +30,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -47,31 +51,14 @@ public class MonitoramentoService {
     private final OfertaRepository ofertaRepository;
     private final MonitoramentoMapper monitoramentoMapper;
     private final MonitoramentoProperties monitoramentoProperties;
+    private final InclusaoDeJogoExterno inclusaoDeJogoExterno;
+    private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
-    @Transactional
     public MonitoramentoResponse criar(UsuarioAutenticado usuario, CriarMonitoramentoRequest pedido) {
         exigirContaAtiva(usuario);
-        Long produtoId = pedido.produtoId();
-        produtoRepository.findByIdAndAtivoTrue(produtoId).orElseThrow(() -> new ProdutoNaoEncontradoException(produtoId));
-        recusarAlvoEmProdutoGratuito(produtoId);
-
-        if (monitoramentoRepository.existsByUsuarioIdAndProdutoId(usuario.id(), produtoId)) {
-            throw new MonitoramentoDuplicadoException();
-        }
-
-        MonitoramentoEntity monitoramento;
-        try {
-            monitoramento = monitoramentoRepository.saveAndFlush(MonitoramentoEntity.novo(usuario.id(), produtoId,
-                    pedido.precoAlvoCentavos(), OffsetDateTime.now(clock)));
-        } catch (DataIntegrityViolationException violacao) {
-            if (violouAUnicidadeDoMonitoramento(violacao)) {
-                throw new MonitoramentoDuplicadoException();
-            }
-            throw violacao;
-        }
-
-        return resumoDoUsuario(monitoramento.getId(), usuario);
+        Long produtoId = pedido.gid() == null ? pedido.produtoId() : produtoDoJogoExterno(pedido.gid().toString());
+        return transactionTemplate.execute(status -> criarParaProduto(usuario, produtoId, pedido.precoAlvoCentavos()));
     }
 
     @Transactional(readOnly = true)
@@ -115,6 +102,38 @@ public class MonitoramentoService {
         if (monitoramentoRepository.apagarDoUsuario(id, usuario.id()) == 0) {
             throw new MonitoramentoNaoEncontradoException(id);
         }
+    }
+
+    private Long produtoDoJogoExterno(String gid) {
+        Optional<ProdutoEntity> existente = produtoRepository.findByChaveItad(gid);
+        if (existente.isEmpty()) {
+            inclusaoDeJogoExterno.incluir(gid);
+            existente = produtoRepository.findByChaveItad(gid);
+        }
+        return existente.map(ProdutoEntity::getId)
+                .orElseThrow(() -> JogoExternoRecusadoException.semOfertaNasLojasAcompanhadas(gid));
+    }
+
+    private MonitoramentoResponse criarParaProduto(UsuarioAutenticado usuario, Long produtoId, long precoAlvoCentavos) {
+        produtoRepository.findByIdAndAtivoTrue(produtoId).orElseThrow(() -> new ProdutoNaoEncontradoException(produtoId));
+        recusarAlvoEmProdutoGratuito(produtoId);
+
+        if (monitoramentoRepository.existsByUsuarioIdAndProdutoId(usuario.id(), produtoId)) {
+            throw new MonitoramentoDuplicadoException();
+        }
+
+        MonitoramentoEntity monitoramento;
+        try {
+            monitoramento = monitoramentoRepository.saveAndFlush(MonitoramentoEntity.novo(usuario.id(), produtoId,
+                    precoAlvoCentavos, OffsetDateTime.now(clock)));
+        } catch (DataIntegrityViolationException violacao) {
+            if (violouAUnicidadeDoMonitoramento(violacao)) {
+                throw new MonitoramentoDuplicadoException();
+            }
+            throw violacao;
+        }
+
+        return resumoDoUsuario(monitoramento.getId(), usuario);
     }
 
     private static boolean violouAUnicidadeDoMonitoramento(DataIntegrityViolationException violacao) {

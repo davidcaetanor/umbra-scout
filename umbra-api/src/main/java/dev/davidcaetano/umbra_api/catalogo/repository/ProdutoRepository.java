@@ -48,6 +48,8 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
 
     Optional<ProdutoEntity> findByIdAndAtivoTrue(Long id);
 
+    Optional<ProdutoEntity> findByChaveItad(String chaveItad);
+
     @Query(value = CONSULTA_DA_LISTAGEM + ORDEM_POR_NOME,
             countQuery = CONTAGEM_DA_LISTAGEM, nativeQuery = true)
     Page<ProdutoResumoProjecao> listarCatalogoPorNome(@Param("categoria") String categoria,
