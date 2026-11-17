@@ -12,10 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
-public class UsuarioController {
+public class UsuarioController implements UsuarioApi {
 
     private final UsuarioService usuarioService;
 
+    @Override
     @GetMapping("/eu")
     public UsuarioResponse eu(@AuthenticationPrincipal UsuarioAutenticado usuario) {
         return usuarioService.buscar(usuario);

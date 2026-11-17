@@ -19,22 +19,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthApi {
 
     private final AuthService authService;
     private final LoginExternoService loginExternoService;
 
+    @Override
     @PostMapping("/cadastro")
     @ResponseStatus(HttpStatus.CREATED)
     public UsuarioResponse cadastrar(@Valid @RequestBody CadastroRequest cadastro) {
         return authService.cadastrar(cadastro);
     }
 
+    @Override
     @PostMapping("/login")
     public TokenResponse entrar(@Valid @RequestBody LoginRequest login) {
         return authService.entrar(login);
     }
 
+    @Override
     @PostMapping("/oauth2/token")
     public TokenResponse trocarCodigo(@Valid @RequestBody TrocaDeCodigoRequest troca) {
         return loginExternoService.trocar(troca.codigo());

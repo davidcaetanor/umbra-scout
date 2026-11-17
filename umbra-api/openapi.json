@@ -1,0 +1,1190 @@
+{
+  "components" : {
+    "responses" : {
+      "EmConflito" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "O recurso já existe."
+      },
+      "ErroInterno" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "Erro inesperado."
+      },
+      "NaoAutenticado" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "Token ausente, inválido ou expirado, ou credencial recusada."
+      },
+      "NaoEncontrado" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "Recurso inexistente, de outro usuário ou de conta desativada; as três causas respondem o mesmo corpo."
+      },
+      "ParametroInvalido" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "Parâmetro, corpo ou campo inválido; `erros` lista cada campo recusado."
+      },
+      "RegraViolada" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "Pedido válido recusado por regra de negócio."
+      },
+      "ServicoIndisponivel" : {
+        "content" : {
+          "application/problem+json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Problema"
+            }
+          }
+        },
+        "description" : "Fonte externa fora ou teto de uso atingido; tente de novo depois do `Retry-After`.",
+        "headers" : {
+          "Retry-After" : {
+            "description" : "Segundos até a próxima tentativa.",
+            "schema" : {
+              "type" : "integer"
+            }
+          }
+        }
+      }
+    },
+    "schemas" : {
+      "AlterarMonitoramentoRequest" : {
+        "properties" : {
+          "ativo" : {
+            "type" : "boolean"
+          },
+          "precoAlvoCentavos" : {
+            "format" : "int64",
+            "maximum" : 100000000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "BuscaProdutosResponse" : {
+        "properties" : {
+          "conteudo" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProdutoResumoResponse"
+            },
+            "type" : "array"
+          },
+          "externos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProdutoExternoResponse"
+            },
+            "type" : "array"
+          },
+          "pagina" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "tamanho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalElementos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPaginas" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "conteudo", "externos", "pagina", "tamanho", "totalElementos", "totalPaginas" ],
+        "type" : "object"
+      },
+      "CadastroRequest" : {
+        "properties" : {
+          "cep" : {
+            "pattern" : "[0-9]{8}",
+            "type" : "string"
+          },
+          "email" : {
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "nomeExibicao" : {
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "senha" : {
+            "maxLength" : 2147483647,
+            "minLength" : 8,
+            "type" : "string"
+          }
+        },
+        "required" : [ "email", "nomeExibicao", "senha" ],
+        "type" : "object"
+      },
+      "CriarMonitoramentoRequest" : {
+        "properties" : {
+          "gid" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "precoAlvoCentavos" : {
+            "format" : "int64",
+            "maximum" : 100000000,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "produtoId" : {
+            "exclusiveMinimum" : 0,
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "precoAlvoCentavos" ],
+        "type" : "object"
+      },
+      "HistoricoResponse" : {
+        "properties" : {
+          "consultadoEm" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "faixas" : {
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
+          "melhorPreco" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PontoHistoricoResponse"
+            },
+            "type" : "array"
+          },
+          "minimo" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/MinimoHistoricoResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "observadoDesde" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "periodo" : {
+            "type" : "string"
+          },
+          "porLoja" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SerieLojaResponse"
+            },
+            "type" : "array"
+          },
+          "variacao" : {
+            "$ref" : "#/components/schemas/VariacaoResponse"
+          }
+        },
+        "required" : [ "consultadoEm", "faixas", "melhorPreco", "minimo", "observadoDesde", "periodo", "porLoja", "variacao" ],
+        "type" : "object"
+      },
+      "LoginRequest" : {
+        "properties" : {
+          "email" : {
+            "maxLength" : 320,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "senha" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "email", "senha" ],
+        "type" : "object"
+      },
+      "MinimoHistoricoResponse" : {
+        "properties" : {
+          "em" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "gratuito" : {
+            "type" : "boolean"
+          },
+          "loja" : {
+            "type" : "string"
+          },
+          "valorCentavos" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "em", "gratuito", "loja", "valorCentavos" ],
+        "type" : "object"
+      },
+      "MonitoramentoResponse" : {
+        "properties" : {
+          "alvoAtingido" : {
+            "type" : "boolean"
+          },
+          "aparentementeDescontinuado" : {
+            "type" : "boolean"
+          },
+          "ativo" : {
+            "type" : "boolean"
+          },
+          "criadoEm" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "distanciaDoAlvoCentavos" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "imagemUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "melhorPreco" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/OfertaResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "nome" : {
+            "type" : "string"
+          },
+          "precoAlvoCentavos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "produtoId" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "alvoAtingido", "aparentementeDescontinuado", "ativo", "criadoEm", "distanciaDoAlvoCentavos", "id", "imagemUrl", "melhorPreco", "nome", "precoAlvoCentavos", "produtoId" ],
+        "type" : "object"
+      },
+      "MonitoramentosResponse" : {
+        "properties" : {
+          "conteudo" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MonitoramentoResponse"
+            },
+            "type" : "array"
+          },
+          "pagina" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "tamanho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalElementos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPaginas" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "conteudo", "pagina", "tamanho", "totalElementos", "totalPaginas" ],
+        "type" : "object"
+      },
+      "OfertaResponse" : {
+        "properties" : {
+          "coletadoEm" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "descontoPct" : {
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
+          },
+          "expiraEm" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "gratuito" : {
+            "type" : "boolean"
+          },
+          "loja" : {
+            "type" : "string"
+          },
+          "promocaoEncerrada" : {
+            "type" : "boolean"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "valorCentavos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "valorOriginalCentavos" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          }
+        },
+        "required" : [ "coletadoEm", "descontoPct", "expiraEm", "gratuito", "loja", "promocaoEncerrada", "url", "valorCentavos", "valorOriginalCentavos" ],
+        "type" : "object"
+      },
+      "PontoHistoricoResponse" : {
+        "properties" : {
+          "instante" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "valorCentavos" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          }
+        },
+        "required" : [ "instante", "valorCentavos" ],
+        "type" : "object"
+      },
+      "Problema" : {
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "erros" : {
+            "description" : "Presente só no 400.",
+            "items" : {
+              "properties" : {
+                "campo" : {
+                  "type" : "string"
+                },
+                "mensagem" : {
+                  "type" : "string"
+                }
+              },
+              "required" : [ "campo", "mensagem" ],
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "instance" : {
+            "format" : "uri-reference",
+            "type" : "string"
+          },
+          "status" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "format" : "uri",
+            "type" : "string"
+          }
+        },
+        "required" : [ "detail", "instance", "status", "title", "type" ],
+        "type" : "object"
+      },
+      "ProdutoExternoResponse" : {
+        "properties" : {
+          "gid" : {
+            "type" : "string"
+          },
+          "imagemUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "melhorPreco" : {
+            "$ref" : "#/components/schemas/OfertaResponse"
+          },
+          "nome" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "gid", "imagemUrl", "melhorPreco", "nome" ],
+        "type" : "object"
+      },
+      "ProdutoResponse" : {
+        "properties" : {
+          "categoria" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "imagemUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "melhorPreco" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/OfertaResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "nome" : {
+            "type" : "string"
+          },
+          "ofertas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/OfertaResponse"
+            },
+            "type" : "array"
+          },
+          "tipo" : {
+            "enum" : [ "JOGO", "HARDWARE" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "categoria", "id", "imagemUrl", "melhorPreco", "nome", "ofertas", "tipo" ],
+        "type" : "object"
+      },
+      "ProdutoResumoResponse" : {
+        "properties" : {
+          "categoria" : {
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "imagemUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "melhorPreco" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/OfertaResponse"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "nome" : {
+            "type" : "string"
+          },
+          "tipo" : {
+            "enum" : [ "JOGO", "HARDWARE" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "categoria", "id", "imagemUrl", "melhorPreco", "nome", "tipo" ],
+        "type" : "object"
+      },
+      "SerieLojaResponse" : {
+        "properties" : {
+          "loja" : {
+            "type" : "string"
+          },
+          "pontos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PontoHistoricoResponse"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "loja", "pontos" ],
+        "type" : "object"
+      },
+      "TokenResponse" : {
+        "properties" : {
+          "expiraEm" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "expiraEm", "tipo", "token" ],
+        "type" : "object"
+      },
+      "TrocaDeCodigoRequest" : {
+        "properties" : {
+          "codigo" : {
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "codigo" ],
+        "type" : "object"
+      },
+      "UsuarioResponse" : {
+        "properties" : {
+          "cep" : {
+            "type" : [ "string", "null" ]
+          },
+          "cidade" : {
+            "type" : [ "string", "null" ]
+          },
+          "criadoEm" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "nomeExibicao" : {
+            "type" : "string"
+          },
+          "uf" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "cep", "cidade", "criadoEm", "email", "id", "nomeExibicao", "uf" ],
+        "type" : "object"
+      },
+      "VariacaoResponse" : {
+        "properties" : {
+          "diferencaCentavos" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "percentualAcimaDoMinimo" : {
+            "type" : [ "number", "null" ]
+          },
+          "precoAtualCentavos" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          }
+        },
+        "required" : [ "diferencaCentavos", "percentualAcimaDoMinimo", "precoAtualCentavos" ],
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "bearer" : {
+        "bearerFormat" : "JWT",
+        "scheme" : "bearer",
+        "type" : "http"
+      }
+    }
+  },
+  "info" : {
+    "description" : "Catálogo de preços de jogos e hardware e monitoramento de preço-alvo. Erros seguem a RFC 9457 em application/problem+json.",
+    "title" : "Umbra API",
+    "version" : "v1"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/auth/cadastro" : {
+      "post" : {
+        "description" : "CEP opcional, aceito com ou sem máscara; a cidade vem do ViaCEP quando disponível.",
+        "operationId" : "cadastrar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CadastroRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsuarioResponse"
+                }
+              }
+            },
+            "description" : "Conta criada."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/EmConflito"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Cria conta com email e senha",
+        "tags" : [ "Autenticação" ]
+      }
+    },
+    "/auth/login" : {
+      "post" : {
+        "operationId" : "entrar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description" : "Token de acesso."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Login por email e senha",
+        "tags" : [ "Autenticação" ]
+      }
+    },
+    "/auth/oauth2/token" : {
+      "post" : {
+        "description" : "O código chega ao frontend no retorno de `/login/oauth2/code/{provedor}`, vale uma vez e expira em pouco tempo.",
+        "operationId" : "trocarCodigoDeLoginExterno",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TrocaDeCodigoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description" : "Token de acesso."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Troca o código do login externo por token",
+        "tags" : [ "Autenticação" ]
+      }
+    },
+    "/login/oauth2/code/{provedor}" : {
+      "get" : {
+        "description" : "Chamada pelo provedor, nunca pelo frontend. Redireciona ao endereço de retorno do frontend com `codigo`, a ser trocado em `POST /auth/oauth2/token`, ou com `erro`, um dos códigos: email_nao_verificado, conta_inativa, conta_vinculada_a_outra_identidade, falha_no_provedor.",
+        "operationId" : "receberRetornoDoProvedor",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "provedor",
+          "required" : true,
+          "schema" : {
+            "enum" : [ "discord", "google" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "302" : {
+            "description" : "Redireciona ao frontend com `codigo` ou `erro`."
+          }
+        },
+        "security" : [ ],
+        "summary" : "Retorno do provedor externo",
+        "tags" : [ "Autenticação" ]
+      }
+    },
+    "/monitoramentos" : {
+      "get" : {
+        "description" : "Ordem fixa, do mais recente ao mais antigo; `sort` não é aceito.",
+        "operationId" : "listarMonitoramentos",
+        "parameters" : [ {
+          "description" : "Página, a partir de 0.",
+          "in" : "query",
+          "name" : "page",
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Itens por página; acima de 20 vira 20.",
+          "in" : "query",
+          "name" : "size",
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MonitoramentosResponse"
+                }
+              }
+            },
+            "description" : "Página de monitoramentos."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "summary" : "Monitoramentos do usuário",
+        "tags" : [ "Monitoramento" ]
+      },
+      "post" : {
+        "description" : "Informe `produtoId` de um produto do catálogo ou `gid` de um jogo achado no ITAD, nunca os dois. Jogo pelo `gid` fora do catálogo é incluído antes de criar o monitoramento.",
+        "operationId" : "criarMonitoramento",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CriarMonitoramentoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MonitoramentoResponse"
+                }
+              }
+            },
+            "description" : "Monitoramento criado.",
+            "headers" : {
+              "Location" : {
+                "description" : "Endereço do monitoramento criado.",
+                "schema" : {
+                  "format" : "uri",
+                  "type" : "string"
+                },
+                "style" : "simple"
+              }
+            }
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/EmConflito"
+          },
+          "422" : {
+            "$ref" : "#/components/responses/RegraViolada"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/ServicoIndisponivel"
+          }
+        },
+        "summary" : "Monitora um produto",
+        "tags" : [ "Monitoramento" ]
+      }
+    },
+    "/monitoramentos/{id}" : {
+      "delete" : {
+        "operationId" : "apagarMonitoramento",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Monitoramento apagado."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "summary" : "Apaga o monitoramento",
+        "tags" : [ "Monitoramento" ]
+      },
+      "patch" : {
+        "description" : "Ao menos um dos campos é obrigatório.",
+        "operationId" : "alterarMonitoramento",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AlterarMonitoramentoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MonitoramentoResponse"
+                }
+              }
+            },
+            "description" : "Monitoramento alterado."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "422" : {
+            "$ref" : "#/components/responses/RegraViolada"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "summary" : "Pausa, reativa ou troca o alvo",
+        "tags" : [ "Monitoramento" ]
+      }
+    },
+    "/oauth2/authorization/{provedor}" : {
+      "get" : {
+        "description" : "Navegação do browser, não chamada por fetch: redireciona para o provedor, que devolve o usuário a `/login/oauth2/code/{provedor}`.",
+        "operationId" : "iniciarLoginExterno",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "provedor",
+          "required" : true,
+          "schema" : {
+            "enum" : [ "discord", "google" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "302" : {
+            "description" : "Redireciona para o provedor."
+          }
+        },
+        "security" : [ ],
+        "summary" : "Inicia o login pelo provedor externo",
+        "tags" : [ "Autenticação" ]
+      }
+    },
+    "/produtos" : {
+      "get" : {
+        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio.",
+        "operationId" : "buscarProdutos",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "nome",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 100,
+            "minLength" : 3,
+            "pattern" : "^[\\p{L}\\p{N} '\\-:.&+!]+$",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "categoria",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CPU", "GPU", "PLACA_MAE", "MEMORIA_RAM", "FONTE", "SSD", "HD", "COOLER", "KIT_HARDWARE", "PLACA_INTERFACE" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "ordenacao",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "nome", "menorPreco" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "incluirExterno",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Página, a partir de 0.",
+          "in" : "query",
+          "name" : "page",
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Itens por página; acima de 20 vira 20.",
+          "in" : "query",
+          "name" : "size",
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "maximum" : 20,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BuscaProdutosResponse"
+                }
+              }
+            },
+            "description" : "Página do catálogo."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Busca no catálogo",
+        "tags" : [ "Catálogo" ]
+      }
+    },
+    "/produtos/{id}" : {
+      "get" : {
+        "operationId" : "detalharProduto",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProdutoResponse"
+                }
+              }
+            },
+            "description" : "Produto ativo."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Detalhe do produto com as ofertas atuais",
+        "tags" : [ "Catálogo" ]
+      }
+    },
+    "/produtos/{id}/historico" : {
+      "get" : {
+        "operationId" : "historicoDoProduto",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "periodo",
+          "required" : false,
+          "schema" : {
+            "default" : "90d",
+            "enum" : [ "30d", "90d", "1a", "tudo" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HistoricoResponse"
+                }
+              }
+            },
+            "description" : "Série do melhor preço e série por loja no período."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/ParametroInvalido"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Histórico de preço do produto",
+        "tags" : [ "Catálogo" ]
+      }
+    },
+    "/usuarios/eu" : {
+      "get" : {
+        "operationId" : "buscarUsuarioAtual",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsuarioResponse"
+                }
+              }
+            },
+            "description" : "Conta ativa."
+          },
+          "401" : {
+            "$ref" : "#/components/responses/NaoAutenticado"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NaoEncontrado"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "summary" : "Conta do usuário do token",
+        "tags" : [ "Usuário" ]
+      }
+    }
+  },
+  "security" : [ {
+    "bearer" : [ ]
+  } ],
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "tags" : [ {
+    "description" : "Busca, detalhe e histórico de preço, sem login.",
+    "name" : "Catálogo"
+  }, {
+    "description" : "Preço-alvo por produto, sempre do usuário do token. Conta desativada recebe 404 em todas as rotas.",
+    "name" : "Monitoramento"
+  }, {
+    "description" : "Conta do usuário do token.",
+    "name" : "Usuário"
+  }, {
+    "description" : "Cadastro, login por email e senha e login por provedor externo.",
+    "name" : "Autenticação"
+  } ]
+}

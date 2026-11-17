@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api.monitoramento;
 
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
+import dev.davidcaetano.umbra_api.comum.RotasPublicas;
 import dev.davidcaetano.umbra_api.usuario.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,18 +52,7 @@ class IsolamentoEntreUsuariosTest extends IntegrationTestBase {
 
     private static final String QUALQUER_METODO = "*";
 
-    private static final Set<String> ROTAS_PUBLICAS = Set.of(
-            "POST /auth/cadastro",
-            "POST /auth/login",
-            "POST /auth/oauth2/token",
-            "GET /produtos",
-            "GET /produtos/{id}",
-            "GET /produtos/{id}/historico",
-            "* /error",
-            "GET /v3/api-docs",
-            "GET /v3/api-docs.yaml",
-            "GET /v3/api-docs/swagger-config",
-            "GET /swagger-ui.html");
+    private static final Set<String> ROTAS_PUBLICAS = RotasPublicas.mapeadasNoSpring();
 
     private static final Map<String, String> CASOS_DE_ISOLAMENTO = Map.of(
             "POST /monitoramentos", "criar_mesmoProdutoDoOutroUsuarioDeveSerAceitoSemRevelarOMonitoramentoAlheio",
