@@ -10,11 +10,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
 @Entity
+@DynamicUpdate
 @Table(name = "monitoramento")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -37,6 +39,7 @@ public class MonitoramentoEntity {
     @ColumnDefault("true")
     private boolean ativo = true;
 
+    @Column(insertable = false, updatable = false)
     private OffsetDateTime ultimoAvisoEm;
 
     @Column(nullable = false, updatable = false)
