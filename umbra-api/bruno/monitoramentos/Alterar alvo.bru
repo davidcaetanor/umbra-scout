@@ -1,0 +1,27 @@
+meta {
+  name: Alterar alvo
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/monitoramentos/{{monitoramentoId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "precoAlvoCentavos": 3500
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.precoAlvoCentavos: eq 3500
+  res.body.ativo: eq false
+}

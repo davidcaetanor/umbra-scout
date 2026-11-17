@@ -1,0 +1,28 @@
+meta {
+  name: Monitorar com produto e gid juntos
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/monitoramentos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "produtoId": {{produtoId}},
+    "gid": "018d937f-590c-728b-ac35-38bcff85f086",
+    "precoAlvoCentavos": 5000
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.type: eq https://umbra.dev/erros/parametro-invalido
+}

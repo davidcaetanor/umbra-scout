@@ -1,0 +1,20 @@
+meta {
+  name: Apagar monitoramento ja apagado
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrl}}/monitoramentos/{{monitoramentoId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 404
+  res.body.type: eq https://umbra.dev/erros/recurso-nao-encontrado
+}
