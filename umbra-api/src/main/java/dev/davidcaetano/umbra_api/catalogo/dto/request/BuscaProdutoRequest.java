@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.catalogo.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.davidcaetano.umbra_api.catalogo.enums.CategoriaHardware;
 import dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogo;
 import jakarta.validation.constraints.AssertTrue;
@@ -20,6 +21,7 @@ public record BuscaProdutoRequest(
         incluirExterno = Boolean.TRUE.equals(incluirExterno);
     }
 
+    @JsonIgnore
     @AssertTrue(message = "incluirExterno exige nome")
     public boolean isNomeInformadoParaBuscaExterna() {
         return !incluirExterno || nome != null;

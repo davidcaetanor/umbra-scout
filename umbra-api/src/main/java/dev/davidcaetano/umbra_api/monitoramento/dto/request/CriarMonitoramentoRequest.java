@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.monitoramento.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -17,6 +18,7 @@ public record CriarMonitoramentoRequest(
         @Max(value = PrecoAlvo.MAXIMO_CENTAVOS, message = "deve ser menor ou igual a 100000000")
         Long precoAlvoCentavos) {
 
+    @JsonIgnore
     @AssertTrue(message = "informe produtoId ou gid, nunca os dois")
     public boolean isUmProdutoInformado() {
         return (produtoId == null) != (gid == null);

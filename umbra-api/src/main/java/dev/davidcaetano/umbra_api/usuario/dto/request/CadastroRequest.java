@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.usuario.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -40,6 +41,7 @@ public record CadastroRequest(
         return semMascara.isEmpty() ? null : semMascara;
     }
 
+    @JsonIgnore
     @AssertTrue(message = "senha deve ter no máximo 72 bytes")
     public boolean isSenhaDentroDoLimiteDoBcrypt() {
         return senha == null || senha.getBytes(StandardCharsets.UTF_8).length <= LIMITE_DO_BCRYPT_EM_BYTES;

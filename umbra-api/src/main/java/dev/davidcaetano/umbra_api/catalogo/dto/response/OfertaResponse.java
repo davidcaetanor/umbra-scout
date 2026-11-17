@@ -1,15 +1,17 @@
 package dev.davidcaetano.umbra_api.catalogo.dto.response;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Instant;
 
 public record OfertaResponse(
         String loja,
         String url,
         long valorCentavos,
-        Long valorOriginalCentavos,
-        Short descontoPct,
+        @Nullable Long valorOriginalCentavos,
+        @Nullable Short descontoPct,
         boolean gratuito,
-        Instant expiraEm,
+        @Nullable Instant expiraEm,
         boolean promocaoEncerrada,
         Instant coletadoEm) {
 }

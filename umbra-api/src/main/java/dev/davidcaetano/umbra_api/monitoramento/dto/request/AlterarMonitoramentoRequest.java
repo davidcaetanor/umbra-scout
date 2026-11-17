@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.monitoramento.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -10,6 +11,7 @@ public record AlterarMonitoramentoRequest(
         @Max(value = PrecoAlvo.MAXIMO_CENTAVOS, message = "deve ser menor ou igual a 100000000")
         Long precoAlvoCentavos) {
 
+    @JsonIgnore
     @AssertTrue(message = "informe ativo ou precoAlvoCentavos")
     public boolean isAlgumCampoInformado() {
         return ativo != null || precoAlvoCentavos != null;

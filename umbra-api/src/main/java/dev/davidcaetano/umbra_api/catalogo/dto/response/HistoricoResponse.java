@@ -1,13 +1,15 @@
 package dev.davidcaetano.umbra_api.catalogo.dto.response;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Instant;
 import java.util.List;
 
 public record HistoricoResponse(
         String periodo,
         Instant consultadoEm,
-        Instant observadoDesde,
-        MinimoHistoricoResponse minimo,
+        @Nullable Instant observadoDesde,
+        @Nullable MinimoHistoricoResponse minimo,
         VariacaoResponse variacao,
         List<PontoHistoricoResponse> melhorPreco,
         List<SerieLojaResponse> porLoja,
