@@ -2,7 +2,6 @@ package dev.davidcaetano.umbra_api.coleta.itad;
 
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
-import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.coleta.Cobertura;
 import dev.davidcaetano.umbra_api.coleta.FiltroMoeda;
 import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
@@ -114,22 +113,8 @@ public class ItadScraper implements Scraper {
                     continue;
                 }
 
-                resultado.add(new OfertaColetada(
-                        loja.get(),
-                        identificadorLoja,
-                        TipoProduto.JOGO,
-                        info.titulo(),
-                        null,
-                        deal.url(),
-                        info.imagemUrl(),
-                        gid.toString(),
-                        deal.price().amountInt(),
-                        (long) deal.regular().amountInt(),
-                        (short) deal.cut(),
-                        true,
-                        OrigemColeta.ITAD_API,
-                        deal.expiry()
-                ));
+                resultado.add(ConversaoDeOfertaItad.paraOfertaColetada(loja.get(), identificadorLoja, info.titulo(),
+                        info.imagemUrl(), gid, deal));
             }
         }
 

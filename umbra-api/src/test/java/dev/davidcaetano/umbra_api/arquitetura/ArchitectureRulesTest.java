@@ -22,6 +22,9 @@ import dev.davidcaetano.umbra_api.config.log.RequestIdFilter;
 import jakarta.persistence.Entity;
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.Repository;
 import org.springframework.stereotype.Controller;
 
@@ -99,6 +102,15 @@ class ArchitectureRulesTest {
             .should().accessTargetWhere(target(declaredIn(MDC.class)))
             .because("chave de MDC fora dessas três classes escapa do ChaveDeLog e do allowlist do encoder, "
                     + "e desaparece do JSON sem erro (ARCHITECTURE.md §6.3)");
+
+    @ArchTest
+    static final ArchRule repositorioDeRecursoDoUsuarioSemBuscaPorIdSolta = noClasses()
+            .that().resideInAPackage("..monitoramento.repository..")
+            .should().beAssignableTo(CrudRepository.class)
+            .orShould().beAssignableTo(ListCrudRepository.class)
+            .orShould().beAssignableTo(PagingAndSortingRepository.class)
+            .because("repositório de recurso do usuário só expõe consulta amarrada ao usuarioId; herdar findById, "
+                    + "deleteById ou findAll deixa escrever o acesso sem dono que o isolamento proíbe (ARCHITECTURE.md §5.4)");
 
     private static ArchCondition<JavaMethod> naoTerEntidadeNaAssinatura() {
         return new ArchCondition<>("não ter entidade JPA no tipo de retorno nem nos parâmetros") {

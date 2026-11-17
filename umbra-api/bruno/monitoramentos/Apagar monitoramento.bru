@@ -1,0 +1,19 @@
+meta {
+  name: Apagar monitoramento
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/monitoramentos/{{monitoramentoId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 204
+}

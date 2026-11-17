@@ -1,0 +1,27 @@
+meta {
+  name: Monitorar o mesmo produto de novo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/monitoramentos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "produtoId": {{produtoId}},
+    "precoAlvoCentavos": 4000
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.type: eq https://umbra.dev/erros/recurso-em-conflito
+}

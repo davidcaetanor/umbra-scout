@@ -1,0 +1,24 @@
+meta {
+  name: Alterar sem campos
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/monitoramentos/{{monitoramentoId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {}
+}
+
+assert {
+  res.status: eq 400
+  res.body.type: eq https://umbra.dev/erros/parametro-invalido
+}

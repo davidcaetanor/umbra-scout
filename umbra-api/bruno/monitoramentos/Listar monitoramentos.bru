@@ -1,0 +1,22 @@
+meta {
+  name: Listar monitoramentos
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/monitoramentos
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.conteudo: isArray
+  res.body.totalElementos: eq 1
+  res.body.conteudo[0].id: eq {{monitoramentoId}}
+}

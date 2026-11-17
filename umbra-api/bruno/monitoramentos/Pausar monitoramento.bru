@@ -1,0 +1,27 @@
+meta {
+  name: Pausar monitoramento
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/monitoramentos/{{monitoramentoId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "ativo": false
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ativo: eq false
+  res.body.precoAlvoCentavos: eq 5000
+}
