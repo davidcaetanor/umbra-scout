@@ -33,6 +33,8 @@ public interface MonitoramentoRepository extends Repository<MonitoramentoEntity,
 
     MonitoramentoEntity save(MonitoramentoEntity monitoramento);
 
+    MonitoramentoEntity saveAndFlush(MonitoramentoEntity monitoramento);
+
     Optional<MonitoramentoEntity> findByIdAndUsuarioId(Long id, Long usuarioId);
 
     boolean existsByUsuarioIdAndProdutoId(Long usuarioId, Long produtoId);
