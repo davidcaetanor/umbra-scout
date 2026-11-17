@@ -87,6 +87,8 @@ class ContratoOpenApiTest extends IntegrationTestBase {
                 .toList();
 
         assertThat(ids).doesNotContain("").doesNotHaveDuplicates();
+        assertThat(ids).as("o springdoc acrescenta _N ao operationId repetido")
+                .noneMatch(id -> id.matches(".*_\\d+$"));
     }
 
     @Test
