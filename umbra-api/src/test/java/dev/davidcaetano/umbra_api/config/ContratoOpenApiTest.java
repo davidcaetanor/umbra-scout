@@ -149,6 +149,13 @@ class ContratoOpenApiTest extends IntegrationTestBase {
         assertThat(contrato.at("/servers/0/url").asString()).isEqualTo("/");
     }
 
+    @Test
+    void contratoPublicadoNaoDeveConterEnderecoAbsoluto() {
+        assertThat(contrato.toString())
+                .as("o contrato é publicado no Pages e não pode apontar para servidor nenhum")
+                .doesNotContain("http://", "https://");
+    }
+
     private Map<String, JsonNode> operacoes() {
         Map<String, JsonNode> operacoes = new TreeMap<>();
         contrato.path("paths").properties().forEach(caminho -> caminho.getValue().properties().stream()
