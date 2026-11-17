@@ -4,6 +4,7 @@ import dev.davidcaetano.umbra_api.comum.dto.response.ErroDeCampoResponse;
 import dev.davidcaetano.umbra_api.comum.excecao.NaoAutenticadoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoEmConflitoException;
 import dev.davidcaetano.umbra_api.comum.excecao.RecursoNaoEncontradoException;
+import dev.davidcaetano.umbra_api.comum.excecao.RegraDeNegocioVioladaException;
 import dev.davidcaetano.umbra_api.comum.log.SanitizacaoDeLog;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final URI TIPO_RECURSO_NAO_ENCONTRADO = URI.create("https://umbra.dev/erros/recurso-nao-encontrado");
     private static final URI TIPO_RECURSO_EM_CONFLITO = URI.create("https://umbra.dev/erros/recurso-em-conflito");
+    private static final URI TIPO_REGRA_DE_NEGOCIO_VIOLADA = URI.create("https://umbra.dev/erros/regra-de-negocio-violada");
     private static final URI TIPO_PARAMETRO_INVALIDO = URI.create("https://umbra.dev/erros/parametro-invalido");
     private static final URI TIPO_NAO_AUTENTICADO = URI.create("https://umbra.dev/erros/nao-autenticado");
     private static final URI TIPO_ACESSO_NEGADO = URI.create("https://umbra.dev/erros/acesso-negado");
@@ -59,6 +61,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problema.setType(TIPO_RECURSO_EM_CONFLITO);
         problema.setTitle("Recurso em conflito");
+        problema.setInstance(URI.create(request.getRequestURI()));
+        return problema;
+    }
+
+    @ExceptionHandler(RegraDeNegocioVioladaException.class)
+    public ProblemDetail tratarRegraDeNegocioViolada(RegraDeNegocioVioladaException ex, HttpServletRequest request) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage());
+        problema.setType(TIPO_REGRA_DE_NEGOCIO_VIOLADA);
+        problema.setTitle("Regra de negócio violada");
         problema.setInstance(URI.create(request.getRequestURI()));
         return problema;
     }
