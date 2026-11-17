@@ -20,12 +20,12 @@ public class ClienteAutorizadoDescartado implements OAuth2AuthorizedClientReposi
     @Override
     public void saveAuthorizedClient(OAuth2AuthorizedClient authorizedClient, Authentication principal,
                                      HttpServletRequest request, HttpServletResponse response) {
-        // O access token do provedor só serve para ler o perfil no login; a sessão do Umbra é o JWT.
+       
     }
 
     @Override
     public void removeAuthorizedClient(String clientRegistrationId, Authentication principal,
                                        HttpServletRequest request, HttpServletResponse response) {
-        // Nada é guardado, então nada há a remover.
+        
     }
 }
