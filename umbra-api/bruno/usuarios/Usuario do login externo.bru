@@ -1,0 +1,26 @@
+meta {
+  name: Usuario do login externo
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/usuarios/eu
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isNumber
+  res.body.email: isString
+  res.body.senhaHash: isUndefined
+}
+
+docs {
+  Rode depois de "Troca de codigo", que guarda o token da conta criada ou vinculada pelo Discord ou pelo Google.
+}
