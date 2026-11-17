@@ -2,6 +2,9 @@ package dev.davidcaetano.umbra_api.config;
 
 import dev.davidcaetano.umbra_api.config.seguranca.ProblemDetailAccessDeniedHandler;
 import dev.davidcaetano.umbra_api.config.seguranca.ProblemDetailAuthenticationEntryPoint;
+import dev.davidcaetano.umbra_api.usuario.oauth2.ClienteAutorizadoDescartado;
+import dev.davidcaetano.umbra_api.usuario.oauth2.LoginExternoFalhaHandler;
+import dev.davidcaetano.umbra_api.usuario.oauth2.LoginExternoSucessoHandler;
 import dev.davidcaetano.umbra_api.usuario.service.JwtService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +40,7 @@ public class SecurityConfig {
     static final String EMISSOR_DO_TOKEN = "umbra-api";
     private static final MacAlgorithm ALGORITMO_DO_TOKEN = MacAlgorithm.HS256;
     private static final String CABECALHO_REQUEST_ID = "X-Request-Id";
+    private static final String INICIO_DO_LOGIN_EXTERNO = "/oauth2/authorization";
     private static final Duration CACHE_DO_PREFLIGHT = Duration.ofHours(1);
 
     private final SecretKey chaveDoToken;
@@ -54,6 +58,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtService jwtService,
+            LoginExternoSucessoHandler loginExternoSucessoHandler,
+            LoginExternoFalhaHandler loginExternoFalhaHandler,
+            ClienteAutorizadoDescartado clienteAutorizadoDescartado,
             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver) {
         var entryPoint = new ProblemDetailAuthenticationEntryPoint(handlerExceptionResolver);
         var accessDeniedHandler = new ProblemDetailAccessDeniedHandler(handlerExceptionResolver);
@@ -66,12 +73,19 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(rotas -> rotas
-                        .requestMatchers(HttpMethod.POST, "/auth/cadastro", "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/cadastro", "/auth/login", "/auth/oauth2/token")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/oauth2/authorization/*", "/login/oauth2/code/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/produtos/**").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
+                .oauth2Login(login -> login
+                        .loginPage(INICIO_DO_LOGIN_EXTERNO)
+                        .authorizedClientRepository(clienteAutorizadoDescartado)
+                        .successHandler(loginExternoSucessoHandler)
+                        .failureHandler(loginExternoFalhaHandler))
                 .oauth2ResourceServer(recurso -> recurso
                         .jwt(jwt -> jwt.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtService::autenticar))
                         .authenticationEntryPoint(entryPoint)

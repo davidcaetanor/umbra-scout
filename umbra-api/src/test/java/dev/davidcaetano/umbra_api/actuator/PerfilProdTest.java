@@ -35,7 +35,12 @@ import static org.assertj.core.api.Assertions.assertThat;
         "itad.itad-api.api-key=chave-fake-de-teste-nunca-usada-de-verdade",
         "UMBRA_DB_URL=jdbc:postgresql://localhost:1/nao-usada",
         "UMBRA_DB_USER=usuario-nao-usado",
-        "UMBRA_DB_PASSWORD=senha-nao-usada"
+        "UMBRA_DB_PASSWORD=senha-nao-usada",
+        "DISCORD_CLIENT_ID=discord-cliente-de-teste",
+        "DISCORD_CLIENT_SECRET=discord-segredo-fake-de-teste",
+        "GOOGLE_CLIENT_ID=google-cliente-de-teste",
+        "GOOGLE_CLIENT_SECRET=google-segredo-fake-de-teste",
+        "UMBRA_LOGIN_RETORNO_FRONT=https://umbra.invalid/login/callback"
 })
 @Import(PerfilProdTest.EcoDoIpDeOrigem.class)
 class PerfilProdTest {

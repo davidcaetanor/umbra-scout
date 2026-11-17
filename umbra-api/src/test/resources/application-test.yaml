@@ -1,4 +1,14 @@
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            client-id: discord-cliente-de-teste
+            client-secret: discord-segredo-fake-de-teste
+          google:
+            client-id: google-cliente-de-teste
+            client-secret: google-segredo-fake-de-teste
   main:
     banner-mode: off
   datasource:
@@ -10,6 +20,8 @@ spring:
 umbra:
   cors:
     origens: http://localhost:4200
+  login-externo:
+    retorno-front: http://localhost:4200/login/callback
   jwt:
     ttl-horas: 1
     secret: segredo-de-teste-com-pelo-menos-32-bytes

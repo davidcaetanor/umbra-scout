@@ -12,4 +12,8 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
     Optional<UsuarioEntity> findByEmail(String email);
 
     Optional<UsuarioEntity> findByIdAndAtivoTrue(Long id);
+
+    Optional<UsuarioEntity> findByDiscordId(String discordId);
+
+    Optional<UsuarioEntity> findByGoogleId(String googleId);
 }

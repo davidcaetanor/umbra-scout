@@ -16,5 +16,10 @@ public record ItadProperties(@Valid @NotNull(message = "itad.itad-api é obrigat
 
             @NotBlank(message = "itad.itad-api.base-url é obrigatório e não pode estar vazio!")
             String baseUrl) {
+
+        @Override
+        public String toString() {
+            return "ItadApi[apiKey=***, baseUrl=" + baseUrl + "]";
+        }
     }
 }

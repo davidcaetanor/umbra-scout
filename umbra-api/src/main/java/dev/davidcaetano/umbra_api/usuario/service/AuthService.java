@@ -25,7 +25,6 @@ import java.util.UUID;
 public class AuthService {
 
     private static final String RESTRICAO_EMAIL_UNICO = "uq_usuario_email";
-    private static final String TIPO_DO_TOKEN = "Bearer";
 
     private final UsuarioRepository usuarioRepository;
     private final UsuarioMapper usuarioMapper;
@@ -78,8 +77,7 @@ public class AuthService {
             throw new CredenciaisInvalidasException();
         }
 
-        TokenEmitido token = jwtService.emitir(usuario.get().getId());
-        return new TokenResponse(token.valor(), TIPO_DO_TOKEN, OffsetDateTime.ofInstant(token.expiraEm(), clock.getZone()));
+        return TokenResponse.bearer(jwtService.emitir(usuario.get().getId()), clock.getZone());
     }
 
     private void informarCep(UsuarioEntity usuario, String cep) {

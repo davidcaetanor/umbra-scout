@@ -1,0 +1,40 @@
+meta {
+  name: Troca de codigo
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/auth/oauth2/token
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "codigo": "{{codigoOAuth2}}"
+  }
+}
+
+vars:pre-request {
+  codigoOAuth2: cole-aqui-o-codigo-da-barra-de-endereco
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("token", res.body.token);
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.tipo: eq Bearer
+  res.body.token: isString
+  res.body.expiraEm: isString
+}
+
+docs {
+  Abra no navegador {{baseUrl}}/oauth2/authorization/discord ou {{baseUrl}}/oauth2/authorization/google.
+  Depois de autorizar, copie o valor de "codigo" da barra de endereço e cole em codigoOAuth2, na aba Vars.
+  O código vale 60 segundos e uma vez só; repetir a troca com o mesmo código responde 401.
+}

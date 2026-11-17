@@ -2,9 +2,11 @@ package dev.davidcaetano.umbra_api.usuario.controller;
 
 import dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest;
 import dev.davidcaetano.umbra_api.usuario.dto.request.LoginRequest;
+import dev.davidcaetano.umbra_api.usuario.dto.request.TrocaDeCodigoRequest;
 import dev.davidcaetano.umbra_api.usuario.dto.response.TokenResponse;
 import dev.davidcaetano.umbra_api.usuario.dto.response.UsuarioResponse;
 import dev.davidcaetano.umbra_api.usuario.service.AuthService;
+import dev.davidcaetano.umbra_api.usuario.service.LoginExternoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginExternoService loginExternoService;
 
     @PostMapping("/cadastro")
     @ResponseStatus(HttpStatus.CREATED)
@@ -30,5 +33,10 @@ public class AuthController {
     @PostMapping("/login")
     public TokenResponse entrar(@Valid @RequestBody LoginRequest login) {
         return authService.entrar(login);
+    }
+
+    @PostMapping("/oauth2/token")
+    public TokenResponse trocarCodigo(@Valid @RequestBody TrocaDeCodigoRequest troca) {
+        return loginExternoService.trocar(troca.codigo());
     }
 }

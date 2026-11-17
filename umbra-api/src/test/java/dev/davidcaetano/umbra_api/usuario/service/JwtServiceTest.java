@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
@@ -33,7 +34,11 @@ class JwtServiceTest {
     void emitir_deveAssinarComEmissorAssuntoEValidade() {
         TokenEmitido token = jwtService.emitir(42L);
 
-        Jwt jwt = NimbusJwtDecoder.withSecretKey(CHAVE).macAlgorithm(MacAlgorithm.HS256).build().decode(token.valor());
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(CHAVE).macAlgorithm(MacAlgorithm.HS256).build();
+        JwtTimestampValidator validadeNoInstanteDoTeste = new JwtTimestampValidator();
+        validadeNoInstanteDoTeste.setClock(Clock.fixed(AGORA, ZoneOffset.UTC));
+        decoder.setJwtValidator(validadeNoInstanteDoTeste);
+        Jwt jwt = decoder.decode(token.valor());
         assertThat(jwt.getHeaders()).containsEntry("alg", "HS256");
         assertThat(jwt.getClaimAsString("iss")).isEqualTo("umbra-api");
         assertThat(jwt.getSubject()).isEqualTo("42");

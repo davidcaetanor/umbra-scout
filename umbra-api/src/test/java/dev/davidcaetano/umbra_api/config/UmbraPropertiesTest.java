@@ -53,8 +53,18 @@ public class UmbraPropertiesTest {
                     assertThat(context).hasFailed();
                     assertThat(context.getStartupFailure())
                             .rootCause()
-                            .hasMessageContaining("umbra.jwt.secret deve ter pelo menos 32 caracteres");
+                            .hasMessageContaining("umbra.jwt.secret (UMBRA_JWT_SECRET) deve ter pelo menos 32 caracteres")
+                            .hasMessageNotContaining("s".repeat(31));
                 });
+    }
+
+    @Test
+    void segredoCom32Caracteres_deveSerAceito_eToStringNaoDeveExporOValor() {
+        contextRunner
+                .withPropertyValues(SEGREDO_VALIDO, "umbra.jwt.ttl-horas=2", CONTATO_VALIDO)
+                .run(context -> assertThat(context.getBean(UmbraProperties.class).jwt().toString())
+                        .doesNotContain("s".repeat(32))
+                        .contains("secret=***"));
     }
 
     @Test
