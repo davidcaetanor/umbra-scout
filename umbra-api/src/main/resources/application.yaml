@@ -97,6 +97,8 @@ umbra:
       cache-ttl: 6m
       prazo: 4s
       maximo-resultados: 5
+  monitoramento:
+    dias-para-descontinuado: 180
 
 itad:
   itad-api:
