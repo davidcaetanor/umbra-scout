@@ -2,4 +2,4 @@
 mvnw text eol=lf
 /mvnw text eol=lf
 *.cmd text eol=crlf
-*.sql text eol=lf
+*.sql text eol=lfcontrato-api/index.html text eol=lf
