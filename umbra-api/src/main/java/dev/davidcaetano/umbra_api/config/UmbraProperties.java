@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.validation.annotation.Validated;
@@ -23,12 +22,25 @@ public record UmbraProperties(
 
     public record UmbraJWT(
             @NotBlank(message = "umbra.jwt.secret é obrigatório e não pode estar vazio!")
-            @Size(min = 32, message = "umbra.jwt.secret deve ter pelo menos 32 caracteres (256 bits)")
             String secret,
 
             @Min(value = 1, message = "umbra.jwt.ttl-horas deve ser maior ou igual a 1")
             int ttlHoras
     ) {
+
+        private static final int TAMANHO_MINIMO_DO_SEGREDO = 32;
+
+        public UmbraJWT {
+            if (secret != null && !secret.isBlank() && secret.length() < TAMANHO_MINIMO_DO_SEGREDO) {
+                throw new IllegalArgumentException("umbra.jwt.secret (UMBRA_JWT_SECRET) deve ter pelo menos "
+                        + TAMANHO_MINIMO_DO_SEGREDO + " caracteres (256 bits); o valor recusado não é exibido");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "UmbraJWT[secret=***, ttlHoras=" + ttlHoras + "]";
+        }
     }
 
     public record UmbraCors(
