@@ -1,15 +1,19 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoBuscaResponse;
+import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoInfoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -57,5 +61,41 @@ public class ItadBuscaClient {
                 }));
 
         return resposta == null ? List.of() : resposta;
+    }
+
+    @CircuitBreaker(name = "itad-busca")
+    @RateLimiter(name = "itad-busca")
+    public Optional<ItadJogoInfoResponse> buscarInfo(UUID gid) {
+        try {
+            return Optional.ofNullable(executar(() -> itadBuscaRestClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/games/info/v2").queryParam("id", gid).build())
+                    .retrieve()
+                    .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(), (pedido, resposta) -> {
+                        throw new JogoAusenteNoItad();
+                    })
+                    .body(ItadJogoInfoResponse.class)));
+        } catch (JogoAusenteNoItad ausente) {
+            return Optional.empty();
+        }
+    }
+
+    @CircuitBreaker(name = "itad-busca")
+    @RateLimiter(name = "itad-busca")
+    public Map<UUID, List<String>> resolverIdentificadorNativo(int shopId, List<UUID> gids) {
+        Map<UUID, List<String>> resposta = executar(() -> itadBuscaRestClient.post()
+                .uri("/lookup/shop/{shopId}/id/v1", shopId)
+                .body(gids)
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<UUID, List<String>>>() {
+                }));
+
+        return resposta == null ? Map.of() : resposta;
+    }
+
+    private static final class JogoAusenteNoItad extends RuntimeException {
+
+        private JogoAusenteNoItad() {
+            super(null, null, false, false);
+        }
     }
 }
