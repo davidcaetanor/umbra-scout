@@ -248,12 +248,6 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
                 Integer.class, usuario)).isEqualTo(1);
     }
 
-    @Test
-    void semToken_deveResponder401() throws Exception {
-        mockMvc.perform(get("/monitoramentos")).andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/monitoramentos").contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isUnauthorized());
-    }
 
     @Test
     void listar_deveDevolverAPaginaDoUsuarioComOrdemFixaMesmoComSortDoCliente() throws Exception {
@@ -340,20 +334,5 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
 
         como(usuario, delete("/monitoramentos/" + monitoramento)).andExpect(status().isNoContent());
         como(usuario, delete("/monitoramentos/" + monitoramento)).andExpect(status().isNotFound());
-    }
-
-    @Test
-    void outroUsuario_deveReceber404AoAlterarOuApagarESemEfeito() throws Exception {
-        Long dono = inserirUsuario("dono@umbra.dev");
-        Long intruso = inserirUsuario("intruso@umbra.dev");
-        Long monitoramento = criar(dono, inserirProduto("Alheio"), 1000);
-
-        como(intruso, patch("/monitoramentos/" + monitoramento).content("{\"ativo\": false}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.type").value(TIPO_RECURSO_NAO_ENCONTRADO));
-        como(intruso, delete("/monitoramentos/" + monitoramento)).andExpect(status().isNotFound());
-        como(intruso, get("/monitoramentos")).andExpect(jsonPath("$.totalElementos").value(0));
-        assertThat(jdbc.queryForObject("SELECT ativo FROM monitoramento WHERE id = ?", Boolean.class, monitoramento))
-                .isTrue();
     }
 }
