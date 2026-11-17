@@ -17,6 +17,7 @@ import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 public class ColetaService {
 
     private static final int TAMANHO_BLOCO_CONSULTA = 1000;
+    private static final List<String> RESTRICOES_DE_IDENTIDADE = List.of("uq_produto_chave_itad", "uq_produto_loja");
 
     private final ProdutoRepository produtoRepository;
     private final OfertaRepository ofertaRepository;
@@ -139,6 +141,45 @@ public class ColetaService {
         ausenciaPorCenso.concluir(resultado, veredito, agora);
 
         return veredito;
+    }
+
+    public void gravarSobDemanda(List<OfertaColetada> ofertas) {
+        if (ofertas.isEmpty()) {
+            return;
+        }
+
+        List<GrupoDeOfertas> grupos = preparadorDeRodada.preparar(ofertas).stream()
+                .flatMap(List::stream)
+                .toList();
+        Map<CodigoLoja, LojaEntity> lojasPorCodigo = lojaRepository.findAll().stream()
+                .collect(Collectors.toMap(LojaEntity::getCodigo, Function.identity()));
+        OffsetDateTime agora = OffsetDateTime.now(clock);
+
+        Contadores contadores;
+        try {
+            contadores = gravarGruposSobDemanda(grupos, lojasPorCodigo, agora);
+        } catch (DataIntegrityViolationException violacao) {
+            if (!conflitoDeIdentidade(violacao)) {
+                throw violacao;
+            }
+            log.info("Gravacao sob demanda encontrou o mesmo item gravado em paralelo; nova tentativa reaproveita o "
+                    + "que ja existe");
+            contadores = gravarGruposSobDemanda(grupos, lojasPorCodigo, agora);
+        }
+
+        log.info("Gravacao sob demanda: {} produto(s) criado(s), {} oferta(s) criada(s), {} preco(s) gravado(s), "
+                        + "{} preco(s) inalterado(s)", contadores.produtosCriados(), contadores.ofertasCriadas(),
+                contadores.precosGravados(), contadores.precosInalterados());
+    }
+
+    private Contadores gravarGruposSobDemanda(List<GrupoDeOfertas> grupos, Map<CodigoLoja, LojaEntity> lojasPorCodigo,
+                                              OffsetDateTime agora) {
+        return transactionTemplate.execute(status -> gravarChunk(grupos, lojasPorCodigo, Cobertura.amostra(), agora));
+    }
+
+    private static boolean conflitoDeIdentidade(DataIntegrityViolationException violacao) {
+        String mensagem = violacao.getMostSpecificCause().getMessage();
+        return mensagem != null && RESTRICOES_DE_IDENTIDADE.stream().anyMatch(mensagem::contains);
     }
 
     private Contadores gravarChunk(List<GrupoDeOfertas> grupos, Map<CodigoLoja, LojaEntity> lojasPorCodigo,
