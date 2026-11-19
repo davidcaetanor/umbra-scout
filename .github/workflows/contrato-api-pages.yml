@@ -34,7 +34,7 @@ jobs:
           cp contrato-api/index.html umbra-api/openapi.json _site/
 
       - name: Configurar o Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Enviar o site
         uses: actions/upload-pages-artifact@v3
