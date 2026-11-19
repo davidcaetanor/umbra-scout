@@ -4,7 +4,7 @@
     <umbra-aviso tipo="erro" class="mb-6">{{ mensagem | frasesEmLinhas }}</umbra-aviso>
     <umbra-botoes-login-externo [provedores]="provedores" [saindo]="saindoPara()" (escolher)="entrarCom($event)" />
     <p class="mt-6 text-center">
-      <a routerLink="/entrar" class="inline-flex min-h-6 items-center font-semibold underline">Entrar com email e senha</a>
+      <a routerLink="/entrar" class="inline-flex min-h-6 items-center font-semibold link-texto">Entrar com email e senha</a>
     </p>
   </umbra-moldura-entrada>
 } @else {

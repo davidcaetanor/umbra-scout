@@ -38,15 +38,19 @@
     />
     <button
       type="submit"
-      class="mt-2 min-h-12 rounded-controle bg-destaque px-4 text-valor font-semibold text-texto-escuro hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
+      class="mt-2 inline-flex min-h-12 items-center justify-center gap-2 botao-principal px-4 text-valor"
       [disabled]="enviando()"
+      [attr.aria-busy]="enviando() ? 'true' : null"
     >
+      @if (enviando()) {
+        <svg viewBox="0 0 24 24" class="size-5 motion-safe:animate-spin" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+      }
       {{ enviando() ? 'Criando conta…' : 'Criar conta' }}
     </button>
   </form>
 
   <p class="mt-6 text-center text-texto-secundario">
     Já tem conta?
-    <a routerLink="/entrar" [queryParams]="{ returnUrl: destino() }" class="inline-flex min-h-6 items-center font-semibold text-texto underline">Entrar</a>
+    <a routerLink="/entrar" [queryParams]="{ returnUrl: destino() }" class="inline-flex min-h-6 items-center font-semibold text-texto link-texto">Entrar</a>
   </p>
 </umbra-moldura-entrada>
