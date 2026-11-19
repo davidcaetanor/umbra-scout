@@ -10,6 +10,7 @@ import { MolduraEntradaComponent } from '../../components/moldura-entrada/moldur
 import { ProvedorExterno, ResultadoCadastro } from '../../data/auth.modelos';
 import { AuthService } from '../../data/auth.service';
 import { CONTA_CRIADA } from '../entrar/entrar.page';
+import { destravarAoVoltar } from '../destravar-ao-voltar';
 import {
   MAXIMO_DO_EMAIL,
   MAXIMO_DO_NOME,
@@ -50,6 +51,10 @@ export class CadastroPage {
   protected readonly minimoDaSenha = MINIMO_DA_SENHA;
   protected readonly enviando = signal(false);
   protected readonly saindoPara = signal<ProvedorExterno | null>(null);
+
+  constructor() {
+    destravarAoVoltar(this.saindoPara);
+  }
   protected readonly falhou = signal(false);
   protected readonly destino = computed(() => destinoInterno(this.returnUrl()));
   protected readonly mensagem = mensagemDoCampo;
