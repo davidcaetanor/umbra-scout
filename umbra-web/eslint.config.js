@@ -107,6 +107,10 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['src/**/*.spec.ts'],
+    rules: { '@angular-eslint/component-max-inline-declarations': 'off' },
+  },
+  {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
   },
