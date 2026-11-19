@@ -40,6 +40,20 @@ jobs:
       - name: Lint, typecheck, testes e build
         run: npm run verify
 
+      - name: Instalar navegador do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Larguras extremas e roteiro de teclado
+        run: npm run e2e
+
+      - name: Publicar capturas e relatorio do Playwright
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-umbra-web
+          path: umbra-web/e2e/resultados/
+          if-no-files-found: warn
+
       - name: Publicar relatorio de cobertura
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

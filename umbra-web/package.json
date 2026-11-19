@@ -13,7 +13,8 @@
     "pretypecheck": "npm run gerar-cliente",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "lint": "ng lint",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "e2e": "playwright test"
   },
   "private": true,
   "packageManager": "npm@12.2.2",
@@ -35,6 +36,7 @@
     "@angular/cli": "22.3.0",
     "@angular/compiler-cli": "22.3.0",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "4.1.12",
     "@vitest/coverage-v8": "5.0.0",
     "angular-eslint": "22.8.0",

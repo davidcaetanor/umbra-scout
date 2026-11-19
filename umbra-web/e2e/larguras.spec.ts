@@ -1,0 +1,39 @@
+import { expect, test } from '@playwright/test';
+
+const LARGURAS = [
+  { nome: 'minima', largura: 360, altura: 780 },
+  { nome: 'maxima', largura: 1920, altura: 1080 },
+] as const;
+
+const ROTAS = [
+  { caminho: '/catalogo', titulo: 'Catálogo' },
+  { caminho: '/monitoramentos', titulo: 'Meus monitoramentos' },
+  { caminho: '/entrar', titulo: 'Entrar' },
+] as const;
+
+for (const { nome, largura, altura } of LARGURAS) {
+  test.describe(`RNF-08 em ${largura} px`, () => {
+    test.use({ viewport: { width: largura, height: altura } });
+
+    for (const rota of ROTAS) {
+      test(`${rota.titulo} sem rolagem horizontal e sem conteúdo cortado`, async ({ page }, info) => {
+        await page.goto(rota.caminho);
+        await expect(page.getByRole('heading', { level: 1, name: rota.titulo })).toBeVisible();
+
+        const medida = await page.evaluate(() => {
+          const visivel = document.documentElement.clientWidth;
+          const vazando = [...document.querySelectorAll('body *')]
+            .filter((el) => el.getBoundingClientRect().right > visivel + 0.5)
+            .map((el) => el.tagName.toLowerCase());
+          return { visivel, total: document.documentElement.scrollWidth, vazando };
+        });
+
+        expect(medida.total, 'largura rolável igual à visível').toBe(medida.visivel);
+        expect(medida.vazando, 'nenhum elemento passa da borda direita').toEqual([]);
+
+        const captura = await page.screenshot({ fullPage: true });
+        await info.attach(`${nome}${rota.caminho.replace('/', '-')}`, { body: captura, contentType: 'image/png' });
+      });
+    }
+  });
+}
