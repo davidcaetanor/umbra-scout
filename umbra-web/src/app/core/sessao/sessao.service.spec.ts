@@ -1,7 +1,9 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { erroInterceptor } from '../http';
 import { ApiConfiguration } from '../../api/api-configuration';
+import { CONFIGURACAO_AMBIENTE } from '../ambiente';
 import { RELOGIO } from './relogio';
 import { SessaoService } from './sessao.service';
 import { AGORA, tokenQueExpiraEm } from './token-de-teste';
@@ -27,9 +29,10 @@ describe('SessaoService', () => {
     api.rootUrl = API;
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([erroInterceptor])),
         provideHttpClientTesting(),
         { provide: ApiConfiguration, useValue: api },
+        { provide: CONFIGURACAO_AMBIENTE, useValue: { apiUrl: API, loginGoogle: false } },
         { provide: RELOGIO, useValue: () => AGORA },
       ],
     });

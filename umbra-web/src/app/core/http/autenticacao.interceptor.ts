@@ -5,9 +5,9 @@ import { catchError, throwError } from 'rxjs';
 import { CONFIGURACAO_AMBIENTE } from '../ambiente';
 import { ROTA_DE_ENTRADA } from '../navegacao/destino-interno';
 import { TokenDaSessao } from '../sessao';
+import { ehRotaDeAutenticacao } from './rotas-de-autenticacao';
 
 const NAO_AUTENTICADO = 401;
-const PREFIXO_DAS_ROTAS_DE_AUTENTICACAO = '/auth/';
 export const MOTIVO_SESSAO_EXPIRADA = 'expirada';
 
 export const autenticacaoInterceptor: HttpInterceptorFn = (requisicao, proximo) => {
@@ -24,7 +24,7 @@ export const autenticacaoInterceptor: HttpInterceptorFn = (requisicao, proximo) 
   return proximo(autenticada).pipe(
     catchError((erro: unknown) => {
       const caminho = requisicao.url.slice(origemDaApi.length);
-      if (erro instanceof HttpErrorResponse && erro.status === NAO_AUTENTICADO && !caminho.startsWith(PREFIXO_DAS_ROTAS_DE_AUTENTICACAO)) {
+      if (erro instanceof HttpErrorResponse && erro.status === NAO_AUTENTICADO && !ehRotaDeAutenticacao(caminho)) {
         tokenDaSessao.limpar();
         void router.navigate([ROTA_DE_ENTRADA], {
           queryParams: { returnUrl: router.url, ...(token === null ? {} : { motivo: MOTIVO_SESSAO_EXPIRADA }) },
