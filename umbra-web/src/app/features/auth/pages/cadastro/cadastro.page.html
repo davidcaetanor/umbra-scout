@@ -13,14 +13,14 @@
       <umbra-aviso tipo="erro">Não foi possível criar a conta agora. Tente de novo em instantes.</umbra-aviso>
     }
     <umbra-campo
-      id="cadastro-nome"
+      idCampo="cadastro-nome"
       rotulo="Nome"
       autocomplete="nickname"
       [controle]="formulario.controls.nome"
       [erro]="mensagem(formulario.controls.nome)"
     />
     <umbra-campo
-      id="cadastro-email"
+      idCampo="cadastro-email"
       rotulo="Email"
       tipo="email"
       autocomplete="email"
@@ -28,7 +28,7 @@
       [erro]="mensagem(formulario.controls.email)"
     />
     <umbra-campo
-      id="cadastro-senha"
+      idCampo="cadastro-senha"
       rotulo="Senha"
       tipo="password"
       autocomplete="new-password"

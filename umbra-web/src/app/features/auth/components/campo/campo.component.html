@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-1.5">
-  <label [for]="id()" class="font-semibold">{{ rotulo() }}</label>
+  <label [for]="idCampo()" class="font-semibold">{{ rotulo() }}</label>
   <div
     class="flex min-h-12 items-center rounded-controle border bg-superficie focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-foco"
     [class.border-borda-campo]="!erro()"
@@ -7,7 +7,7 @@
     [class.border-2]="erro()"
   >
     <input
-      [id]="id()"
+      [id]="idCampo()"
       [type]="tipoEfetivo()"
       [formControl]="controle()"
       [attr.autocomplete]="autocomplete()"
@@ -19,7 +19,7 @@
       <button
         type="button"
         class="me-1 min-h-11 min-w-11 shrink-0 rounded-controle px-2 text-apoio text-texto-secundario underline hover:text-texto"
-        [attr.aria-controls]="id()"
+        [attr.aria-controls]="idCampo()"
         [attr.aria-pressed]="senhaVisivel()"
         (click)="alternarSenha()"
       >
