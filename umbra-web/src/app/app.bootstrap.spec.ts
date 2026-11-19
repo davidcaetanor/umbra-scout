@@ -58,7 +58,7 @@ describe('iniciarAplicacao com as dependencias do navegador', () => {
     await iniciarAplicacao();
 
     expect(fetch).toHaveBeenCalledWith('/config.json', { cache: 'no-store' });
-    expect(document.querySelector('umbra-root router-outlet')).not.toBeNull();
+    expect(document.querySelector('umbra-root main router-outlet')).not.toBeNull();
   });
 
   it('escreve a mensagem de falha no corpo do documento', async () => {

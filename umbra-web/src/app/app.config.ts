@@ -1,7 +1,9 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { TitleStrategy, provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { ConfiguracaoAmbiente, provideConfiguracaoAmbiente } from './core/ambiente';
+import { provideFocoNaTrocaDeRota } from './core/navegacao/foco-na-troca-de-rota';
+import { TituloComMarcaStrategy } from './core/navegacao/titulo-com-marca.strategy';
 import { routes } from './app.routes';
 
 export function criarAppConfig(configuracao: ConfiguracaoAmbiente): ApplicationConfig {
@@ -10,7 +12,9 @@ export function criarAppConfig(configuracao: ConfiguracaoAmbiente): ApplicationC
       provideBrowserGlobalErrorListeners(),
       provideConfiguracaoAmbiente(configuracao),
       provideHttpClient(withFetch()),
-      provideRouter(routes, withComponentInputBinding()),
+      provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+      { provide: TitleStrategy, useClass: TituloComMarcaStrategy },
+      provideFocoNaTrocaDeRota(),
     ],
   };
 }

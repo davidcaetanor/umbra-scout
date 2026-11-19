@@ -1,0 +1,32 @@
+<header class="sticky top-0 z-10 border-b-2 border-filete bg-superficie">
+  <div class="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 tablet:h-15 tablet:px-6">
+    <a routerLink="/" class="flex min-h-11 items-center gap-2.5 rounded-controle" aria-label="Umbra, página inicial">
+      <img src="marca/umbra-simbolo.svg" alt="" width="28" height="28" class="size-7" />
+      <span class="font-titulo text-subtitulo" aria-hidden="true">Umbra</span>
+    </a>
+
+    <nav aria-label="Principal" class="hidden h-full tablet:flex">
+      <ul class="flex h-full gap-1">
+        @for (item of itens; track item.rota) {
+          <li class="flex">
+            <a
+              [routerLink]="item.rota"
+              routerLinkActive="ativo"
+              ariaCurrentWhenActive="page"
+              class="link-navegacao flex items-center px-3 text-interface text-texto-secundario hover:text-texto"
+            >
+              {{ item.rotulo }}
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <a
+      routerLink="/entrar"
+      class="ms-auto inline-flex min-h-11 items-center rounded-controle border border-borda-campo px-4 text-interface hover:bg-superficie-elevada"
+    >
+      Entrar
+    </a>
+  </div>
+</header>

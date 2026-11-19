@@ -12,7 +12,7 @@
     min-width: 20rem;
     font-size: var(--text-interface);
     line-height: var(--text-interface--line-height);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   :focus-visible {
@@ -34,5 +34,29 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+@layer components {
+  .link-navegacao {
+    border-bottom: 2px solid transparent;
+    padding-top: 2px;
+  }
+
+  .link-navegacao.ativo {
+    border-bottom-color: var(--color-ambiente);
+    color: var(--color-texto);
+    font-weight: 600;
+  }
+
+  .link-barra {
+    border-top: 2px solid transparent;
+    margin-top: -2px;
+  }
+
+  .link-barra.ativo {
+    border-top-color: var(--color-ambiente);
+    color: var(--color-texto);
+    font-weight: 600;
   }
 }
