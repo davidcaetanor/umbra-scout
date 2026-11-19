@@ -6,7 +6,8 @@ export type EstadoMascote =
   | 'erro'
   | 'perdido'
   | 'pausado'
-  | 'acenando';
+  | 'acenando'
+  | 'ocioso';
 
 export type DirecaoMascote = 'south' | 'east' | 'north' | 'west';
 

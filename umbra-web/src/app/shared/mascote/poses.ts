@@ -62,6 +62,9 @@ export const POSES: Readonly<Record<EstadoMascote, Readonly<Partial<Record<Direc
   acenando: {
     south: pose({ nome: 'acenando-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 7, fps: 8, repeticao: UMA_VEZ }),
   },
+  ocioso: {
+    south: pose({ nome: 'ocioso-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 8, fps: 6, repeticao: UMA_VEZ }),
+  },
 };
 
 export function poseDe(estado: EstadoMascote, direcao: DirecaoMascote): PoseMascote {
