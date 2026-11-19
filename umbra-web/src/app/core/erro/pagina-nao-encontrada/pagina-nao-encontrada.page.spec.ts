@@ -17,7 +17,7 @@ describe('PaginaNaoEncontradaPage', () => {
     expect(tela.querySelector('umbra-mascote .sprite')?.getAttribute('style')).toContain('perdido-south');
     expect([...tela.querySelectorAll('a')].map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
       ['Ir para o catálogo', '/catalogo'],
-      ['Buscar um jogo', '/catalogo'],
+      ['Buscar um jogo', '/catalogo#busca'],
     ]);
     expect(tela.textContent).not.toMatch(/404/);
   });
