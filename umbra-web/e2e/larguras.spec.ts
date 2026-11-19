@@ -11,6 +11,7 @@ const ROTAS = [
   { caminho: '/monitoramentos', titulo: 'Meus monitoramentos' },
   { caminho: '/entrar', titulo: 'Entrar' },
   { caminho: '/cadastro', titulo: 'Criar conta' },
+  { caminho: '/conta', titulo: 'Minha conta' },
   { caminho: '/login/callback?erro=falha_no_provedor', titulo: 'Não deu para entrar' },
 ] as const;
 

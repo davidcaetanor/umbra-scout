@@ -45,6 +45,13 @@
             @if (usuario(); as conta) {
               <p class="truncate px-3 py-2 text-apoio text-texto-secundario">{{ conta.email }}</p>
             }
+            <a
+              routerLink="/conta"
+              class="flex min-h-11 w-full items-center rounded-controle px-3 text-interface hover:bg-superficie"
+              (click)="fecharMenu()"
+            >
+              Minha conta
+            </a>
             <button
               type="button"
               class="flex min-h-11 w-full items-center rounded-controle px-3 text-start text-interface hover:bg-superficie"

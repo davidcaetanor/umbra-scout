@@ -1,0 +1,39 @@
+<h1 class="font-titulo text-secao">Minha conta</h1>
+
+<section class="mt-6 max-w-2xl rounded-bloco border-2 border-filete bg-superficie p-4 tablet:p-6" aria-label="Seus dados">
+  @switch (estado().tipo) {
+    @case ('carregando') {
+      <p role="status" class="text-texto-secundario">Carregando seus dados…</p>
+    }
+    @case ('erro') {
+      <div role="alert" class="flex flex-col items-start gap-3">
+        <p>Não foi possível carregar seus dados agora.</p>
+        <button
+          type="button"
+          class="min-h-11 rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada"
+          (click)="carregar()"
+        >
+          Tentar de novo
+        </button>
+      </div>
+    }
+    @case ('pronto') {
+      @if (dados(); as dados) {
+        <dl class="grid gap-x-8 gap-y-4 tablet:grid-cols-[max-content_1fr]">
+          <dt class="text-apoio text-texto-secundario">Nome</dt>
+          <dd class="min-w-0 break-words">{{ dados.nome }}</dd>
+          <dt class="text-apoio text-texto-secundario">Email</dt>
+          <dd class="min-w-0 break-words">{{ dados.email }}</dd>
+          <dt class="text-apoio text-texto-secundario">Região</dt>
+          <dd>{{ dados.regiao ?? 'Não informada' }}</dd>
+          <dt class="text-apoio text-texto-secundario">No Umbra desde</dt>
+          <dd>{{ dados.membroDesde }}</dd>
+        </dl>
+      }
+    }
+  }
+</section>
+
+<p class="mt-4 max-w-2xl text-apoio text-texto-secundario">
+  <span class="block">Editar seus dados, informar o CEP e excluir a conta chegam em breve.</span>
+</p>

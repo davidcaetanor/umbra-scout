@@ -9,6 +9,11 @@ export const routes: Routes = [
     canActivate: [autenticadoGuard],
     loadChildren: () => import('./features/monitoramentos/monitoramentos.routes').then((m) => m.MONITORAMENTOS_ROUTES),
   },
+  {
+    path: 'conta',
+    canActivate: [autenticadoGuard],
+    loadChildren: () => import('./features/conta/conta.routes').then((m) => m.CONTA_ROUTES),
+  },
   { path: 'entrar', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES) },
   { path: 'cadastro', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.CADASTRO_ROUTES) },
   { path: 'login/callback', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.RETORNO_ROUTES) },

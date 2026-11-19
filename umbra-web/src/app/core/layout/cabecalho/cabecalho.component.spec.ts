@@ -75,6 +75,16 @@ describe('CabecalhoComponent', () => {
     expect(tela.querySelector('#menu-da-conta')).toBeNull();
   });
 
+  it('leva a Minha conta e fecha o menu', async () => {
+    await clicar(await entrarComo('Ana'));
+
+    const link = tela.querySelector<HTMLAnchorElement>('#menu-da-conta a')!;
+    expect(link.getAttribute('href')).toBe('/conta');
+    await clicar(link);
+
+    expect(tela.querySelector('#menu-da-conta')).toBeNull();
+  });
+
   it('fecha com Escape e devolve o foco ao botao da conta', async () => {
     const botao = await entrarComo('Ana');
     await clicar(botao);
