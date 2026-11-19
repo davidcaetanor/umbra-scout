@@ -1,0 +1,28 @@
+:host {
+  display: block;
+  max-width: 22rem;
+}
+
+.balao::after {
+  content: '';
+  position: absolute;
+  bottom: 1.5rem;
+  width: 1rem;
+  height: 1rem;
+  background: var(--color-superficie-elevada);
+  border: 0 solid var(--color-filete);
+}
+
+.ponta-direita::after {
+  right: -0.6rem;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  transform: rotate(45deg);
+}
+
+.ponta-esquerda::after {
+  left: -0.6rem;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  transform: rotate(45deg);
+}
