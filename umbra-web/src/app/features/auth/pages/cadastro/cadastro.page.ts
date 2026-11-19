@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ROTA_DE_ENTRADA, destinoInterno } from '../../../../core/navegacao/destino-interno';
+import { FrasesEmLinhasPipe } from '../../../../shared/formatacao/frases-em-linhas.pipe';
 import { AvisoComponent } from '../../components/aviso/aviso.component';
 import { BotoesLoginExternoComponent } from '../../components/botoes-login-externo/botoes-login-externo.component';
 import { CampoComponent } from '../../components/campo/campo.component';
@@ -21,6 +22,7 @@ import {
 @Component({
   selector: 'umbra-cadastro-page',
   imports: [
+    FrasesEmLinhasPipe,
     ReactiveFormsModule,
     RouterLink,
     AvisoComponent,

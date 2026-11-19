@@ -1,6 +1,7 @@
 import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { frasesEmLinhas } from '../../../../shared/formatacao/frases-em-linhas.pipe';
 import { AuthService } from '../../data/auth.service';
 import { RetornoPage, mensagemDoMotivo } from './retorno.page';
 
@@ -79,7 +80,7 @@ describe('RetornoPage', () => {
     const tela = await abrir({ codigo: 'abc' });
 
     expect(tela.querySelector('h1')?.textContent).toContain('Não deu para entrar');
-    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(mensagemDoMotivo(resultado));
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(frasesEmLinhas(mensagemDoMotivo(resultado)));
   });
 
   it.each(['email_nao_verificado', 'conta_inativa', 'conta_vinculada_a_outra_identidade', 'falha_no_provedor'])(
@@ -89,7 +90,7 @@ describe('RetornoPage', () => {
 
       expect(auth.trocarCodigo).not.toHaveBeenCalled();
       expect(substituir).toHaveBeenCalledWith('/login/callback');
-      expect(tela.querySelector('[role="alert"]')?.textContent).toContain(mensagemDoMotivo(motivo));
+      expect(tela.querySelector('[role="alert"]')?.textContent).toContain(frasesEmLinhas(mensagemDoMotivo(motivo)));
     },
   );
 
@@ -98,7 +99,7 @@ describe('RetornoPage', () => {
 
     const tela = await abrir({});
 
-    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(mensagemDoMotivo('falha_no_provedor'));
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(frasesEmLinhas(mensagemDoMotivo('falha_no_provedor')));
   });
 
   it('permite tentar de novo pelo provedor com o destino original', async () => {

@@ -1,7 +1,7 @@
 @if (falha(); as mensagem) {
   <umbra-moldura-entrada>
     <h1 class="mb-6 font-titulo text-secao">Não deu para entrar</h1>
-    <umbra-aviso tipo="erro" class="mb-6">{{ mensagem }}</umbra-aviso>
+    <umbra-aviso tipo="erro" class="mb-6">{{ mensagem | frasesEmLinhas }}</umbra-aviso>
     <umbra-botoes-login-externo [provedores]="provedores" [saindo]="saindoPara()" (escolher)="entrarCom($event)" />
     <p class="mt-6 text-center">
       <a routerLink="/entrar" class="inline-flex min-h-6 items-center font-semibold underline">Entrar com email e senha</a>

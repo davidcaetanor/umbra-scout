@@ -3,9 +3,9 @@
   <p class="mt-1 mb-6 text-texto-secundario">Acompanhe seus monitoramentos e receba os avisos.</p>
 
   @if (sessaoExpirada()) {
-    <umbra-aviso class="mb-6">Sua sessão expirou. Entre de novo para voltar de onde parou.</umbra-aviso>
+    <umbra-aviso class="mb-6">{{ 'Sua sessão expirou. Entre de novo para voltar de onde parou.' | frasesEmLinhas }}</umbra-aviso>
   } @else if (contaCriada()) {
-    <umbra-aviso class="mb-6">Conta criada. Entre com seu email e senha.</umbra-aviso>
+    <umbra-aviso class="mb-6">{{ 'Conta criada. Entre com seu email e senha.' | frasesEmLinhas }}</umbra-aviso>
   }
 
   <umbra-botoes-login-externo [provedores]="provedores" [saindo]="saindoPara()" (escolher)="entrarCom($event)" />
@@ -18,7 +18,7 @@
     @if (falha() === 'credenciais') {
       <umbra-aviso tipo="erro">Email ou senha incorretos.</umbra-aviso>
     } @else if (falha() === 'falha') {
-      <umbra-aviso tipo="erro">Não foi possível entrar agora. Tente de novo em instantes.</umbra-aviso>
+      <umbra-aviso tipo="erro">{{ 'Não foi possível entrar agora. Tente de novo em instantes.' | frasesEmLinhas }}</umbra-aviso>
     }
     <umbra-campo
       idCampo="entrar-email"

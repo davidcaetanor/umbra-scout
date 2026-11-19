@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { MOTIVO_SESSAO_EXPIRADA } from '../../../../core/http';
 import { destinoInterno } from '../../../../core/navegacao/destino-interno';
+import { FrasesEmLinhasPipe } from '../../../../shared/formatacao/frases-em-linhas.pipe';
 import { AvisoComponent } from '../../components/aviso/aviso.component';
 import { BotoesLoginExternoComponent } from '../../components/botoes-login-externo/botoes-login-externo.component';
 import { CampoComponent } from '../../components/campo/campo.component';
@@ -18,6 +19,7 @@ type FalhaDaEntrada = 'credenciais' | 'falha';
 @Component({
   selector: 'umbra-entrar-page',
   imports: [
+    FrasesEmLinhasPipe,
     ReactiveFormsModule,
     RouterLink,
     AvisoComponent,

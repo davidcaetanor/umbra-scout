@@ -2,6 +2,7 @@ import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { destinoInterno } from '../../../../core/navegacao/destino-interno';
+import { FrasesEmLinhasPipe } from '../../../../shared/formatacao/frases-em-linhas.pipe';
 import { AvisoComponent } from '../../components/aviso/aviso.component';
 import { BotoesLoginExternoComponent } from '../../components/botoes-login-externo/botoes-login-externo.component';
 import { MolduraEntradaComponent } from '../../components/moldura-entrada/moldura-entrada.component';
@@ -29,7 +30,7 @@ export function mensagemDoMotivo(motivo: string): string {
 
 @Component({
   selector: 'umbra-retorno-page',
-  imports: [RouterLink, AvisoComponent, BotoesLoginExternoComponent, MolduraEntradaComponent],
+  imports: [FrasesEmLinhasPipe, RouterLink, AvisoComponent, BotoesLoginExternoComponent, MolduraEntradaComponent],
   templateUrl: './retorno.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
