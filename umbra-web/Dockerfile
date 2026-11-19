@@ -9,7 +9,7 @@ COPY umbra-api/openapi.json /build/umbra-api/openapi.json
 COPY umbra-web/ ./
 RUN npm run build
 
-FROM caddy:2.10-alpine
+FROM caddy:2.11-alpine
 RUN addgroup -S -g 10001 umbra && adduser -S -u 10001 -G umbra -H -s /sbin/nologin umbra \
     && mkdir -p /srv /data /config /run/umbra \
     && chown -R umbra:umbra /srv /data /config /run/umbra
