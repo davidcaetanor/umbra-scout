@@ -1,25 +1,21 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { carregarEstado } from '../../../../core/erro';
+import { EstadoDoBloco, dadosDe } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
+import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
 import { DadosDaConta } from '../../data/dados-da-conta';
 import { ContaService } from '../../data/conta.service';
 
-type EstadoDaConta =
-  | { readonly tipo: 'carregando' }
-  | { readonly tipo: 'erro' }
-  | { readonly tipo: 'pronto'; readonly dados: DadosDaConta };
-
 @Component({
   selector: 'umbra-minha-conta-page',
+  imports: [EstadoDoBlocoComponent],
   templateUrl: './minha-conta.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MinhaContaPage implements OnInit {
   private readonly conta = inject(ContaService);
 
-  protected readonly estado = signal<EstadoDaConta>({ tipo: 'carregando' });
-  protected readonly dados = computed(() => {
-    const atual = this.estado();
-    return atual.tipo === 'pronto' ? atual.dados : null;
-  });
+  protected readonly estado = signal<EstadoDoBloco<DadosDaConta>>({ tipo: 'carregando' });
+  protected readonly dados = computed(() => dadosDe(this.estado()));
 
   ngOnInit(): void {
     void this.carregar();
@@ -27,10 +23,6 @@ export class MinhaContaPage implements OnInit {
 
   protected async carregar(): Promise<void> {
     this.estado.set({ tipo: 'carregando' });
-    try {
-      this.estado.set({ tipo: 'pronto', dados: await this.conta.carregar() });
-    } catch {
-      this.estado.set({ tipo: 'erro' });
-    }
+    this.estado.set(await carregarEstado(() => this.conta.carregar()));
   }
 }

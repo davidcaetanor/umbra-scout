@@ -1,0 +1,28 @@
+@switch (estado().tipo) {
+  @case ('carregando') {
+    <div role="status" class="text-texto-secundario">
+      <ng-content select="[carregando]" />
+    </div>
+  }
+  @case ('erro') {
+    <div role="alert" class="flex flex-col items-start gap-3 tablet:flex-row tablet:items-center tablet:gap-5">
+      <umbra-mascote estado="erro" class="shrink-0" />
+      <div class="flex flex-col items-start gap-3">
+        <p class="whitespace-pre-line">{{ mensagem() | frasesEmLinhas }}</p>
+        <button
+          type="button"
+          class="min-h-11 w-full rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada tablet:w-auto"
+          (click)="pedirNovaTentativa()"
+        >
+          Tentar de novo
+        </button>
+      </div>
+    </div>
+  }
+  @case ('vazio') {
+    <ng-content select="[vazio]" />
+  }
+  @case ('sucesso') {
+    <ng-content />
+  }
+}
