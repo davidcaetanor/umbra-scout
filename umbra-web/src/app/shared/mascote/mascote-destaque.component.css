@@ -1,0 +1,14 @@
+:host {
+  display: inline-block;
+  line-height: 0;
+}
+
+.moldura {
+  overflow: hidden;
+}
+
+img {
+  display: block;
+  max-width: none;
+  image-rendering: pixelated;
+}
