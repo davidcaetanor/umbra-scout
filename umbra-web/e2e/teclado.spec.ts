@@ -1,10 +1,15 @@
-import { expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
+
+async function abrir(page: Page, caminho: string): Promise<void> {
+  await page.goto(caminho);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+}
 
 test.describe('RNF-06, roteiro de teclado', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('a primeira tecla Tab mostra o link de salto, que leva ao conteúdo', async ({ page }) => {
-    await page.goto('/catalogo');
+    await abrir(page, '/catalogo');
     await page.keyboard.press('Tab');
 
     const salto = page.getByRole('link', { name: 'Pular para o conteúdo' });
@@ -16,7 +21,7 @@ test.describe('RNF-06, roteiro de teclado', () => {
   });
 
   test('a ordem do foco segue a ordem visual do cabeçalho', async ({ page }) => {
-    await page.goto('/catalogo');
+    await abrir(page, '/catalogo');
     const esperados = ['Pular para o conteúdo', 'Umbra, página inicial', 'Catálogo', 'Meus monitoramentos', 'Entrar'];
 
     for (const nome of esperados) {
@@ -26,7 +31,7 @@ test.describe('RNF-06, roteiro de teclado', () => {
   });
 
   test('o foco é visível com contorno de pelo menos 2 px', async ({ page }) => {
-    await page.goto('/catalogo');
+    await abrir(page, '/catalogo');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
 
@@ -39,7 +44,7 @@ test.describe('RNF-06, roteiro de teclado', () => {
   });
 
   test('navegar pelo teclado leva o foco ao título da nova página e atualiza a aba', async ({ page }) => {
-    await page.goto('/catalogo');
+    await abrir(page, '/catalogo');
     await page.getByRole('link', { name: 'Meus monitoramentos' }).first().focus();
     await page.keyboard.press('Enter');
 
@@ -48,7 +53,7 @@ test.describe('RNF-06, roteiro de teclado', () => {
   });
 
   test('todo alvo interativo tem pelo menos 24 por 24 px', async ({ page }) => {
-    await page.goto('/catalogo');
+    await abrir(page, '/catalogo');
     const pequenos = await page.evaluate(() =>
       [...document.querySelectorAll('a[href], button')]
         .filter((el) => getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 1)

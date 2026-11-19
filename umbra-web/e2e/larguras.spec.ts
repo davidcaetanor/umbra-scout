@@ -31,6 +31,9 @@ for (const { nome, largura, altura } of LARGURAS) {
         expect(medida.total, 'largura rolável igual à visível').toBe(medida.visivel);
         expect(medida.vazando, 'nenhum elemento passa da borda direita').toEqual([]);
 
+        const mascotesVisiveis = await page.locator('umbra-mascote:visible, umbra-mascote-destaque:visible').count();
+        expect(mascotesVisiveis, 'no máximo um Umbra por tela').toBeLessThanOrEqual(1);
+
         const captura = await page.screenshot({ fullPage: true });
         await info.attach(`${nome}${rota.caminho.replace('/', '-')}`, { body: captura, contentType: 'image/png' });
       });
