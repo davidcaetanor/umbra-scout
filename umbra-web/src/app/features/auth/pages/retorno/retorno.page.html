@@ -1,0 +1,16 @@
+@if (falha(); as mensagem) {
+  <umbra-moldura-entrada>
+    <h1 class="mb-6 font-titulo text-secao">Não deu para entrar</h1>
+    <umbra-aviso tipo="erro" class="mb-6">{{ mensagem }}</umbra-aviso>
+    <umbra-botoes-login-externo [provedores]="provedores" [saindo]="saindoPara()" (escolher)="entrarCom($event)" />
+    <p class="mt-6 text-center">
+      <a routerLink="/entrar" class="inline-flex min-h-6 items-center font-semibold underline">Entrar com email e senha</a>
+    </p>
+  </umbra-moldura-entrada>
+} @else {
+  <div role="status" class="flex flex-col items-center gap-4 py-16 text-center">
+    <span aria-hidden="true" class="size-8 rounded-full border-3 border-filete border-t-ambiente motion-safe:animate-spin"></span>
+    <h1 class="font-titulo text-secao">Entrando…</h1>
+    <p class="text-texto-secundario">Confirmando seu acesso.</p>
+  </div>
+}

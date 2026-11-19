@@ -39,6 +39,7 @@ export class AuthService {
   private readonly configuracao = inject(CONFIGURACAO_AMBIENTE);
   private readonly sairPara = inject(SAIR_PARA);
   private readonly documento = inject(DOCUMENT);
+  private readonly trocas = new Map<string, Promise<ResultadoTroca>>();
 
   readonly provedores: readonly ProvedorExterno[] = this.configuracao.loginGoogle ? ['discord', 'google'] : ['discord'];
 
@@ -68,7 +69,17 @@ export class AuthService {
     return entrada === 'ok' ? { tipo: 'ok' } : { tipo: 'criada-sem-entrar' };
   }
 
-  async trocarCodigo(codigo: string): Promise<ResultadoTroca> {
+  trocarCodigo(codigo: string): Promise<ResultadoTroca> {
+    const emAndamento = this.trocas.get(codigo);
+    if (emAndamento !== undefined) {
+      return emAndamento;
+    }
+    const troca = this.trocarUmaVez(codigo);
+    this.trocas.set(codigo, troca);
+    return troca;
+  }
+
+  private async trocarUmaVez(codigo: string): Promise<ResultadoTroca> {
     try {
       const resposta = await this.api.invoke(trocarCodigoDeLoginExterno, { body: { codigo } });
       this.sessao.entrar(resposta.token);

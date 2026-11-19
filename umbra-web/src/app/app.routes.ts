@@ -11,5 +11,6 @@ export const routes: Routes = [
   },
   { path: 'entrar', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES) },
   { path: 'cadastro', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.CADASTRO_ROUTES) },
+  { path: 'login/callback', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.RETORNO_ROUTES) },
   { path: '**', redirectTo: 'catalogo' },
 ];
