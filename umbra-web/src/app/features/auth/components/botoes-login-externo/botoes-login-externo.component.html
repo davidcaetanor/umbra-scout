@@ -3,7 +3,7 @@
     <li>
       <button
         type="button"
-        class="flex min-h-12 w-full items-center justify-center gap-3 rounded-controle border border-borda-campo bg-superficie-elevada px-4 font-semibold hover:border-texto-secundario disabled:cursor-wait disabled:opacity-70"
+        class="flex min-h-12 w-full items-center justify-center gap-3 rounded-controle border border-borda-campo bg-superficie-elevada px-4 font-medium hover:border-texto-secundario disabled:cursor-wait disabled:opacity-70"
         [disabled]="saindo() !== null"
         [attr.aria-busy]="saindo() === provedor ? 'true' : null"
         (click)="escolher.emit(provedor)"

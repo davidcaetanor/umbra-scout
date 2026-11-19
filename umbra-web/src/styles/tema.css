@@ -50,7 +50,8 @@
 
 @theme {
   --font-*: initial;
-  --font-titulo: 'Fraunces', Georgia, serif;
+  --font-titulo: 'Fraunces Variable', Georgia, serif;
+  --font-titulo--font-variation-settings: 'wght' 560;
   --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
