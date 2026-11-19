@@ -81,11 +81,15 @@ describe('CatalogoService', () => {
         id: 1,
         nome: 'Placa',
         tipo: 'HARDWARE',
-        imagem: '/imagens/itad/a/boxart.jpg',
+        capa: {
+          endereco: '/imagens/itad/a/banner300.jpg',
+          alternativas: '/imagens/itad/a/banner300.jpg 300w, /imagens/itad/a/banner400.jpg 400w',
+          reserva: '/imagens/itad/a/boxart.jpg',
+        },
         categoria: 'Placa de vídeo',
         preco: { atual: 'R$ 1.500,00', original: 'R$ 2.000,00', descontoPct: 25, loja: 'Kabum' },
       },
-      { id: 2, nome: 'Esgotado', tipo: 'JOGO', imagem: null, categoria: null, preco: null },
+      { id: 2, nome: 'Esgotado', tipo: 'JOGO', capa: null, categoria: null, preco: null },
     ]);
   });
 
@@ -120,7 +124,7 @@ describe('CatalogoService', () => {
       {
         gid: 'g1',
         nome: 'Hollow',
-        imagem: null,
+        capa: null,
         preco: { atual: 'R$ 99,90', original: null, descontoPct: null, loja: 'Steam' },
         enderecoDaLoja: 'https://loja.exemplo/jogo',
       },

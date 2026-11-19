@@ -1,8 +1,9 @@
+import { CapaExibida } from './capa-exibida';
 import { PrecoExibido } from './preco-exibido';
 
 export interface ProdutoExternoExibido {
   readonly nome: string;
-  readonly imagem: string | null;
+  readonly capa: CapaExibida | null;
   readonly preco: PrecoExibido;
   readonly enderecoDaLoja: string;
 }

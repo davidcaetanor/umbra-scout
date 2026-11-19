@@ -14,7 +14,7 @@ const PRODUTO: ProdutoDoCatalogo = {
   id: 1,
   nome: 'Hollow Knight',
   tipo: 'JOGO',
-  imagem: null,
+  capa: null,
   categoria: null,
   preco: { atual: 'R$ 23,99', original: 'R$ 47,99', descontoPct: 50, loja: 'Steam' },
 };
@@ -22,7 +22,7 @@ const PRODUTO: ProdutoDoCatalogo = {
 const EXTERNO: ProdutoExterno = {
   gid: 'g1',
   nome: 'Hollow Edition',
-  imagem: null,
+  capa: null,
   preco: { atual: 'R$ 35,99', original: null, descontoPct: null, loja: 'GOG' },
   enderecoDaLoja: 'https://loja.exemplo/hollow',
 };

@@ -9,7 +9,7 @@ import { ProdutoExternoResponse } from '../../../api/models/produto-externo-resp
 import { ProdutoResumoResponse } from '../../../api/models/produto-resumo-response';
 import { reais } from '../../../shared/formatacao/reais';
 import { CategoriaDeHardware, FiltroDaBusca } from './filtro-da-busca';
-import { imagemPelaOrigem } from './imagem-pela-origem';
+import { capaPelaOrigem } from './imagem-pela-origem';
 import { PrecoDoProduto } from './preco-do-produto';
 import { ProdutoDoCatalogo } from './produto-do-catalogo';
 import { ProdutoExterno } from './produto-externo';
@@ -60,7 +60,7 @@ function paraProduto(produto: ProdutoResumoResponse): ProdutoDoCatalogo {
     id: produto.id,
     nome: produto.nome,
     tipo: produto.tipo,
-    imagem: imagemPelaOrigem(produto.imagemUrl),
+    capa: capaPelaOrigem(produto.imagemUrl),
     categoria: produto.categoria ? (ROTULO_DA_CATEGORIA[produto.categoria as CategoriaDeHardware] ?? null) : null,
     preco: produto.melhorPreco ? paraPreco(produto.melhorPreco) : null,
   };
@@ -70,7 +70,7 @@ function paraProdutoExterno(produto: ProdutoExternoResponse): ProdutoExterno {
   return {
     gid: produto.gid,
     nome: produto.nome,
-    imagem: imagemPelaOrigem(produto.imagemUrl),
+    capa: capaPelaOrigem(produto.imagemUrl),
     preco: paraPreco(produto.melhorPreco),
     enderecoDaLoja: produto.melhorPreco.url,
   };

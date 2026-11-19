@@ -1,5 +1,5 @@
 <article class="flex flex-wrap items-center gap-3 rounded-bloco border border-filete bg-fundo p-3">
-  <umbra-capa-produto [imagem]="produto().imagem" tipo="JOGO" class="size-16 shrink-0 overflow-hidden rounded-peca" />
+  <umbra-capa-produto [capa]="produto().capa" tipo="JOGO" class="aspect-[300/140] w-30 shrink-0 rounded-peca" />
   <div class="flex min-w-0 flex-1 flex-col gap-1">
     <h3 class="break-words text-interface font-medium">{{ produto().nome }}</h3>
     <umbra-preco-produto [preco]="produto().preco" />
