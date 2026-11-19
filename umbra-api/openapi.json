@@ -974,7 +974,7 @@
     },
     "/produtos" : {
       "get" : {
-        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio.",
+        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. `categoria` vale só para hardware: com `tipo=JOGO` responde 400.",
         "operationId" : "buscarProdutos",
         "parameters" : [ {
           "in" : "query",
@@ -984,6 +984,14 @@
             "maxLength" : 100,
             "minLength" : 3,
             "pattern" : "^[\\p{L}\\p{N} '\\-:.&+!]+$",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "tipo",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "JOGO", "HARDWARE" ],
             "type" : "string"
           }
         }, {

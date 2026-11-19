@@ -121,6 +121,39 @@ class ProdutoControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void tipo_deveFiltrarComTermoESemTermo() throws Exception {
+        long jogo = produto("t44-tipo Aventura", "JOGO", null, true);
+        long placa = produto("t44-tipo Placa", "HARDWARE", "GPU", true);
+
+        mockMvc.perform(get("/produtos").param("nome", "t44-tipo").param("tipo", "JOGO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(1))
+                .andExpect(jsonPath("$.conteudo[0].id").value(jogo));
+
+        List<String> paginas = todasAsPaginas(Map.of("tipo", "HARDWARE"));
+        List<Long> todos = paginas.stream().flatMap(json -> ids(json).stream()).toList();
+        List<String> tipos = paginas.stream()
+                .flatMap(json -> JsonPath.<List<String>>read(json, "$.conteudo[*].tipo").stream())
+                .toList();
+        Long hardwareAtivo = jdbc.queryForObject(
+                "SELECT count(*) FROM produto WHERE ativo AND tipo = 'HARDWARE'", Long.class);
+
+        assertThat(todos).hasSize(hardwareAtivo.intValue()).contains(placa).doesNotContain(jogo);
+        assertThat(tipos).containsOnly("HARDWARE");
+    }
+
+    @Test
+    void tipoJogoComCategoria_deveDevolver400() throws Exception {
+        esperarParametroInvalido(mockMvc.perform(get("/produtos").param("tipo", "JOGO").param("categoria", "GPU")),
+                "categoriaCompativelComTipo");
+    }
+
+    @Test
+    void tipoInvalido_deveDevolver400() throws Exception {
+        esperarParametroInvalido(mockMvc.perform(get("/produtos").param("tipo", "FILME")), "tipo");
+    }
+
+    @Test
     void categoriaInvalida_deveDevolver400ListandoAsDezAceitas() throws Exception {
         ResultActions resposta = mockMvc.perform(get("/produtos").param("categoria", "XYZ"));
 

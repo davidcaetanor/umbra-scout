@@ -11,7 +11,6 @@ import dev.davidcaetano.umbra_api.catalogo.dto.response.ProdutoResumoResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.SerieLojaResponse;
 import dev.davidcaetano.umbra_api.catalogo.entity.LojaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
-import dev.davidcaetano.umbra_api.catalogo.enums.CategoriaHardware;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.mapper.ProdutoMapper;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
@@ -55,8 +54,7 @@ public class ProdutoService {
     private final ProdutoMapper produtoMapper;
     private final Clock clock;
 
-    public BuscaProdutosResponse buscar(String termo,
-                                        CategoriaHardware categoria,
+    public BuscaProdutosResponse buscar(FiltroDoCatalogo filtro,
                                         OrdenacaoCatalogo ordenacao,
                                         boolean incluirExterno,
                                         Pageable paginacao,
@@ -64,12 +62,12 @@ public class ProdutoService {
         Instant agora = clock.instant();
         Pageable semOrdenacaoDoCliente = PageRequest.of(paginacao.getPageNumber(), paginacao.getPageSize());
 
-        Page<ProdutoResumoProjecao> locais = buscarNoCatalogo(termo, categoria, ordenacao, semOrdenacaoDoCliente);
+        Page<ProdutoResumoProjecao> locais = buscarNoCatalogo(filtro, ordenacao, semOrdenacaoDoCliente);
         List<ProdutoResumoResponse> conteudo = locais.getContent().stream()
                 .map(produto -> produtoMapper.paraResumo(produto, melhorPrecoDo(produto, agora)))
                 .toList();
         List<ProdutoExternoResponse> externos = incluirExterno && semOrdenacaoDoCliente.getPageNumber() == 0
-                ? buscarForaDoCatalogo(termo, ipDeOrigem, agora)
+                ? buscarForaDoCatalogo(filtro.termo(), ipDeOrigem, agora)
                 : List.of();
 
         return new BuscaProdutosResponse(conteudo, locais.getNumber(), locais.getSize(),
@@ -187,22 +185,23 @@ public class ProdutoService {
         return produtoRepository.findByIdAndAtivoTrue(id).orElseThrow(() -> new ProdutoNaoEncontradoException(id));
     }
 
-    private Page<ProdutoResumoProjecao> buscarNoCatalogo(String termo,
-                                                         CategoriaHardware categoria,
+    private Page<ProdutoResumoProjecao> buscarNoCatalogo(FiltroDoCatalogo filtro,
                                                          OrdenacaoCatalogo ordenacao,
                                                          Pageable paginacao) {
-        String codigoCategoria = categoria == null ? null : categoria.name();
+        String termo = filtro.termo();
+        String codigoTipo = filtro.tipo() == null ? null : filtro.tipo().name();
+        String codigoCategoria = filtro.categoria() == null ? null : filtro.categoria().name();
         boolean porMenorPreco = ordenacao == OrdenacaoCatalogo.MENOR_PRECO;
 
         if (termo == null) {
             return porMenorPreco
-                    ? produtoRepository.listarCatalogoPorMenorPreco(codigoCategoria, paginacao)
-                    : produtoRepository.listarCatalogoPorNome(codigoCategoria, paginacao);
+                    ? produtoRepository.listarCatalogoPorMenorPreco(codigoTipo, codigoCategoria, paginacao)
+                    : produtoRepository.listarCatalogoPorNome(codigoTipo, codigoCategoria, paginacao);
         }
 
         return porMenorPreco
-                ? produtoRepository.buscarCatalogoPorMenorPreco(termo, codigoCategoria, paginacao)
-                : produtoRepository.buscarCatalogoPorNome(termo, codigoCategoria, paginacao);
+                ? produtoRepository.buscarCatalogoPorMenorPreco(termo, codigoTipo, codigoCategoria, paginacao)
+                : produtoRepository.buscarCatalogoPorNome(termo, codigoTipo, codigoCategoria, paginacao);
     }
 
     private OfertaResponse melhorPrecoDo(ProdutoResumoProjecao produto, Instant agora) {
