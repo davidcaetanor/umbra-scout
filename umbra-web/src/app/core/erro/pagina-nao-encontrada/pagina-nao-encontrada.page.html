@@ -1,0 +1,22 @@
+<div class="flex flex-col items-center gap-6 py-8 text-center tablet:flex-row tablet:items-center tablet:gap-10 tablet:py-16 tablet:text-start">
+  <umbra-mascote estado="perdido" class="shrink-0 tablet:hidden" />
+  <umbra-mascote estado="perdido" tamanho="grande" class="hidden shrink-0 tablet:block" />
+  <div class="flex w-full flex-col items-center gap-3 tablet:w-auto tablet:items-start">
+    <h1 class="font-titulo text-secao">Página não encontrada</h1>
+    <p class="text-texto-secundario">O Umbra procurou por aqui e não achou nada.</p>
+    <div class="mt-3 flex w-full flex-col gap-2 tablet:w-auto tablet:flex-row tablet:gap-3">
+      <a
+        routerLink="/catalogo"
+        class="flex min-h-12 items-center justify-center rounded-controle bg-destaque px-4 text-valor font-semibold text-texto-escuro hover:brightness-110"
+      >
+        Ir para o catálogo
+      </a>
+      <a
+        routerLink="/catalogo"
+        class="flex min-h-12 items-center justify-center rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada"
+      >
+        Buscar um jogo
+      </a>
+    </div>
+  </div>
+</div>
