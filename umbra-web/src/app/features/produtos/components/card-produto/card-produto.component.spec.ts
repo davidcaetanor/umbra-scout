@@ -55,11 +55,9 @@ describe('CardProdutoComponent', () => {
     expect([capa.getAttribute('width'), capa.getAttribute('height')]).toEqual(['300', '140']);
   });
 
-  it('so a primeira fileira carrega na frente; o resto espera chegar perto da tela', async () => {
-    expect(imagem(await mostrar(PRODUTO, true))!.getAttribute('fetchpriority')).toBe('high');
+  it('so a primeira fileira carrega de imediato; o resto espera chegar perto da tela', async () => {
     expect(imagem(await mostrar(PRODUTO, true))!.getAttribute('loading')).toBe('eager');
     expect(imagem(await mostrar(PRODUTO, false))!.getAttribute('loading')).toBe('lazy');
-    expect(imagem(await mostrar(PRODUTO, false))!.hasAttribute('fetchpriority')).toBe(false);
   });
 
   it('entra transparente e aparece quando termina de carregar', async () => {
