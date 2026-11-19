@@ -16,7 +16,12 @@ export class TokenDaSessao {
   readonly autenticado = computed(() => this.atual() !== null);
 
   constructor() {
-    this.atual.set(this.aceitar(this.ler()));
+    const guardado = this.ler();
+    const aceito = this.aceitar(guardado);
+    if (guardado !== null && aceito === null) {
+      this.gravar(null);
+    }
+    this.atual.set(aceito);
     const janela = inject(DOCUMENT).defaultView;
     const aoMudarEmOutraAba = (evento: StorageEvent): void => {
       if (evento.key === CHAVE_DO_TOKEN || evento.key === null) {

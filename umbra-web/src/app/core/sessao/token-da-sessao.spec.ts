@@ -30,6 +30,7 @@ describe('TokenDaSessao', () => {
     localStorage.setItem(CHAVE_DO_TOKEN, tokenQueExpiraEm(MARGEM_DE_EXPIRACAO_MS - 1));
 
     expect(criar().token()).toBeNull();
+    expect(localStorage.getItem(CHAVE_DO_TOKEN)).toBeNull();
   });
 
   it('descarta na partida o token ilegivel', () => {
