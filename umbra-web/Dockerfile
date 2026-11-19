@@ -1,5 +1,5 @@
 # Contexto do build: raiz do repositório, porque o cliente é gerado de umbra-api/openapi.json.
-FROM node:24.15-alpine AS build
+FROM node:26.13-alpine AS build
 WORKDIR /build/umbra-web
 
 COPY umbra-web/package.json umbra-web/package-lock.json ./
