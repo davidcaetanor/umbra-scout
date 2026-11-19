@@ -1,0 +1,58 @@
+{
+  "name": "umbra-web",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "gerar-cliente": "ng-openapi-gen --config ng-openapi-gen.json",
+    "prestart": "npm run gerar-cliente",
+    "start": "ng serve",
+    "prebuild": "npm run gerar-cliente",
+    "build": "ng build",
+    "pretest": "npm run gerar-cliente",
+    "test": "ng test --watch=false --coverage",
+    "pretypecheck": "npm run gerar-cliente",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
+    "lint": "ng lint",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "e2e": "playwright test"
+  },
+  "private": true,
+  "packageManager": "npm@12.2.2",
+  "dependencies": {
+    "@angular/common": "22.3.0",
+    "@angular/compiler": "22.3.0",
+    "@angular/core": "22.3.0",
+    "@angular/forms": "22.3.0",
+    "@angular/platform-browser": "22.3.0",
+    "@angular/router": "22.3.0",
+    "@fontsource/fraunces": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "rxjs": "7.8.0",
+    "tslib": "2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "22.3.0",
+    "@angular/cli": "22.3.0",
+    "@angular/compiler-cli": "22.3.0",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "@tailwindcss/postcss": "4.1.12",
+    "@vitest/coverage-v8": "5.0.0",
+    "angular-eslint": "22.8.0",
+    "eslint": "10.14.0",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-boundaries": "7.4.4",
+    "jsdom": "31.0.0",
+    "ng-openapi-gen": "1.1.0",
+    "postcss": "8.5.3",
+    "prettier": "3.8.1",
+    "tailwindcss": "4.1.12",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.72.2",
+    "vitest": "5.0.0"
+  },
+  "engines": {
+    "node": "24.15.0"
+  }
+}

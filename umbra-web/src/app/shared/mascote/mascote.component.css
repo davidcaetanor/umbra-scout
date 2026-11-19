@@ -1,0 +1,41 @@
+:host {
+  display: inline-block;
+  line-height: 0;
+}
+
+.sprite {
+  width: var(--largura);
+  height: var(--altura-visivel);
+  background-image: var(--sprite);
+  background-repeat: no-repeat;
+  background-size: var(--largura-tira) var(--altura);
+  image-rendering: pixelated;
+  animation: tocar var(--duracao) steps(var(--passos)) 1 forwards;
+}
+
+.sprite.repete {
+  animation-iteration-count: infinite;
+  animation-fill-mode: none;
+}
+
+.sprite.repouso {
+  animation: none;
+  background-position: var(--repouso) 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite,
+  .sprite.repete {
+    animation: none;
+    background-position: var(--repouso) 0;
+  }
+}
+
+@keyframes tocar {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: var(--destino) 0;
+  }
+}

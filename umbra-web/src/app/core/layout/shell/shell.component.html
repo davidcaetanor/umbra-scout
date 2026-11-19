@@ -1,0 +1,11 @@
+<a
+  [href]="'#' + idConteudo"
+  class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-20 focus:rounded-controle focus:bg-superficie-elevada focus:px-4 focus:py-3"
+>
+  Pular para o conteúdo
+</a>
+<umbra-cabecalho />
+<main [id]="idConteudo" class="mx-auto w-full max-w-6xl px-4 pt-7 pb-24 tablet:px-6 tablet:pb-10">
+  <router-outlet />
+</main>
+<umbra-barra-inferior />

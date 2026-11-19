@@ -1,0 +1,23 @@
+<div
+  class="balao relative rounded-bloco border-2 border-filete bg-superficie-elevada py-3 ps-4 text-interface"
+  [class.pe-12]="fechavel()"
+  [class.pe-4]="!fechavel()"
+  [class.ponta-esquerda]="ponta() === 'esquerda'"
+  [class.ponta-direita]="ponta() === 'direita'"
+  role="status"
+  aria-live="polite"
+>
+  <ng-content />
+  @if (fechavel()) {
+    <button
+      type="button"
+      class="absolute end-1 top-1 inline-flex size-10 items-center justify-center rounded-controle text-texto-secundario hover:text-texto"
+      aria-label="Fechar aviso"
+      (click)="fechado.emit()"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
+  }
+</div>

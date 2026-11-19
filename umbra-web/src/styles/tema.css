@@ -1,0 +1,92 @@
+/*
+  Primitivos: valores do guia MareEstilo, com o nome do guia. Nenhum componente usa esta camada.
+  Contraste medido em 18/11/2026 e anotado no UX-DESIGN.md §3.
+*/
+:root {
+  --umbra-tinta: #0e1014;
+  --umbra-superficie: #15181e;
+  --umbra-superficie-elevada: #1d2129;
+  --umbra-filete: #292e38;
+  --umbra-borda-campo: #6f7788;
+  --umbra-texto: #eceef2;
+  --umbra-texto-secundario: #99a0ae;
+  --umbra-erro: #d9766f;
+  --umbra-coroa: #e2a85c;
+  --umbra-coroa-profunda: #2a1e12;
+  --umbra-mare: #619a98;
+  --umbra-mare-profunda: #11262a;
+  --umbra-veu: #9b86d4;
+  --umbra-veu-profundo: #221c31;
+  --umbra-historico-1: #6bd4c9;
+  --umbra-historico-2: #54b5b1;
+  --umbra-historico-3: #419798;
+  --umbra-historico-4: #3d787c;
+}
+
+/* Semânticos: o papel de cada cor. Componente usa só esta camada, pelas classes do Tailwind. */
+@theme inline {
+  --color-*: initial;
+  --color-fundo: var(--umbra-tinta);
+  --color-superficie: var(--umbra-superficie);
+  --color-superficie-elevada: var(--umbra-superficie-elevada);
+  --color-filete: var(--umbra-filete);
+  --color-borda-campo: var(--umbra-borda-campo);
+  --color-texto: var(--umbra-texto);
+  --color-texto-secundario: var(--umbra-texto-secundario);
+  --color-texto-escuro: var(--umbra-tinta);
+  --color-erro: var(--umbra-erro);
+  --color-destaque: var(--umbra-coroa);
+  --color-destaque-fundo: var(--umbra-coroa-profunda);
+  --color-apoio: var(--umbra-mare);
+  --color-apoio-fundo: var(--umbra-mare-profunda);
+  --color-ambiente: var(--umbra-veu);
+  --color-ambiente-fundo: var(--umbra-veu-profundo);
+  --color-foco: var(--umbra-veu);
+  --color-historico-1: var(--umbra-historico-1);
+  --color-historico-2: var(--umbra-historico-2);
+  --color-historico-3: var(--umbra-historico-3);
+  --color-historico-4: var(--umbra-historico-4);
+}
+
+@theme {
+  --font-*: initial;
+  --font-titulo: 'Fraunces', Georgia, serif;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Tamanhos de título fluidos: mínimo em 360 px, valor do guia a partir de 1024 px. */
+  --text-nome: clamp(2.5rem, 1.415rem + 4.82vw, 4.5rem);
+  --text-nome--line-height: 1.06;
+  --text-secao: clamp(1.5rem, 1.229rem + 1.2vw, 2rem);
+  --text-secao--line-height: 1.25;
+  --text-subtitulo: clamp(1.25rem, 1.182rem + 0.3vw, 1.375rem);
+  --text-subtitulo--line-height: 1.27;
+  --text-preco: clamp(2.25rem, 1.708rem + 2.41vw, 3.25rem);
+  --text-preco--line-height: 1.15;
+  --text-destaque: 1.25rem;
+  --text-destaque--line-height: 1.75rem;
+  --text-valor: 1.0625rem;
+  --text-valor--line-height: 1.5rem;
+  --text-interface: 0.9375rem;
+  --text-interface--line-height: 1.5rem;
+  --text-apoio: 0.875rem;
+  --text-apoio--line-height: 1.375rem;
+  --text-dado: 0.8125rem;
+  --text-dado--line-height: 1.125rem;
+
+  --radius-*: initial;
+  --radius-mini: 3px;
+  --radius-peca: 4px;
+  --radius-controle: 6px;
+  --radius-bloco: 10px;
+
+  /*
+    Breakpoints, evidência do RNF-08: o layout opera de 360 a 1920 px.
+    Abaixo de "tablet", uma coluna; "largo" libera o painel lateral do login.
+  */
+  --breakpoint-*: initial;
+  --breakpoint-tablet: 48rem;
+  --breakpoint-largo: 64rem;
+  --breakpoint-amplo: 80rem;
+  --breakpoint-maximo: 120rem;
+}

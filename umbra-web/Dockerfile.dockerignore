@@ -1,0 +1,11 @@
+*
+!umbra-api/openapi.json
+!umbra-web/
+umbra-web/node_modules/
+umbra-web/dist/
+umbra-web/.angular/
+umbra-web/coverage/
+umbra-web/src/app/api/
+umbra-web/e2e/resultados/
+umbra-web/**/*.log
+umbra-web/**/.env*

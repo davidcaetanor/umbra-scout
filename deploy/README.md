@@ -22,6 +22,9 @@ Produção: `docker-compose.prod.yaml` (o da raiz é desenvolvimento). Requer Do
 | `UMBRA_IMAGE_TAG`                   | não         | `latest`    |
 | `UMBRA_COLETA_HABILITADA`           | não         | `false`     |
 | `UMBRA_COLETA_AGENDA_RODADAINICIAL` | não         | `false`     |
+| `UMBRA_WEB_API_URL`                 | sim (web)   | nenhum      |
+| `UMBRA_WEB_LOGIN_GOOGLE`            | não         | `false`     |
+| `UMBRA_WEB_IMAGE_TAG`               | não         | `latest`    |
 
 Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_JWT_SECRET` precisa de pelo menos 32 caracteres (256 bits). `UMBRA_COLETA_CONTATO` tem que ser um email válido: ele vai no `User-Agent` da coleta.
 
@@ -31,6 +34,8 @@ Login com Discord e Google: as credenciais vêm da aplicação registrada em cad
 
 `UMBRA_DB_URL`, `SPRING_PROFILES_ACTIVE=prod` e `TZ` já vêm no compose.
 
+Frontend (`web`): `UMBRA_WEB_API_URL` é a origem da API como o navegador a vê (`https://host`, sem caminho), e `UMBRA_WEB_LOGIN_GOOGLE` mostra ou oculta o botão do Google. As duas viram o `config.json` do front na partida do contêiner. O serviço recebe só essas duas variáveis, nunca o `.env` inteiro: tudo o que chega ao front é público. A origem do front precisa estar em `UMBRA_CORS_ORIGENS`, e `UMBRA_LOGIN_RETORNO_FRONT` aponta para `https://<host do front>/login/callback`. O contêiner roda sem root e com sistema de arquivos somente leitura.
+
 ## HTTPS
 
 A API escuta só em `127.0.0.1:8080` e não deve ser exposta em HTTP: login e token trafegam por ela. Na frente dela fica um proxy reverso com HTTPS no mesmo host, por exemplo o Caddy:
@@ -38,6 +43,10 @@ A API escuta só em `127.0.0.1:8080` e não deve ser exposta em HTTP: login e to
 ```
 api.exemplo.com {
     reverse_proxy 127.0.0.1:8080
+}
+
+exemplo.com {
+    reverse_proxy 127.0.0.1:8081
 }
 ```
 
