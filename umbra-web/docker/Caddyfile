@@ -53,7 +53,7 @@
 			header_down -Set-Cookie
 			header_down -Cache-Control
 		}
-		header Cache-Control "public, max-age=86400"
+		header Cache-Control "public, max-age=2592000"
 	}
 
 	handle /imagens/* {
