@@ -10,7 +10,7 @@ const API = 'http://api.teste';
 const USUARIO = {
   id: 7,
   email: 'ana@exemplo.com',
-  nomeExibicao: 'Ana',
+  nomeExibicao: 'ana maria da silva',
   cep: null,
   cidade: null,
   uf: null,
@@ -56,7 +56,7 @@ describe('SessaoService', () => {
     sessao.entrar(tokenQueExpiraEm(3_600_000));
     await responderUsuario(200);
 
-    expect(sessao.usuario()).toEqual({ nome: 'Ana', email: 'ana@exemplo.com' });
+    expect(sessao.usuario()).toEqual({ nome: 'Ana Maria', nomeCompleto: 'ana maria da silva', email: 'ana@exemplo.com' });
     expect(sessao.autenticado()).toBe(true);
 
     sessao.sair();

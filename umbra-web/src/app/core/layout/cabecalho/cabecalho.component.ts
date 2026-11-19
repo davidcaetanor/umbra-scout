@@ -24,6 +24,7 @@ export class CabecalhoComponent {
   protected readonly autenticado = this.sessao.autenticado;
   protected readonly usuario = this.sessao.usuario;
   protected readonly nomeDaConta = computed(() => this.usuario()?.nome ?? 'Conta');
+  protected readonly nomeAcessivel = computed(() => `Conta de ${this.usuario()?.nomeCompleto ?? 'usuário'}`);
   protected readonly menuAberto = signal(false);
 
   protected alternarMenu(): void {

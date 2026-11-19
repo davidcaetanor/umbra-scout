@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { Api } from '../../api/api';
 import { buscarUsuarioAtual } from '../../api/fn/usuario/buscar-usuario-atual';
+import { nomeCurto } from './nome-curto';
 import { TokenDaSessao } from './token-da-sessao';
 import { UsuarioDaSessao } from './usuario-da-sessao';
 
@@ -35,7 +36,11 @@ export class SessaoService {
     try {
       const resposta = await this.api.invoke(buscarUsuarioAtual);
       if (this.tokenDaSessao.token() === token) {
-        this.atual.set({ nome: resposta.nomeExibicao, email: resposta.email });
+        this.atual.set({
+          nome: nomeCurto(resposta.nomeExibicao) || resposta.email,
+          nomeCompleto: resposta.nomeExibicao,
+          email: resposta.email,
+        });
       }
     } catch (erro) {
       if (erro instanceof HttpErrorResponse && erro.status === CONTA_INDISPONIVEL) {

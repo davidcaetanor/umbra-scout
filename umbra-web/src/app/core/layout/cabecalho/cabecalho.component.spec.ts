@@ -28,7 +28,7 @@ describe('CabecalhoComponent', () => {
 
   async function entrarComo(nome: string): Promise<HTMLButtonElement> {
     autenticado.set(true);
-    usuario.set({ nome, email: 'ana@exemplo.com' });
+    usuario.set({ nome, nomeCompleto: `${nome} da Silva`, email: 'ana@exemplo.com' });
     await fixture.whenStable();
     return tela.querySelector<HTMLButtonElement>('button[aria-controls="menu-da-conta"]')!;
   }
@@ -53,6 +53,7 @@ describe('CabecalhoComponent', () => {
   it('abre o menu da conta com o email e o botao Sair', async () => {
     const botao = await entrarComo('Ana');
     expect(botao.textContent).toContain('Ana');
+    expect(botao.getAttribute('aria-label')).toBe('Conta de Ana da Silva');
     expect(botao.getAttribute('aria-expanded')).toBe('false');
 
     await clicar(botao);
