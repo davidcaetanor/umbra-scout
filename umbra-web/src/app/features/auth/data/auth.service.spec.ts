@@ -1,6 +1,7 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { erroInterceptor } from '../../../core/http';
 import { ApiConfiguration } from '../../../api/api-configuration';
 import { CONFIGURACAO_AMBIENTE } from '../../../core/ambiente';
 import { SessaoService } from '../../../core/sessao';
@@ -22,7 +23,7 @@ describe('AuthService', () => {
     sairPara = vi.fn();
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([erroInterceptor])),
         provideHttpClientTesting(),
         { provide: ApiConfiguration, useValue: api },
         { provide: CONFIGURACAO_AMBIENTE, useValue: { apiUrl: API, loginGoogle } },

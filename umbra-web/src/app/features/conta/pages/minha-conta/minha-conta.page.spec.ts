@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ErroDaApi } from '../../../../core/erro';
 import { ContaService } from '../../data/conta.service';
 import { MinhaContaPage } from './minha-conta.page';
 
@@ -8,13 +9,18 @@ describe('MinhaContaPage', () => {
   let fixture: ComponentFixture<MinhaContaPage>;
   let carregar: ReturnType<typeof vi.fn>;
 
+  async function estabilizar(): Promise<void> {
+    await new Promise((pronto) => setTimeout(pronto));
+    await fixture.whenStable();
+  }
+
   async function abrir(): Promise<HTMLElement> {
     TestBed.configureTestingModule({
       imports: [MinhaContaPage],
       providers: [{ provide: ContaService, useValue: { carregar } }],
     });
     fixture = TestBed.createComponent(MinhaContaPage);
-    await fixture.whenStable();
+    await estabilizar();
     return fixture.nativeElement as HTMLElement;
   }
 
@@ -51,15 +57,24 @@ describe('MinhaContaPage', () => {
   });
 
   it('na falha oferece tentar de novo e recarrega', async () => {
-    carregar = vi.fn().mockRejectedValueOnce(new Error('rede')).mockResolvedValueOnce(DADOS);
+    carregar = vi.fn().mockRejectedValueOnce(new ErroDaApi({ tipo: 'rede' })).mockResolvedValueOnce(DADOS);
     const tela = await abrir();
 
-    expect(tela.querySelector('[role="alert"]')?.textContent).toContain('Não foi possível carregar seus dados agora.');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain('Não conseguimos falar com o Umbra agora.');
 
     tela.querySelector<HTMLButtonElement>('[role="alert"] button')!.click();
-    await fixture.whenStable();
+    await estabilizar();
 
     expect(carregar).toHaveBeenCalledTimes(2);
     expect(termos(tela)['Nome']).toBe('Ana Maria da Silva');
+  });
+
+  it('na sessao encerrada continua carregando ate o login assumir', async () => {
+    carregar = vi.fn().mockRejectedValue(new ErroDaApi({ tipo: 'sessao-encerrada' }));
+
+    const tela = await abrir();
+
+    expect(tela.querySelector('[role="alert"]')).toBeNull();
+    expect(tela.querySelector('[role="status"]')?.textContent).toContain('Carregando seus dados');
   });
 });

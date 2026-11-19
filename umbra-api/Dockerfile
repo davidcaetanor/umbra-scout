@@ -6,7 +6,7 @@ COPY mvnw pom.xml ./
 RUN ./mvnw --batch-mode --no-transfer-progress dependency:go-offline
 
 COPY src/ src/
-RUN ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+RUN ./mvnw --batch-mode --no-transfer-progress --update-snapshots -DskipTests package
 
 FROM eclipse-temurin:25-jre
 RUN groupadd --system umbra && useradd --system --gid umbra --no-create-home --shell /usr/sbin/nologin umbra

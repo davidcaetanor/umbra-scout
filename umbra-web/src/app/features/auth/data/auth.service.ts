@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
 import { Injectable, InjectionToken, inject } from '@angular/core';
 import { Api } from '../../../api/api';
@@ -6,8 +5,8 @@ import { cadastrar } from '../../../api/fn/autenticacao/cadastrar';
 import { entrar } from '../../../api/fn/autenticacao/entrar';
 import { iniciarLoginExterno } from '../../../api/fn/autenticacao/iniciar-login-externo';
 import { trocarCodigoDeLoginExterno } from '../../../api/fn/autenticacao/trocar-codigo-de-login-externo';
-import { Problema } from '../../../api/models/problema';
 import { CONFIGURACAO_AMBIENTE } from '../../../core/ambiente';
+import { TipoDeErro, casoDe } from '../../../core/erro';
 import { SessaoService } from '../../../core/sessao';
 import {
   Cadastro,
@@ -19,9 +18,7 @@ import {
   ResultadoTroca,
 } from './auth.modelos';
 
-const REQUISICAO_INVALIDA = 400;
-const NAO_AUTENTICADO = 401;
-const CONFLITO = 409;
+const RECUSA_DE_CREDENCIAL: readonly TipoDeErro[] = ['credencial-recusada', 'invalido'];
 const CHAVE_DO_DESTINO = 'umbra.login-externo.destino';
 
 export const SAIR_PARA = new InjectionToken<(endereco: string) => void>('SAIR_PARA', {
@@ -49,7 +46,7 @@ export class AuthService {
       this.sessao.entrar(resposta.token);
       return 'ok';
     } catch (erro) {
-      return statusDe(erro) === NAO_AUTENTICADO || statusDe(erro) === REQUISICAO_INVALIDA ? 'credenciais' : 'falha';
+      return RECUSA_DE_CREDENCIAL.includes(casoDe(erro).tipo) ? 'credenciais' : 'falha';
     }
   }
 
@@ -59,7 +56,7 @@ export class AuthService {
         body: { nomeExibicao: cadastro.nome, email: cadastro.email, senha: cadastro.senha },
       });
     } catch (erro) {
-      if (statusDe(erro) === CONFLITO) {
+      if (casoDe(erro).tipo === 'conflito') {
         return { tipo: 'email-em-uso' };
       }
       const erros = errosDeCampo(erro);
@@ -85,7 +82,7 @@ export class AuthService {
       this.sessao.entrar(resposta.token);
       return 'ok';
     } catch (erro) {
-      return statusDe(erro) === NAO_AUTENTICADO || statusDe(erro) === REQUISICAO_INVALIDA ? 'codigo-invalido' : 'falha';
+      return RECUSA_DE_CREDENCIAL.includes(casoDe(erro).tipo) ? 'codigo-invalido' : 'falha';
     }
   }
 
@@ -120,16 +117,12 @@ const CAMPOS_DO_CONTRATO: Readonly<Record<string, keyof Cadastro>> = {
   senha: 'senha',
 };
 
-function statusDe(erro: unknown): number | null {
-  return erro instanceof HttpErrorResponse ? erro.status : null;
-}
-
 function errosDeCampo(erro: unknown): ErroDeCampo[] {
-  if (statusDe(erro) !== REQUISICAO_INVALIDA) {
+  const caso = casoDe(erro);
+  if (caso.tipo !== 'invalido') {
     return [];
   }
-  const problema = (erro as HttpErrorResponse).error as Partial<Problema> | null;
-  return (problema?.erros ?? []).flatMap(({ campo, mensagem }) => {
+  return caso.campos.flatMap(({ campo, mensagem }) => {
     const nosso = CAMPOS_DO_CONTRATO[campo];
     return nosso === undefined ? [] : [{ campo: nosso, mensagem }];
   });

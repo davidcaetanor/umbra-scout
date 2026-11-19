@@ -57,6 +57,12 @@ class CorsTest extends WireMockIntegrationTestBase {
     }
 
     @Test
+    void leituraPublicaDaOrigemDoFrontend_deveExporORetryAfterDoServicoIndisponivel() throws Exception {
+        mockMvc.perform(get("/produtos").header(HttpHeaders.ORIGIN, ORIGEM_DO_FRONTEND))
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, containsString(HttpHeaders.RETRY_AFTER)));
+    }
+
+    @Test
     void leituraPublicaDeOutraOrigem_deveSerRecusada() throws Exception {
         mockMvc.perform(get("/produtos").header(HttpHeaders.ORIGIN, OUTRA_ORIGEM))
                 .andExpect(status().isForbidden());

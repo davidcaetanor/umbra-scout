@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { PaginaNaoEncontradaPage } from './core/erro/pagina-nao-encontrada/pagina-nao-encontrada.page';
 import { autenticadoGuard } from './core/sessao';
 
 export const routes: Routes = [
@@ -17,5 +18,5 @@ export const routes: Routes = [
   { path: 'entrar', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES) },
   { path: 'cadastro', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.CADASTRO_ROUTES) },
   { path: 'login/callback', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.RETORNO_ROUTES) },
-  { path: '**', redirectTo: 'catalogo' },
+  { path: '**', component: PaginaNaoEncontradaPage, title: 'Página não encontrada' },
 ];

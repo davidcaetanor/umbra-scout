@@ -1,12 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { Api } from '../../api/api';
 import { buscarUsuarioAtual } from '../../api/fn/usuario/buscar-usuario-atual';
+import { casoDe } from '../erro';
 import { nomeCurto } from './nome-curto';
 import { TokenDaSessao } from './token-da-sessao';
 import { UsuarioDaSessao } from './usuario-da-sessao';
-
-const CONTA_INDISPONIVEL = 404;
 
 @Injectable({ providedIn: 'root' })
 export class SessaoService {
@@ -43,7 +41,7 @@ export class SessaoService {
         });
       }
     } catch (erro) {
-      if (erro instanceof HttpErrorResponse && erro.status === CONTA_INDISPONIVEL) {
+      if (casoDe(erro).tipo === 'nao-encontrado') {
         this.sair();
       }
     }
