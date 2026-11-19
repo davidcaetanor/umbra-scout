@@ -59,6 +59,7 @@ function paraProduto(produto: ProdutoResumoResponse): ProdutoDoCatalogo {
   return {
     id: produto.id,
     nome: produto.nome,
+    tipo: produto.tipo,
     imagem: imagemPelaOrigem(produto.imagemUrl),
     categoria: produto.categoria ? (ROTULO_DA_CATEGORIA[produto.categoria as CategoriaDeHardware] ?? null) : null,
     preco: produto.melhorPreco ? paraPreco(produto.melhorPreco) : null,
@@ -86,7 +87,6 @@ function paraPreco(oferta: OfertaResponse): PrecoDoProduto {
     atual: oferta.gratuito ? 'Grátis' : reais(oferta.valorCentavos),
     original: emPromocao && oferta.valorOriginalCentavos !== null ? reais(oferta.valorOriginalCentavos) : null,
     descontoPct: emPromocao ? oferta.descontoPct : null,
-    gratuito: oferta.gratuito,
     loja: oferta.loja,
   };
 }
