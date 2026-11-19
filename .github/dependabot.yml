@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /umbra-web
+    schedule:
+      interval: weekly
+    groups:
+      angular:
+        patterns: ['@angular/*', '@angular-devkit/*', 'angular-eslint']
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: maven
+    directory: /umbra-api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directories: ['/umbra-api', '/umbra-web']
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
