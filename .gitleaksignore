@@ -1,0 +1,5 @@
+# Valores ficticios de teste do umbra-api, conferidos em 18/11/2026
+5adca7279b641140c977d8f1c65afce3072c9b90:umbra-api/src/test/java/dev/davidcaetano/umbra_api/usuario/oauth2/LoginExternoFluxoTest.java:discord-client-secret:41
+3e7a4c0153daa9c4d6d7db83d4bf8f7c7a331d44:umbra-api/src/test/java/dev/davidcaetano/umbra_api/comum/IntegrationTestBase.java:generic-api-key:9
+3e7a4c0153daa9c4d6d7db83d4bf8f7c7a331d44:umbra-api/src/test/java/dev/davidcaetano/umbra_api/actuator/PerfilProdTest.java:generic-api-key:26
+3e7a4c0153daa9c4d6d7db83d4bf8f7c7a331d44:umbra-api/src/test/resources/application-test.yaml:generic-api-key:13
