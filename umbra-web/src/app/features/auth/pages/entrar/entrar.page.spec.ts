@@ -146,4 +146,28 @@ describe('EntrarPage', () => {
     expect(botoes.every((botao) => botao.disabled)).toBe(true);
     expect(botoes[0].getAttribute('aria-busy')).toBe('true');
   });
+
+  it('voltar do provedor pelo navegador destrava os botoes', async () => {
+    const tela = await abrir();
+    tela.querySelector<HTMLButtonElement>('umbra-botoes-login-externo button')!.click();
+    await fixture.whenStable();
+
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    await fixture.whenStable();
+
+    const botoes = [...tela.querySelectorAll<HTMLButtonElement>('umbra-botoes-login-externo button')];
+    expect(botoes.every((botao) => !botao.disabled)).toBe(true);
+    expect(botoes[0].hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('carga nova da pagina nao mexe nos botoes travados', async () => {
+    const tela = await abrir();
+    tela.querySelector<HTMLButtonElement>('umbra-botoes-login-externo button')!.click();
+    await fixture.whenStable();
+
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+    await fixture.whenStable();
+
+    expect(tela.querySelector<HTMLButtonElement>('umbra-botoes-login-externo button')!.disabled).toBe(true);
+  });
 });

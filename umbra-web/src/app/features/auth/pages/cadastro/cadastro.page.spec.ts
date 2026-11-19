@@ -155,4 +155,16 @@ describe('CadastroPage', () => {
 
     expect(auth.iniciarLoginExterno).toHaveBeenCalledWith('discord', '/monitoramentos');
   });
+
+  it('voltar do provedor pelo navegador destrava os botoes', async () => {
+    const tela = await abrir('/monitoramentos');
+    tela.querySelector<HTMLButtonElement>('umbra-botoes-login-externo button')!.click();
+    await fixture.whenStable();
+    expect(tela.querySelector<HTMLButtonElement>('umbra-botoes-login-externo button')!.disabled).toBe(true);
+
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    await fixture.whenStable();
+
+    expect(tela.querySelector<HTMLButtonElement>('umbra-botoes-login-externo button')!.disabled).toBe(false);
+  });
 });

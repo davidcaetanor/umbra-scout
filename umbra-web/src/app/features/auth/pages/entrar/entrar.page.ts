@@ -11,6 +11,7 @@ import { MolduraEntradaComponent } from '../../components/moldura-entrada/moldur
 import { ProvedorExterno } from '../../data/auth.modelos';
 import { AuthService } from '../../data/auth.service';
 import { MAXIMO_DO_EMAIL, focarPrimeiroInvalido, mensagemDoCampo, senhaDentroDoLimite } from '../formulario';
+import { destravarAoVoltar } from '../destravar-ao-voltar';
 
 export const CONTA_CRIADA = 'criada';
 
@@ -48,6 +49,10 @@ export class EntrarPage implements OnInit {
   protected readonly provedores = this.auth.provedores;
   protected readonly enviando = signal(false);
   protected readonly saindoPara = signal<ProvedorExterno | null>(null);
+
+  constructor() {
+    destravarAoVoltar(this.saindoPara);
+  }
   protected readonly falha = signal<FalhaDaEntrada | null>(null);
   protected readonly sessaoExpirada = computed(() => this.motivo() === MOTIVO_SESSAO_EXPIRADA);
   protected readonly contaCriada = computed(() => this.conta() === CONTA_CRIADA);
