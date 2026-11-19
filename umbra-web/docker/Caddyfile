@@ -25,12 +25,39 @@
 	@comHash path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
 	header @comHash Cache-Control "public, max-age=31536000, immutable"
 
-	@semHash not path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
+	@semHash {
+		not path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
+		not path /imagens/*
+	}
 	header @semHash Cache-Control "no-store"
 
 	handle /config.json {
 		root * /run/umbra
 		file_server
+	}
+
+	@imagemDoItad {
+		method GET HEAD
+		path /imagens/itad/*
+	}
+	handle @imagemDoItad {
+		uri strip_prefix /imagens/itad
+		reverse_proxy https://assets.isthereanydeal.com {
+			header_up Host assets.isthereanydeal.com
+			header_up -X-Forwarded-For
+			header_up -X-Forwarded-Host
+			header_up -X-Forwarded-Proto
+			header_up -Referer
+			header_up -Cookie
+			header_up -Authorization
+			header_down -Set-Cookie
+			header_down -Cache-Control
+		}
+		header Cache-Control "public, max-age=86400"
+	}
+
+	handle /imagens/* {
+		respond 404
 	}
 
 	handle /saude {

@@ -1,0 +1,8 @@
+{
+  "/imagens/itad": {
+    "target": "https://assets.isthereanydeal.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/imagens/itad": "" }
+  }
+}
