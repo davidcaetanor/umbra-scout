@@ -1,0 +1,18 @@
+@if (preco(); as preco) {
+  <p class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+    <span class="font-mono text-valor tabular-nums text-destaque">{{ preco.atual }}</span>
+    @if (preco.descontoPct !== null) {
+      <span class="rounded-mini bg-apoio-fundo px-1.5 text-dado font-medium text-(--color-apoio)">
+        -{{ preco.descontoPct }}%<span class="sr-only"> de desconto</span>
+      </span>
+    }
+  </p>
+  <p class="text-dado text-texto-secundario">
+    @if (preco.original !== null) {
+      <span class="sr-only">De </span><s class="font-mono tabular-nums">{{ preco.original }}</s> ·
+    }
+    {{ preco.loja }}
+  </p>
+} @else {
+  <p class="text-apoio text-texto-secundario">Indisponível agora</p>
+}

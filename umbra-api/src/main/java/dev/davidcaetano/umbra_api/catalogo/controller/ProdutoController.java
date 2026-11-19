@@ -4,6 +4,7 @@ import dev.davidcaetano.umbra_api.catalogo.dto.request.BuscaProdutoRequest;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.BuscaProdutosResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.HistoricoResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.ProdutoResponse;
+import dev.davidcaetano.umbra_api.catalogo.service.FiltroDoCatalogo;
 import dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistorico;
 import dev.davidcaetano.umbra_api.catalogo.service.ProdutoService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,8 +30,8 @@ public class ProdutoController implements ProdutoApi {
     public BuscaProdutosResponse buscar(@Valid @ModelAttribute BuscaProdutoRequest busca, Pageable paginacao,
                                         HttpServletRequest requisicao) {
         String ipDeOrigem = requisicao.getRemoteAddr();
-        return produtoService.buscar(busca.nome(), busca.categoria(), busca.ordenacao(), busca.incluirExterno(),
-                paginacao, ipDeOrigem);
+        FiltroDoCatalogo filtro = new FiltroDoCatalogo(busca.nome(), busca.tipo(), busca.categoria());
+        return produtoService.buscar(filtro, busca.ordenacao(), busca.incluirExterno(), paginacao, ipDeOrigem);
     }
 
     @Override

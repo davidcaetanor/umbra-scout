@@ -4,7 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { provideFocoNaTrocaDeRota } from '../../navegacao/foco-na-troca-de-rota';
 import { ShellComponent } from './shell.component';
 
-@Component({ selector: 'umbra-pagina-teste', template: '<h1>Destino</h1>' })
+@Component({ selector: 'umbra-pagina-teste', template: '<h1>Destino</h1><input id="busca" aria-label="Busca" />' })
 class PaginaTesteComponent {}
 
 describe('ShellComponent', () => {
@@ -53,5 +53,26 @@ describe('ShellComponent', () => {
     await new Promise((resolver) => setTimeout(resolver));
     expect(document.activeElement?.tagName).toBe('H1');
     expect(document.activeElement?.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('nao tira o foco quando so a consulta da URL muda, como na digitacao da busca', async () => {
+    const { fixture, router } = await montar();
+    const campo = document.getElementById('busca') as HTMLInputElement;
+    campo.focus();
+
+    await router.navigateByUrl('/catalogo?nome=hollow', { replaceUrl: true });
+    await fixture.whenStable();
+    await new Promise((resolver) => setTimeout(resolver));
+
+    expect(document.activeElement).toBe(campo);
+  });
+
+  it('com fragmento leva o foco ao elemento indicado, no lugar do titulo', async () => {
+    const { fixture, router } = await montar();
+    await router.navigateByUrl('/monitoramentos#busca');
+    await fixture.whenStable();
+    await new Promise((resolver) => setTimeout(resolver));
+
+    expect(document.activeElement?.id).toBe('busca');
   });
 });

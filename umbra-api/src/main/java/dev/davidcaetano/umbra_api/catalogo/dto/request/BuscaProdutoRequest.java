@@ -2,6 +2,7 @@ package dev.davidcaetano.umbra_api.catalogo.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.davidcaetano.umbra_api.catalogo.enums.CategoriaHardware;
+import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogo;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Pattern;
@@ -12,6 +13,7 @@ public record BuscaProdutoRequest(
         @Pattern(regexp = "^[\\p{L}\\p{N} '\\-:.&+!]+$",
                 message = "aceita só letras, dígitos, espaço e a pontuação ' - : . & + !")
         String nome,
+        TipoProduto tipo,
         CategoriaHardware categoria,
         OrdenacaoCatalogo ordenacao,
         Boolean incluirExterno) {
@@ -25,5 +27,11 @@ public record BuscaProdutoRequest(
     @AssertTrue(message = "incluirExterno exige nome")
     public boolean isNomeInformadoParaBuscaExterna() {
         return !incluirExterno || nome != null;
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = "categoria só se aplica a HARDWARE")
+    public boolean isCategoriaCompativelComTipo() {
+        return categoria == null || tipo != TipoProduto.JOGO;
     }
 }

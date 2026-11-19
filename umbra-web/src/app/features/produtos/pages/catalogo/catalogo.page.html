@@ -3,8 +3,193 @@
     <h1 class="font-titulo text-secao">Catálogo</h1>
     <p class="text-apoio text-texto-secundario">Jogos e hardware que o Umbra acompanha</p>
   </div>
-  <umbra-mascote estado="observando" class="-me-4 shrink-0 tablet:me-0" />
+  @if (umbraDoCabecalho(); as estado) {
+    <umbra-mascote [estado]="estado" class="-me-4 shrink-0 tablet:me-0" />
+  }
 </div>
+
 <section class="rounded-bloco border-2 border-filete bg-superficie p-4 tablet:p-6" aria-label="Lista de produtos">
-  <p class="text-interface text-texto-secundario">A busca e a lista de produtos chegam em breve.</p>
+  <search class="flex flex-col gap-3">
+    <div class="flex flex-col gap-3 tablet:flex-row tablet:items-start">
+      <div class="flex min-w-0 flex-1 flex-col gap-1">
+        <label for="busca" class="sr-only">Buscar por nome</label>
+        <input
+          id="busca"
+          type="search"
+          enterkeyhint="search"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="100"
+          placeholder="Buscar por nome"
+          class="min-h-11 w-full rounded-controle border border-borda-campo bg-fundo px-3"
+          [value]="textoDigitado()"
+          [attr.aria-describedby]="situacaoDoTexto() === 'curto' || situacaoDoTexto() === 'invalido' ? 'busca-dica' : null"
+          (input)="digitar($any($event.target).value)"
+        />
+        @switch (situacaoDoTexto()) {
+          @case ('curto') {
+            <p id="busca-dica" class="text-dado text-texto-secundario">Digite ao menos 3 letras.</p>
+          }
+          @case ('invalido') {
+            <p id="busca-dica" class="text-dado text-texto-erro">Use só letras, números, espaço e ' - : . &amp; + !</p>
+          }
+        }
+      </div>
+      <div class="flex flex-col gap-3 tablet:flex-row">
+        @if (filtro().tipo === 'HARDWARE') {
+          <div class="flex min-w-0 flex-1 flex-col">
+            <label for="categoria" class="sr-only">Categoria</label>
+            <select
+              id="categoria"
+              class="min-h-11 w-full rounded-controle border border-borda-campo bg-fundo px-3"
+              (change)="escolherCategoria($any($event.target).value)"
+            >
+              <option value="" [selected]="filtro().categoria === null">Todas as categorias</option>
+              @for (categoria of categorias; track categoria[0]) {
+                <option [value]="categoria[0]" [selected]="filtro().categoria === categoria[0]">{{ categoria[1] }}</option>
+              }
+            </select>
+          </div>
+        }
+        <div class="flex min-w-0 flex-1 flex-col">
+          <label for="ordenacao" class="sr-only">Ordenar por</label>
+          <select
+            id="ordenacao"
+            class="min-h-11 w-full rounded-controle border border-borda-campo bg-fundo px-3"
+            (change)="escolherOrdenacao($any($event.target).value)"
+          >
+            @for (ordenacao of ordenacoes; track ordenacao[0]) {
+              <option [value]="ordenacao[0]" [selected]="filtro().ordenacao === ordenacao[0]">Ordenar: {{ ordenacao[1] }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <div role="group" aria-label="Tipo de produto" class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="min-h-9 rounded-controle border px-3 font-medium"
+          [class]="filtro().tipo === null ? 'border-destaque bg-destaque text-texto-escuro' : 'border-borda-campo hover:bg-superficie-elevada'"
+          [attr.aria-pressed]="filtro().tipo === null"
+          (click)="escolherTipo(null)"
+        >
+          Todos
+        </button>
+        @for (tipo of tipos; track tipo[0]) {
+          <button
+            type="button"
+            class="min-h-9 rounded-controle border px-3 font-medium"
+            [class]="filtro().tipo === tipo[0] ? 'border-destaque bg-destaque text-texto-escuro' : 'border-borda-campo hover:bg-superficie-elevada'"
+            [attr.aria-pressed]="filtro().tipo === tipo[0]"
+            (click)="escolherTipo(tipo[0])"
+          >
+            {{ tipo[1] }}
+          </button>
+        }
+      </div>
+      <p role="status" class="ms-auto text-apoio text-texto-secundario">{{ contagem() }}</p>
+    </div>
+  </search>
+
+  <umbra-estado-do-bloco class="mt-4" [estado]="resultado()" (tentarDeNovo)="recarregar()">
+    <div carregando>
+      <span class="sr-only">Carregando produtos…</span>
+      <ul class="grid gap-3 tablet:grid-cols-2 largo:grid-cols-3" aria-hidden="true">
+        @for (vaga of [1, 2, 3, 4, 5, 6]; track vaga) {
+          <li class="h-24 rounded-bloco bg-superficie-elevada motion-safe:animate-pulse tablet:h-56"></li>
+        }
+      </ul>
+    </div>
+
+    <div vazio>
+      @if (nadaEncontrado()) {
+        <div class="flex flex-col items-center gap-4 py-4 text-center tablet:flex-row tablet:text-start">
+          <div class="shrink-0 tablet:hidden"><umbra-mascote estado="perdido" /></div>
+          <div class="hidden shrink-0 tablet:block"><umbra-mascote estado="perdido" tamanho="grande" /></div>
+          <div class="flex flex-col items-center gap-2 tablet:items-start">
+            <h2 class="font-titulo text-subtitulo">
+              @if (filtro().termo; as termo) {
+                Nada com "{{ termo }}"
+              } @else {
+                Nada nesta seleção
+              }
+            </h2>
+            <p class="whitespace-pre-line text-texto-secundario">
+              @if (filtro().termo) {
+                O Umbra procurou no catálogo e fora dele.{{ '\n' }}Tente outro nome ou tire os filtros.
+              } @else {
+                O Umbra ainda não acompanha produtos com esses filtros.
+              }
+            </p>
+            <button
+              type="button"
+              class="mt-1 min-h-11 rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada"
+              (click)="limparFiltros()"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        </div>
+      } @else {
+        <p class="text-texto-secundario">Nada no catálogo com "{{ filtro().termo }}".</p>
+      }
+    </div>
+
+    @if (dados(); as dados) {
+      <ul class="grid gap-3 tablet:grid-cols-2 largo:grid-cols-3">
+        @for (produto of dados.produtos; track produto.id) {
+          <li><umbra-card-produto [produto]="produto" /></li>
+        }
+      </ul>
+      <umbra-paginacao
+        class="mt-4"
+        [pagina]="dados.pagina"
+        [totalDePaginas]="dados.totalDePaginas"
+        (irPara)="irParaPagina($event)"
+      />
+    }
+  </umbra-estado-do-bloco>
+
+  @if (podeBuscarFora()) {
+    <div class="mt-4 flex flex-col gap-2 border-t border-filete pt-4 tablet:flex-row tablet:items-center tablet:justify-between">
+      <p class="text-texto-secundario">Não achou? O Umbra procura também fora do catálogo.</p>
+      <button
+        type="button"
+        class="min-h-11 rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada"
+        (click)="buscarFora()"
+      >
+        Buscar também fora do catálogo
+      </button>
+    </div>
+  }
+
+  @switch (buscaExterna().tipo) {
+    @case ('buscando') {
+      <p role="status" class="mt-4 border-t border-filete pt-4 text-texto-secundario">O Umbra está procurando fora do catálogo…</p>
+    }
+    @case ('concluida') {
+      @if (buscaExterna(); as externa) {
+        @if (externa.tipo === 'concluida' && externa.produtos.length > 0) {
+          <section class="mt-4 border-t border-filete pt-4" aria-labelledby="fora-do-catalogo">
+            <h2 id="fora-do-catalogo" class="font-titulo text-subtitulo">Fora do catálogo</h2>
+            <p class="text-apoio text-texto-secundario">Ainda não acompanhados pelo Umbra.</p>
+            <ul class="mt-3 flex flex-col gap-3">
+              @for (produto of externa.produtos; track produto.gid) {
+                <li><umbra-card-externo [produto]="produto" /></li>
+              }
+            </ul>
+          </section>
+        } @else if (resultado().tipo === 'sucesso') {
+          <p role="status" class="mt-4 border-t border-filete pt-4 text-texto-secundario">Nada novo fora do catálogo.</p>
+        }
+      }
+    }
+    @case ('falhou') {
+      @if (resultado().tipo === 'sucesso') {
+        <p role="status" class="mt-4 border-t border-filete pt-4 text-texto-secundario">Não deu para procurar fora do catálogo agora.</p>
+      }
+    }
+  }
 </section>

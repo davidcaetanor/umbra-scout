@@ -40,7 +40,7 @@ class ProdutoControllerIpDeOrigemTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<String> ipDeOrigem = ArgumentCaptor.forClass(String.class);
-        verify(produtoService, times(2)).buscar(any(), any(), any(), anyBoolean(), any(), ipDeOrigem.capture());
+        verify(produtoService, times(2)).buscar(any(), any(), anyBoolean(), any(), ipDeOrigem.capture());
         assertThat(ipDeOrigem.getAllValues()).containsExactly(ENDERECO_REMOTO, ENDERECO_REMOTO);
     }
 

@@ -15,6 +15,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
 
     String FILTRO_DA_LISTAGEM = """
              WHERE p.ativo
+               AND (CAST(:tipo AS TEXT) IS NULL OR p.tipo = :tipo)
                AND (CAST(:categoria AS TEXT) IS NULL OR p.categoria = :categoria)
             """;
 
@@ -52,23 +53,27 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
 
     @Query(value = CONSULTA_DA_LISTAGEM + ORDEM_POR_NOME,
             countQuery = CONTAGEM_DA_LISTAGEM, nativeQuery = true)
-    Page<ProdutoResumoProjecao> listarCatalogoPorNome(@Param("categoria") String categoria,
+    Page<ProdutoResumoProjecao> listarCatalogoPorNome(@Param("tipo") String tipo,
+                                                      @Param("categoria") String categoria,
                                                       Pageable paginacao);
 
     @Query(value = CONSULTA_DA_LISTAGEM + ORDEM_POR_MENOR_PRECO,
             countQuery = CONTAGEM_DA_LISTAGEM, nativeQuery = true)
-    Page<ProdutoResumoProjecao> listarCatalogoPorMenorPreco(@Param("categoria") String categoria,
+    Page<ProdutoResumoProjecao> listarCatalogoPorMenorPreco(@Param("tipo") String tipo,
+                                                            @Param("categoria") String categoria,
                                                             Pageable paginacao);
 
     @Query(value = CONSULTA_DO_CATALOGO + ORDEM_POR_NOME,
             countQuery = CONTAGEM_DO_CATALOGO, nativeQuery = true)
     Page<ProdutoResumoProjecao> buscarCatalogoPorNome(@Param("termo") String termo,
+                                                      @Param("tipo") String tipo,
                                                       @Param("categoria") String categoria,
                                                       Pageable paginacao);
 
     @Query(value = CONSULTA_DO_CATALOGO + ORDEM_POR_MENOR_PRECO,
             countQuery = CONTAGEM_DO_CATALOGO, nativeQuery = true)
     Page<ProdutoResumoProjecao> buscarCatalogoPorMenorPreco(@Param("termo") String termo,
-                                                            @Param("categoria") String categoria,
+                                                            @Param("tipo") String tipo,
+                                                      @Param("categoria") String categoria,
                                                             Pageable paginacao);
 }

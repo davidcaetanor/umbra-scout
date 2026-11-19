@@ -24,7 +24,8 @@ public interface ProdutoApi {
     @Operation(operationId = "buscarProdutos", summary = "Busca no catálogo",
             description = "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. "
                     + "Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD "
-                    + "que ainda não estão no catálogo; nas demais páginas `externos` vem vazio.")
+                    + "que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. "
+                    + "`categoria` vale só para hardware: com `tipo=JOGO` responde 400.")
     @Parameter(name = "page", in = ParameterIn.QUERY, description = "Página, a partir de 0.",
             schema = @Schema(type = "integer", format = "int32", minimum = "0", defaultValue = "0"))
     @Parameter(name = "size", in = ParameterIn.QUERY, description = "Itens por página; acima de 20 vira 20.",
