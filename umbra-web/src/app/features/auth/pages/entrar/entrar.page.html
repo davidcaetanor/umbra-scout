@@ -1,5 +1,52 @@
-<div class="flex flex-col items-center gap-4 py-8 text-center">
-  <umbra-mascote estado="acenando" tamanho="grande" />
+<umbra-moldura-entrada>
   <h1 class="font-titulo text-secao">Entrar</h1>
-  <p class="max-w-md text-interface text-texto-secundario">O login por email, Discord e Google chega em breve.</p>
-</div>
+  <p class="mt-1 mb-6 text-texto-secundario">Acompanhe seus monitoramentos e receba os avisos.</p>
+
+  @if (sessaoExpirada()) {
+    <umbra-aviso class="mb-6">Sua sessão expirou. Entre de novo para voltar de onde parou.</umbra-aviso>
+  } @else if (contaCriada()) {
+    <umbra-aviso class="mb-6">Conta criada. Entre com seu email e senha.</umbra-aviso>
+  }
+
+  <umbra-botoes-login-externo [provedores]="provedores" [saindo]="saindoPara()" (escolher)="entrarCom($event)" />
+
+  <p class="my-6 flex items-center gap-3 text-apoio text-texto-secundario before:h-px before:flex-1 before:bg-filete after:h-px after:flex-1 after:bg-filete">
+    ou com email
+  </p>
+
+  <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate class="flex flex-col gap-4">
+    @if (falha() === 'credenciais') {
+      <umbra-aviso tipo="erro">Email ou senha incorretos.</umbra-aviso>
+    } @else if (falha() === 'falha') {
+      <umbra-aviso tipo="erro">Não foi possível entrar agora. Tente de novo em instantes.</umbra-aviso>
+    }
+    <umbra-campo
+      id="entrar-email"
+      rotulo="Email"
+      tipo="email"
+      autocomplete="username"
+      [controle]="formulario.controls.email"
+      [erro]="mensagem(formulario.controls.email)"
+    />
+    <umbra-campo
+      id="entrar-senha"
+      rotulo="Senha"
+      tipo="password"
+      autocomplete="current-password"
+      [controle]="formulario.controls.senha"
+      [erro]="mensagem(formulario.controls.senha)"
+    />
+    <button
+      type="submit"
+      class="mt-2 min-h-12 rounded-controle bg-destaque px-4 text-valor font-semibold text-texto-escuro hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
+      [disabled]="enviando()"
+    >
+      {{ enviando() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+
+  <p class="mt-6 text-center text-texto-secundario">
+    Ainda não tem conta?
+    <a routerLink="/cadastro" [queryParams]="{ returnUrl: destino() }" class="inline-flex min-h-6 items-center font-semibold text-texto underline">Criar conta</a>
+  </p>
+</umbra-moldura-entrada>

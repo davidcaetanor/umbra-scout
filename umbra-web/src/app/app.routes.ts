@@ -10,5 +10,6 @@ export const routes: Routes = [
     loadChildren: () => import('./features/monitoramentos/monitoramentos.routes').then((m) => m.MONITORAMENTOS_ROUTES),
   },
   { path: 'entrar', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES) },
+  { path: 'cadastro', loadChildren: () => import('./features/auth/auth.routes').then((m) => m.CADASTRO_ROUTES) },
   { path: '**', redirectTo: 'catalogo' },
 ];

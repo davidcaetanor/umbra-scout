@@ -1,0 +1,23 @@
+<div
+  class="flex items-start gap-3 rounded-controle border p-3"
+  [class.border-ambiente]="tipo() === 'informacao'"
+  [class.bg-ambiente-fundo]="tipo() === 'informacao'"
+  [class.border-erro]="tipo() === 'erro'"
+  [class.bg-superficie]="tipo() === 'erro'"
+>
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 20 20"
+    class="mt-0.5 size-5 shrink-0"
+    [class.text-ambiente]="tipo() === 'informacao'"
+    [class.text-erro]="tipo() === 'erro'"
+    fill="currentColor"
+  >
+    @if (tipo() === 'erro') {
+      <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm-.9 4h1.8v5.2H9.1V6Zm0 6.8h1.8v1.8H9.1v-1.8Z" />
+    } @else {
+      <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm-.9 3.6h1.8v1.8H9.1V5.6Zm0 3.4h1.8v5.4H9.1V9Z" />
+    }
+  </svg>
+  <div class="min-w-0 flex-1"><ng-content /></div>
+</div>
