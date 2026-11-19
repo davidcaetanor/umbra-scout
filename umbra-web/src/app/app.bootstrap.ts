@@ -1,16 +1,30 @@
+import { ApplicationRef } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { App } from './app';
 import { criarAppConfig } from './app.config';
-import { carregarConfiguracao } from './core/ambiente';
+import { ConfiguracaoAmbiente, carregarConfiguracao } from './core/ambiente';
 
-const MENSAGEM_DE_FALHA = 'Não foi possível iniciar o Umbra. Recarregue a página em alguns instantes.';
+export const MENSAGEM_DE_FALHA_NA_PARTIDA = 'Não foi possível iniciar o Umbra. Recarregue a página em alguns instantes.';
 
-export async function iniciarAplicacao(): Promise<void> {
+export interface DependenciasDaPartida {
+  readonly carregar: () => Promise<ConfiguracaoAmbiente>;
+  readonly iniciar: (configuracao: ConfiguracaoAmbiente) => Promise<ApplicationRef>;
+  readonly corpo: HTMLElement;
+}
+
+const dependenciasPadrao: DependenciasDaPartida = {
+  carregar: () => carregarConfiguracao(),
+  iniciar: (configuracao) => bootstrapApplication(App, criarAppConfig(configuracao)),
+  get corpo() {
+    return document.body;
+  },
+};
+
+export async function iniciarAplicacao(dependencias: DependenciasDaPartida = dependenciasPadrao): Promise<void> {
   try {
-    const configuracao = await carregarConfiguracao();
-    await bootstrapApplication(App, criarAppConfig(configuracao));
+    await dependencias.iniciar(await dependencias.carregar());
   } catch (erro) {
     console.error(erro);
-    document.body.textContent = MENSAGEM_DE_FALHA;
+    dependencias.corpo.textContent = MENSAGEM_DE_FALHA_NA_PARTIDA;
   }
 }
