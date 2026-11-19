@@ -104,7 +104,7 @@ public class SecurityConfig {
         cors.setAllowedMethods(List.of(HttpMethod.GET.name(), HttpMethod.POST.name(), HttpMethod.PATCH.name(),
                 HttpMethod.DELETE.name()));
         cors.setAllowedHeaders(List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE, CABECALHO_REQUEST_ID));
-        cors.setExposedHeaders(List.of(CABECALHO_REQUEST_ID));
+        cors.setExposedHeaders(List.of(CABECALHO_REQUEST_ID, HttpHeaders.RETRY_AFTER));
         cors.setAllowCredentials(false);
         cors.setMaxAge(CACHE_DO_PREFLIGHT);
 
