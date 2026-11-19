@@ -9,6 +9,10 @@ describe('capaPelaOrigem', () => {
     });
   });
 
+  it('capa em pe em PNG tambem usa as faixas, que o ITAD publica sempre em JPEG', () => {
+    expect(capaPelaOrigem('https://assets.isthereanydeal.com/018d/boxart.png?t=2')?.endereco).toBe('/imagens/itad/018d/banner300.jpg?t=2');
+  });
+
   it('imagem do ITAD fora da convencao segue como veio, sem variantes', () => {
     expect(capaPelaOrigem('https://assets.isthereanydeal.com/018d/outra.png')).toEqual({
       endereco: '/imagens/itad/018d/outra.png',

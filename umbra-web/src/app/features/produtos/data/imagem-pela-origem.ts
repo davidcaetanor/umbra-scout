@@ -2,7 +2,7 @@ import { CapaDoProduto } from './capa-do-produto';
 
 const ORIGEM_DO_ITAD = 'https://assets.isthereanydeal.com/';
 const CAMINHO_PELA_NOSSA_ORIGEM = '/imagens/itad/';
-const ARQUIVO_DA_CAPA_EM_PE = /\/boxart\.jpg(?=\?|$)/;
+const ARQUIVO_DA_CAPA_EM_PE = /\/boxart\.(?:jpg|png)(?=\?|$)/;
 const LARGURAS_DA_FAIXA = [300, 400] as const;
 
 export function capaPelaOrigem(endereco: string | null | undefined): CapaDoProduto | null {
