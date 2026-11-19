@@ -18,6 +18,19 @@
   animation-fill-mode: none;
 }
 
+.sprite.repouso {
+  animation: none;
+  background-position: var(--repouso) 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite,
+  .sprite.repete {
+    animation: none;
+    background-position: var(--repouso) 0;
+  }
+}
+
 @keyframes tocar {
   from {
     background-position: 0 0;

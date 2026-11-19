@@ -6,6 +6,8 @@ import { EstadoMascote } from './estado-mascote';
 describe('MascoteComponent', () => {
   let ref: ComponentRef<MascoteComponent>;
 
+  beforeEach(() => sessionStorage.clear());
+
   function sprite(): HTMLElement {
     return (ref.location.nativeElement as HTMLElement).querySelector('.sprite') as HTMLElement;
   }
@@ -58,5 +60,32 @@ describe('MascoteComponent', () => {
     montar('erro', { direcao: 'east' });
     expect(sprite().style.getPropertyValue('--sprite')).toContain('erro-south.png');
     expect(sprite().style.transform).toBe('');
+  });
+
+  it('toca o observando uma vez e para no quadro de repouso ao terminar', () => {
+    montar('observando');
+    expect(sprite().classList).not.toContain('repete');
+    expect(sprite().classList).not.toContain('repouso');
+
+    sprite().dispatchEvent(new Event('animationend'));
+    ref.changeDetectorRef.detectChanges();
+
+    expect(sprite().classList).toContain('repouso');
+    expect(sprite().style.getPropertyValue('--repouso')).toBe('-736px');
+  });
+
+  it('aparece já em repouso quando a entrada da tela já foi vista na sessão', () => {
+    montar('observando');
+    sprite().dispatchEvent(new Event('animationend'));
+
+    montar('observando');
+    expect(sprite().classList).toContain('repouso');
+  });
+
+  it('nunca põe em repouso as animações de espera', () => {
+    montar('digitando');
+    sprite().dispatchEvent(new Event('animationend'));
+    ref.changeDetectorRef.detectChanges();
+    expect(sprite().classList).not.toContain('repouso');
   });
 });

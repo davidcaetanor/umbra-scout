@@ -2,23 +2,27 @@ import { DirecaoMascote, EstadoMascote, TamanhoMascote } from './estado-mascote'
 import { PoseMascote } from './pose-mascote';
 
 const PASTA = 'mascote/spritesheets';
+const QUADROS = 9;
 
-function pose(
-  nome: string,
-  largura: number,
-  sobraAbaixoDosPes: number,
-  quadros: number,
-  fps: number,
-  repeticao: PoseMascote['repeticao'],
-): PoseMascote {
+interface DefinicaoDePose {
+  readonly nome: string;
+  readonly largura: number;
+  readonly sobraAbaixoDosPes: number;
+  readonly quadroDeRepouso: number;
+  readonly fps: number;
+  readonly repeticao: PoseMascote['repeticao'];
+}
+
+function pose(definicao: DefinicaoDePose): PoseMascote {
   return {
-    arquivo: `${PASTA}/${nome}.png`,
-    larguraQuadro: largura,
-    alturaQuadro: largura,
-    sobraAbaixoDosPes,
-    quadros,
-    fps,
-    repeticao,
+    arquivo: `${PASTA}/${definicao.nome}.png`,
+    larguraQuadro: definicao.largura,
+    alturaQuadro: definicao.largura,
+    sobraAbaixoDosPes: definicao.sobraAbaixoDosPes,
+    quadros: QUADROS,
+    quadroDeRepouso: definicao.quadroDeRepouso,
+    fps: definicao.fps,
+    repeticao: definicao.repeticao,
   };
 }
 
@@ -27,20 +31,37 @@ export const ESCALA_POR_TAMANHO: Readonly<Record<TamanhoMascote, number>> = {
   grande: 3,
 };
 
+const UMA_VEZ = 'uma-vez';
+const LOOP = 'loop';
+
 export const POSES: Readonly<Record<EstadoMascote, Readonly<Partial<Record<DirecaoMascote, PoseMascote>>>>> = {
-  observando: { south: pose('observando-south', 92, 14, 9, 6, 'loop') },
-  buscando: {
-    south: pose('buscando-south', 92, 14, 9, 8, 'loop'),
-    east: pose('buscando-east', 88, 13, 9, 8, 'loop'),
-    north: pose('buscando-north', 84, 12, 9, 8, 'loop'),
-    west: pose('buscando-west', 88, 13, 9, 8, 'loop'),
+  observando: {
+    south: pose({ nome: 'observando-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 4, fps: 6, repeticao: UMA_VEZ }),
   },
-  digitando: { south: pose('digitando-south', 92, 14, 9, 8, 'loop') },
-  comemorando: { south: pose('comemorando-south', 92, 14, 9, 10, 'uma-vez') },
-  erro: { south: pose('erro-south', 92, 14, 9, 8, 'uma-vez') },
-  perdido: { south: pose('perdido-south', 92, 14, 9, 8, 'uma-vez') },
-  pausado: { south: pose('pausado-south', 92, 14, 9, 4, 'loop') },
-  acenando: { south: pose('acenando-south', 92, 14, 9, 8, 'uma-vez') },
+  buscando: {
+    south: pose({ nome: 'buscando-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 0, fps: 8, repeticao: LOOP }),
+    east: pose({ nome: 'buscando-east', largura: 88, sobraAbaixoDosPes: 13, quadroDeRepouso: 0, fps: 8, repeticao: LOOP }),
+    north: pose({ nome: 'buscando-north', largura: 84, sobraAbaixoDosPes: 12, quadroDeRepouso: 0, fps: 8, repeticao: LOOP }),
+    west: pose({ nome: 'buscando-west', largura: 88, sobraAbaixoDosPes: 13, quadroDeRepouso: 0, fps: 8, repeticao: LOOP }),
+  },
+  digitando: {
+    south: pose({ nome: 'digitando-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 4, fps: 8, repeticao: LOOP }),
+  },
+  comemorando: {
+    south: pose({ nome: 'comemorando-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 6, fps: 10, repeticao: UMA_VEZ }),
+  },
+  erro: {
+    south: pose({ nome: 'erro-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 5, fps: 8, repeticao: UMA_VEZ }),
+  },
+  perdido: {
+    south: pose({ nome: 'perdido-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 6, fps: 8, repeticao: UMA_VEZ }),
+  },
+  pausado: {
+    south: pose({ nome: 'pausado-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 5, fps: 4, repeticao: UMA_VEZ }),
+  },
+  acenando: {
+    south: pose({ nome: 'acenando-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 7, fps: 8, repeticao: UMA_VEZ }),
+  },
 };
 
 export function poseDe(estado: EstadoMascote, direcao: DirecaoMascote): PoseMascote {
