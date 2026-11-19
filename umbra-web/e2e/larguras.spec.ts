@@ -13,6 +13,7 @@ const ROTAS = [
   { caminho: '/cadastro', titulo: 'Criar conta' },
   { caminho: '/conta', titulo: 'Minha conta' },
   { caminho: '/login/callback?erro=falha_no_provedor', titulo: 'Não deu para entrar' },
+  { caminho: '/rota-que-nao-existe', titulo: 'Página não encontrada' },
 ] as const;
 
 for (const { nome, largura, altura } of LARGURAS) {
