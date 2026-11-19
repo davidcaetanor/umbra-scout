@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { comSessao } from './apoio/sessao';
 
 const LARGURAS = [
   { nome: 'minima', largura: 360, altura: 780 },
@@ -9,6 +10,9 @@ const ROTAS = [
   { caminho: '/catalogo', titulo: 'Catálogo' },
   { caminho: '/monitoramentos', titulo: 'Meus monitoramentos' },
   { caminho: '/entrar', titulo: 'Entrar' },
+  { caminho: '/cadastro', titulo: 'Criar conta' },
+  { caminho: '/conta', titulo: 'Minha conta' },
+  { caminho: '/login/callback?erro=falha_no_provedor', titulo: 'Não deu para entrar' },
 ] as const;
 
 for (const { nome, largura, altura } of LARGURAS) {
@@ -17,6 +21,7 @@ for (const { nome, largura, altura } of LARGURAS) {
 
     for (const rota of ROTAS) {
       test(`${rota.titulo} sem rolagem horizontal e sem conteúdo cortado`, async ({ page }, info) => {
+        await comSessao(page);
         await page.goto(rota.caminho);
         await expect(page.getByRole('heading', { level: 1, name: rota.titulo })).toBeVisible();
 
@@ -35,7 +40,7 @@ for (const { nome, largura, altura } of LARGURAS) {
         expect(mascotesVisiveis, 'no máximo um Umbra por tela').toBeLessThanOrEqual(1);
 
         const captura = await page.screenshot({ fullPage: true });
-        await info.attach(`${nome}${rota.caminho.replace('/', '-')}`, { body: captura, contentType: 'image/png' });
+        await info.attach(`${nome}${rota.caminho.split('?')[0].replaceAll('/', '-')}`, { body: captura, contentType: 'image/png' });
       });
     }
   });

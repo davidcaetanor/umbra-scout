@@ -22,11 +22,53 @@
       </ul>
     </nav>
 
-    <a
-      routerLink="/entrar"
-      class="ms-auto inline-flex min-h-11 items-center rounded-controle border border-borda-campo px-4 text-interface hover:bg-superficie-elevada"
-    >
-      Entrar
-    </a>
+    @if (autenticado()) {
+      <div #conta class="relative ms-auto">
+        <button
+          #botaoDaConta
+          type="button"
+          class="inline-flex min-h-11 max-w-48 items-center gap-2 rounded-controle border border-borda-campo px-3 text-interface hover:bg-superficie-elevada"
+          aria-haspopup="true"
+          aria-controls="menu-da-conta"
+          [attr.aria-expanded]="menuAberto()"
+          [attr.aria-label]="nomeAcessivel()"
+          (click)="alternarMenu()"
+        >
+          <span class="truncate">{{ nomeDaConta() }}</span>
+          <svg aria-hidden="true" viewBox="0 0 20 20" class="size-4 shrink-0" fill="currentColor"><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z"/></svg>
+        </button>
+        @if (menuAberto()) {
+          <div
+            id="menu-da-conta"
+            class="absolute end-0 top-full z-20 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-bloco border-2 border-filete bg-superficie-elevada p-2"
+          >
+            @if (usuario(); as conta) {
+              <p class="truncate px-3 py-2 text-apoio text-texto-secundario">{{ conta.email }}</p>
+            }
+            <a
+              routerLink="/conta"
+              class="flex min-h-11 w-full items-center rounded-controle px-3 text-interface hover:bg-superficie"
+              (click)="fecharMenu()"
+            >
+              Minha conta
+            </a>
+            <button
+              type="button"
+              class="flex min-h-11 w-full items-center rounded-controle px-3 text-start text-interface hover:bg-superficie"
+              (click)="sair()"
+            >
+              Sair
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <a
+        routerLink="/entrar"
+        class="ms-auto inline-flex min-h-11 items-center rounded-controle border border-borda-campo px-4 text-interface hover:bg-superficie-elevada"
+      >
+        Entrar
+      </a>
+    }
   </div>
 </header>
