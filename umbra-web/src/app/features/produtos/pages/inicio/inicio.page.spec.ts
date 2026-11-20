@@ -105,15 +105,16 @@ describe('InicioPage', () => {
     expect(catalogo.pedidos).toBe(2);
   });
 
-  it('deslogado ve o convite e o Umbra no topo; logado ve o Umbra ao lado do titulo', async () => {
+  it('o Umbra aparece uma vez so, e o convite so para quem esta deslogado', async () => {
     await abrir();
     expect(tela.querySelector('a[href="/cadastro"]')).not.toBeNull();
+    expect(tela.querySelectorAll('umbra-mascote')).toHaveLength(1);
 
     autenticado.set(true);
     await harness.fixture.whenStable();
 
     expect(tela.querySelector('a[href="/cadastro"]')).toBeNull();
-    expect(tela.querySelector('#titulo-destaques')?.parentElement?.querySelector('umbra-mascote')).not.toBeNull();
+    expect(tela.querySelectorAll('umbra-mascote')).toHaveLength(1);
   });
 
   it('busca leva o termo ao catalogo e termo curto so avisa', async () => {

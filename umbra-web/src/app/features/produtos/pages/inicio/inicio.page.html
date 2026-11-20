@@ -1,9 +1,7 @@
 <section class="flex items-end justify-between gap-4" aria-labelledby="titulo-inicio">
   <div class="min-w-0 flex-1 pb-6">
-    <h1 id="titulo-inicio" class="font-titulo text-secao">O preço que você quer, na hora certa</h1>
-    <p class="mb-4 text-apoio text-texto-secundario">
-      Acompanho jogos e hardware nas lojas e aviso quando bater o seu alvo.
-    </p>
+    <h1 id="titulo-inicio" class="font-titulo text-secao">Ofertas de jogos e hardware</h1>
+    <p class="mb-4 text-apoio text-texto-secundario">Escolha um preço e o Umbra avisa quando ele chegar.</p>
     <search>
       <form class="flex flex-col gap-1" (submit)="buscar($event)">
         <div class="flex gap-2">
@@ -40,9 +38,7 @@
       </p>
     }
   </div>
-  @if (!autenticado()) {
-    <div class="hidden shrink-0 tablet:block"><umbra-mascote estado="acenando" /></div>
-  }
+  <div class="hidden shrink-0 tablet:block"><umbra-mascote [estado]="autenticado() ? 'observando' : 'acenando'" /></div>
 </section>
 
 <section
@@ -50,12 +46,7 @@
   aria-labelledby="titulo-destaques"
 >
   <div class="mb-4 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-2">
-      @if (autenticado()) {
-        <umbra-mascote estado="observando" class="-my-2 shrink-0" />
-      }
-      <h2 id="titulo-destaques" class="font-titulo text-subtitulo">Destaques Umbra</h2>
-    </div>
+    <h2 id="titulo-destaques" class="font-titulo text-subtitulo">Destaques Umbra</h2>
     <a routerLink="/catalogo" [queryParams]="parametrosDoCatalogo" class="link-texto shrink-0 text-apoio">
       Ver todos no catálogo
     </a>
