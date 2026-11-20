@@ -82,7 +82,7 @@ services:
     environment:
       IMGPROXY_ONLY_PRESETS: "true"
       IMGPROXY_PRESETS: capa=quality:75/format:webp
-      IMGPROXY_ALLOWED_SOURCES: https://assets.isthereanydeal.com/
+      IMGPROXY_ALLOWED_SOURCES: https://assets.isthereanydeal.com/,https://images.kabum.com.br/
       IMGPROXY_MAX_SRC_RESOLUTION: "2"
       IMGPROXY_MAX_SRC_FILE_SIZE: "2097152"
       IMGPROXY_WORKERS: "2"
