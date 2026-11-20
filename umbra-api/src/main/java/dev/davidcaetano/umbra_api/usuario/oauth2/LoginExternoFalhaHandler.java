@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +27,16 @@ public class LoginExternoFalhaHandler implements AuthenticationFailureHandler {
         String erro = exception instanceof OAuth2AuthenticationException oauth2
                 ? oauth2.getError().getErrorCode()
                 : exception.getClass().getSimpleName();
-        log.warn("Login externo falhou no provedor: erro={}", erro);
         EncerramentoDeSessao.encerrar(request, response);
-        response.sendRedirect(properties.retornoComErro(MotivoDeRecusa.FALHA_NO_PROVEDOR.codigo()));
+        response.sendRedirect(properties.retornoComErro(motivoDoErro(erro).codigo()));
+    }
+
+    private static MotivoDeRecusa motivoDoErro(String erro) {
+        if (OAuth2ErrorCodes.ACCESS_DENIED.equals(erro)) {
+            log.info("Login externo cancelado pelo usuario no provedor");
+            return MotivoDeRecusa.ENTRADA_CANCELADA;
+        }
+        log.warn("Login externo falhou no provedor: erro={}", erro);
+        return MotivoDeRecusa.FALHA_NO_PROVEDOR;
     }
 }

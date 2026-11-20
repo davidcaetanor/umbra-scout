@@ -733,7 +733,7 @@
     },
     "/login/oauth2/code/{provedor}" : {
       "get" : {
-        "description" : "Chamada pelo provedor, nunca pelo frontend. Redireciona ao endereço de retorno do frontend com `codigo`, a ser trocado em `POST /auth/oauth2/token`, ou com `erro`, um dos códigos: email_nao_verificado, conta_inativa, conta_vinculada_a_outra_identidade, falha_no_provedor.",
+        "description" : "Chamada pelo provedor, nunca pelo frontend. Redireciona ao endereço de retorno do frontend com `codigo`, a ser trocado em `POST /auth/oauth2/token`, ou com `erro`, um dos códigos: email_nao_verificado, conta_inativa, conta_vinculada_a_outra_identidade, falha_no_provedor, entrada_cancelada.",
         "operationId" : "receberRetornoDoProvedor",
         "parameters" : [ {
           "in" : "path",
