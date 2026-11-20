@@ -90,7 +90,7 @@ class ProdutoEntityTest {
                 dados("Counter-Strike 2", null, null, null), PRIMEIRA_COLETA);
 
         OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
-        produto.completarDadosAusentes(
+        produto.incorporarDadosDaColeta(
                 dados("Counter-Strike 2 (Nuuvem)", "Acao", "https://img/cs2.jpg", "cs2-itad"),
                 segundaColeta);
 
@@ -101,12 +101,36 @@ class ProdutoEntityTest {
     }
 
     @Test
+    void hardware_deveAcompanharACategoriaDaLojaMesmoJaTendoUma() {
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.HARDWARE,
+                dados("Cabo riser PCIe", "GPU", null, null), PRIMEIRA_COLETA);
+
+        OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(12);
+        produto.incorporarDadosDaColeta(dados("Cabo riser PCIe", "OUTROS", null, null), segundaColeta);
+
+        assertThat(produto.getCategoria()).isEqualTo("OUTROS");
+        assertThat(produto.getAtualizadoEm()).isEqualTo(segundaColeta);
+    }
+
+    @Test
+    void hardware_semCategoriaNaColeta_deveManterAAtualSemMexerNaData() {
+        ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.HARDWARE,
+                dados("Placa RTX", "GPU", null, null), PRIMEIRA_COLETA);
+
+        produto.incorporarDadosDaColeta(dados("Placa RTX", null, null, null), PRIMEIRA_COLETA.plusHours(12));
+        produto.incorporarDadosDaColeta(dados("Placa RTX", "GPU", null, null), PRIMEIRA_COLETA.plusHours(24));
+
+        assertThat(produto.getCategoria()).isEqualTo("GPU");
+        assertThat(produto.getAtualizadoEm()).isEqualTo(PRIMEIRA_COLETA);
+    }
+
+    @Test
     void deveManterValoresExistentesEAtualizadoEmInalteradoQuandoNadaEstiverAusente() {
         ProdutoEntity produto = ProdutoEntity.novo(TipoProduto.JOGO,
                 dados("Counter-Strike 2", "Acao", null, null), PRIMEIRA_COLETA);
 
         OffsetDateTime segundaColeta = PRIMEIRA_COLETA.plusHours(6);
-        produto.completarDadosAusentes(
+        produto.incorporarDadosDaColeta(
                 dados("Counter-Strike 2 (Nuuvem)", "Fps", null, null), segundaColeta);
 
         assertThat(produto.getNome()).isEqualTo("Counter-Strike 2");

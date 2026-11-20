@@ -8,7 +8,11 @@ type FaseDaCapa = 'faixa' | 'reserva' | 'sem-imagem';
   selector: 'umbra-capa-produto',
   templateUrl: './capa-produto.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex items-center justify-center overflow-hidden bg-superficie-elevada text-texto-secundario' },
+  host: {
+    class: 'flex items-center justify-center overflow-hidden text-texto-secundario',
+    '[class.bg-superficie-elevada]': '!emMoldura()',
+    '[class.bg-moldura-foto]': 'emMoldura()',
+  },
 })
 export class CapaProdutoComponent {
   readonly capa = input.required<CapaExibida | null>();
@@ -21,6 +25,7 @@ export class CapaProdutoComponent {
     computation: (capa) => (capa === null ? 'sem-imagem' : 'faixa'),
   });
   protected readonly carregada = signal(false);
+  protected readonly emMoldura = computed(() => this.capa()?.enquadramento === 'foto' && this.fase() !== 'sem-imagem');
 
   protected readonly endereco = computed(() => {
     const capa = this.capa();

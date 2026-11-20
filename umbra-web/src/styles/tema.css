@@ -21,6 +21,7 @@
   --umbra-historico-2: #54b5b1;
   --umbra-historico-3: #419798;
   --umbra-historico-4: #3d787c;
+  --umbra-moldura-foto: #e9e8e3;
 }
 
 /* Semânticos: o papel de cada cor. Componente usa só esta camada, pelas classes do Tailwind. */
@@ -39,6 +40,7 @@
   --color-destaque-fundo: var(--umbra-coroa-profunda);
   --color-apoio: var(--umbra-mare);
   --color-apoio-fundo: var(--umbra-mare-profunda);
+  --color-moldura-foto: var(--umbra-moldura-foto);
   --color-ambiente: var(--umbra-veu);
   --color-ambiente-fundo: var(--umbra-veu-profundo);
   --color-foco: var(--umbra-veu);

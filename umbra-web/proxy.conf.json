@@ -4,5 +4,11 @@
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/imagens/itad": "" }
+  },
+  "/imagens/kabum": {
+    "target": "https://images.kabum.com.br",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/imagens/kabum": "" }
   }
 }

@@ -29,6 +29,7 @@ public record KabumAtributosResponse(
         @JsonProperty("product_link")
         String productLink,
 
-        KabumPrimeResponse prime
+        KabumPrimeResponse prime,
+        KabumFotosResponse photos
 ) {
 }

@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -279,6 +281,63 @@ class KabumScraperTest extends WireMockIntegrationTestBase {
         } finally {
             pararDeCapturar(logs);
         }
+    }
+
+    private static String itemComFotos(long id, String menu, String fotos) {
+        return """
+                {
+                  "type": "product",
+                  "id": %d,
+                  "attributes": {
+                    "menu": "%s",
+                    "title": "Item %d",
+                    "price": 100.00,
+                    "price_with_discount": 90.00,
+                    "discount_percentage": 10,
+                    "available": true,
+                    "stock": 3,
+                    "is_marketplace": false,
+                    "is_openbox": false,
+                    "product_link": "item-%d",
+                    "prime": null,
+                    "photos": %s
+                  }
+                }
+                """.formatted(id, menu, id, id, fotos);
+    }
+
+    @Test
+    void coletar_deveGravarAFotoMediaGrandeECairParaAMediaQuandoFaltar() {
+        stubPagina(1, catalogoResponse(1, 1,
+                itemComFotos(1, "Hardware/SSD/SSD SATA", """
+                        {"p": ["https://images.kabum.com.br/produtos/fotos/1/1_index_p.jpg"],
+                         "m": ["https://images.kabum.com.br/produtos/fotos/1/1_index_m.jpg"],
+                         "g": ["https://images.kabum.com.br/produtos/fotos/1/1_index_g.jpg"]}"""),
+                itemComFotos(2, "Hardware/SSD/SSD SATA", """
+                        {"m": ["https://images.kabum.com.br/produtos/fotos/2/2_index_m.jpg"], "g": []}"""),
+                itemComFotos(3, "Hardware/SSD/SSD SATA", "null")));
+
+        List<OfertaColetada> ofertas = kabumScraper.coletar().ofertas();
+
+        assertThat(ofertas).extracting(OfertaColetada::imagemUrl).containsExactly(
+                "https://images.kabum.com.br/produtos/fotos/1/1_index_g.jpg",
+                "https://images.kabum.com.br/produtos/fotos/2/2_index_m.jpg",
+                null);
+    }
+
+    @Test
+    void coletar_deveMandarAcessoriosEPastaTermicaParaOutrosAntesDaCategoriaDaPeca() {
+        stubPagina(1, catalogoResponse(1, 1,
+                itemComFotos(11, "Hardware/Placa de vídeo (VGA)/Acessórios", "null"),
+                itemComFotos(12, "Hardware/SSD/Acessórios", "null"),
+                itemComFotos(13, "Hardware/Coolers/Pasta Térmica", "null"),
+                itemComFotos(14, "Hardware/Placa de vídeo (VGA)/Placa de vídeo Nvidia", "null"),
+                itemComFotos(15, "Hardware/Coolers/Water Cooler", "null")));
+
+        List<OfertaColetada> ofertas = kabumScraper.coletar().ofertas();
+
+        assertThat(ofertas).extracting(OfertaColetada::categoria)
+                .containsExactly("OUTROS", "OUTROS", "OUTROS", "GPU", "COOLER");
     }
 
     @Test

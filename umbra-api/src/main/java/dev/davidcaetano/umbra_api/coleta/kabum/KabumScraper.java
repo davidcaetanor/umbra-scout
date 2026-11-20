@@ -11,6 +11,7 @@ import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumAtributosResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
+import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumFotosResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumProdutoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -33,6 +36,9 @@ public class KabumScraper implements Scraper {
     private static final Map<String, CategoriaHardware> CATEGORIA_POR_PREFIXO_MENU = new LinkedHashMap<>();
 
     static {
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placa de vídeo (VGA)/Acessórios", CategoriaHardware.OUTROS);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/SSD/Acessórios", CategoriaHardware.OUTROS);
+        CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Coolers/Pasta Térmica", CategoriaHardware.OUTROS);
         CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Processadores", CategoriaHardware.CPU);
         CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placa de vídeo (VGA)", CategoriaHardware.GPU);
         CATEGORIA_POR_PREFIXO_MENU.put("Hardware/Placas-mãe", CategoriaHardware.PLACA_MAE);
@@ -160,7 +166,7 @@ public class KabumScraper implements Scraper {
                 atributos.title(),
                 categoria,
                 "https://www.kabum.com.br/produto/" + item.id() + "/" + atributos.productLink(),
-                null,
+                fotoDoCard(atributos.photos()),
                 null,
                 paraCentavos(atributos.priceWithDiscount()),
                 temDesconto ? paraCentavos(atributos.price()) : null,
@@ -169,6 +175,17 @@ public class KabumScraper implements Scraper {
                 OrigemColeta.KABUM_API,
                 null
         );
+    }
+
+    private static String fotoDoCard(KabumFotosResponse fotos) {
+        if (fotos == null) {
+            return null;
+        }
+        return primeiraDe(fotos.g()).orElseGet(() -> primeiraDe(fotos.m()).orElse(null));
+    }
+
+    private static Optional<String> primeiraDe(List<String> enderecos) {
+        return enderecos == null ? Optional.empty() : enderecos.stream().filter(Objects::nonNull).findFirst();
     }
 
     private static long paraCentavos(BigDecimal valor) {

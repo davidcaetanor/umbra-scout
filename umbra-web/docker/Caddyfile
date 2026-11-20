@@ -36,12 +36,17 @@
 		file_server
 	}
 
-	@imagemDoItad {
-		method GET
-		path_regexp itad ^/imagens/itad/(.+)$
+	map {path} {origem_da_imagem} {
+		~^/imagens/itad/ https://assets.isthereanydeal.com
+		~^/imagens/kabum/ https://images.kabum.com.br
 	}
-	handle @imagemDoItad {
-		rewrite * /_/capa/plain/https://assets.isthereanydeal.com/{re.itad.1}?
+
+	@imagemDeLoja {
+		method GET
+		path_regexp imagem ^/imagens/(?:itad|kabum)/(.+)$
+	}
+	handle @imagemDeLoja {
+		rewrite * /_/capa/plain/{origem_da_imagem}/{re.imagem.1}?
 		reverse_proxy {$UMBRA_WEB_IMAGENS_URL:http://imagens:8080} {
 			header_up -X-Forwarded-For
 			header_up -X-Forwarded-Host

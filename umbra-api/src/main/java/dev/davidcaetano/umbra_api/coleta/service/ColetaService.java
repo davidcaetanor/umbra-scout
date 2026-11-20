@@ -237,7 +237,7 @@ public class ColetaService {
         if (chave.chaveItad() != null) {
             ProdutoEntity produtoPorChaveItad = contexto.produtosPorChaveItad().get(chave.chaveItad());
             if (produtoPorChaveItad != null) {
-                produtoPorChaveItad.completarDadosAusentes(dados, agora);
+                produtoPorChaveItad.incorporarDadosDaColeta(dados, agora);
                 return new ResolucaoProduto(produtoPorChaveItad, false);
             }
         }
@@ -247,7 +247,7 @@ public class ColetaService {
             OfertaEntity ofertaExistente = contexto.ofertasExistentes().get(new ChaveOferta(loja.getId(), ofertaColetada.identificadorLoja()));
             if (ofertaExistente != null) {
                 ProdutoEntity produtoDaOferta = ofertaExistente.getProduto();
-                produtoDaOferta.completarDadosAusentes(dados, agora);
+                produtoDaOferta.incorporarDadosDaColeta(dados, agora);
                 return new ResolucaoProduto(produtoDaOferta, false);
             }
         }
