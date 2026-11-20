@@ -8,7 +8,17 @@ import { CatalogoService } from './catalogo.service';
 import { FiltroDaBusca } from './filtro-da-busca';
 
 const API = 'http://api.teste';
-const FILTRO: FiltroDaBusca = { termo: null, tipo: null, categoria: null, ordenacao: 'nome', pagina: 0 };
+const FILTRO: FiltroDaBusca = {
+  termo: null,
+  tipo: null,
+  categoria: null,
+  ordenacao: 'nome',
+  precoMin: null,
+  precoMax: null,
+  descontoMin: null,
+  loja: null,
+  pagina: 0,
+};
 
 function oferta(parcial: Partial<OfertaResponse> = {}): OfertaResponse {
   return {
@@ -58,6 +68,36 @@ describe('CatalogoService', () => {
     expect(params.get('ordenacao')).toBe('nome');
     expect(params.has('categoria')).toBe(false);
     expect(params.has('incluirExterno')).toBe(false);
+  });
+
+  it('converte a faixa de preco para centavos e envia desconto e loja', () => {
+    void firstValueFrom(
+      servico.buscar({ ...FILTRO, tipo: 'JOGO', ordenacao: 'melhoresOfertas', precoMin: 10, precoMax: 250, descontoMin: 50, loja: 'GOG' }),
+    );
+
+    const params = pedido('ordenacao=melhoresOfertas').request.params;
+    expect(params.get('precoMin')).toBe('1000');
+    expect(params.get('precoMax')).toBe('25000');
+    expect(params.get('descontoMin')).toBe('50');
+    expect(params.get('loja')).toBe('GOG');
+  });
+
+  it('busca os destaques e adapta como os produtos do catalogo', async () => {
+    const destaques = firstValueFrom(servico.destaques());
+    http
+      .expectOne(`${API}/produtos/destaques`)
+      .flush({ conteudo: [{ id: 7, nome: 'Jogo', tipo: 'JOGO', categoria: null, imagemUrl: null, melhorPreco: oferta() }] });
+
+    expect(await destaques).toEqual([
+      {
+        id: 7,
+        nome: 'Jogo',
+        tipo: 'JOGO',
+        capa: null,
+        categoria: null,
+        preco: { atual: 'R$ 99,90', original: null, descontoPct: null, loja: 'Steam' },
+      },
+    ]);
   });
 
   it('adapta o produto para a tela: imagem pela origem, categoria legivel e preco em reais', async () => {
