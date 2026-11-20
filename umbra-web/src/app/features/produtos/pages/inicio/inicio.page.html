@@ -1,7 +1,9 @@
 <section class="flex items-end justify-between gap-4" aria-labelledby="titulo-inicio">
   <div class="min-w-0 flex-1 pb-6">
     <h1 id="titulo-inicio" class="font-titulo text-secao">Ofertas de jogos e hardware</h1>
-    <p class="mb-4 text-apoio text-texto-secundario">Escolha um preço e o Umbra avisa quando ele chegar.</p>
+    <p class="mb-4 text-apoio text-texto-secundario">
+      Escolha um valor e o Umbra te avisa quando bater.
+    </p>
     <search>
       <form class="flex flex-col gap-1" (submit)="buscar($event)">
         <div class="flex gap-2">
@@ -19,7 +21,9 @@
             [attr.aria-describedby]="termoCurto() ? 'busca-inicio-dica' : null"
             (input)="digitar($any($event.target).value)"
           />
-          <button type="submit" class="botao-principal min-h-11 shrink-0 px-4 text-interface">Buscar</button>
+          <button type="submit" class="botao-principal min-h-11 shrink-0 px-4 text-interface">
+            Buscar
+          </button>
         </div>
         @if (termoCurto()) {
           <p id="busca-inicio-dica" class="text-dado text-texto-secundario">
@@ -34,11 +38,14 @@
     </search>
     @if (!autenticado()) {
       <p class="mt-3 text-apoio text-texto-secundario">
-        <a routerLink="/cadastro" class="link-texto">Crie uma conta</a> para receber o aviso quando o preço cair.
+        <a routerLink="/cadastro" class="link-texto">Crie uma conta</a> para receber o aviso quando
+        o preço cair.
       </p>
     }
   </div>
-  <div class="hidden shrink-0 tablet:block"><umbra-mascote [estado]="autenticado() ? 'observando' : 'acenando'" /></div>
+  <div class="hidden shrink-0 tablet:block">
+    <umbra-mascote [estado]="autenticado() ? 'observando' : 'acenando'" />
+  </div>
 </section>
 
 <section
@@ -47,7 +54,11 @@
 >
   <div class="mb-4 flex items-center justify-between gap-3">
     <h2 id="titulo-destaques" class="font-titulo text-subtitulo">Destaques Umbra</h2>
-    <a routerLink="/catalogo" [queryParams]="parametrosDoCatalogo" class="link-texto shrink-0 text-apoio">
+    <a
+      routerLink="/catalogo"
+      [queryParams]="parametrosDoCatalogo"
+      class="link-texto shrink-0 text-apoio"
+    >
       Ver todos no catálogo
     </a>
   </div>
@@ -57,7 +68,9 @@
       <span class="sr-only">Carregando destaques…</span>
       <ul class="grid gap-3 tablet:grid-cols-2 largo:grid-cols-4" aria-hidden="true">
         @for (vaga of [1, 2, 3, 4]; track vaga) {
-          <li class="h-24 rounded-bloco bg-superficie-elevada motion-safe:animate-pulse tablet:h-56"></li>
+          <li
+            class="h-24 rounded-bloco bg-superficie-elevada motion-safe:animate-pulse tablet:h-56"
+          ></li>
         }
       </ul>
     </div>
@@ -71,7 +84,10 @@
       <ul class="grid gap-3 tablet:grid-cols-2 largo:grid-cols-4">
         @for (produto of produtos(); track produto.id; let posicao = $index) {
           <li>
-            <umbra-card-produto [produto]="produto" [prioritaria]="posicao < cardsNaPrimeiraFileira" />
+            <umbra-card-produto
+              [produto]="produto"
+              [prioritaria]="posicao < cardsNaPrimeiraFileira"
+            />
           </li>
         }
       </ul>
