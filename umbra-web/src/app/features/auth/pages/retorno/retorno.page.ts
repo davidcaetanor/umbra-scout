@@ -18,6 +18,7 @@ const MENSAGEM_POR_MOTIVO: Readonly<Record<string, string>> = {
   conta_vinculada_a_outra_identidade:
     'Este email já está ligado a outra conta desse provedor. Entre com a conta que você usou antes, ou com email e senha.',
   falha_no_provedor: 'O provedor não respondeu como esperado. Tente de novo em instantes.',
+  entrada_cancelada: 'Você cancelou a entrada. Escolha uma forma de entrar quando quiser.',
   'codigo-invalido': 'O acesso expirou antes de ser confirmado. Tente entrar de novo.',
   falha: 'Não foi possível confirmar seu acesso agora. Tente de novo em instantes.',
 };
