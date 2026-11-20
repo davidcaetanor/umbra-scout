@@ -1,8 +1,17 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { DESTINO_PADRAO } from '../../navegacao/destino-interno';
 import { ITENS_NAVEGACAO } from '../../navegacao/itens-navegacao';
 import { SessaoService } from '../../sessao';
+
+const ROTAS_SEM_BUSCA_NO_CABECALHO = ['/', '/catalogo', '/entrar', '/cadastro', '/login/callback'];
+const TAMANHO_MINIMO_DO_TERMO = 3;
+
+function caminhoDe(url: string): string {
+  return url.split(/[?#]/)[0] || '/';
+}
 
 @Component({
   selector: 'umbra-cabecalho',
@@ -26,6 +35,26 @@ export class CabecalhoComponent {
   protected readonly nomeDaConta = computed(() => this.usuario()?.nome ?? 'Conta');
   protected readonly nomeAcessivel = computed(() => `Conta de ${this.usuario()?.nomeCompleto ?? 'usuário'}`);
   protected readonly menuAberto = signal(false);
+
+  private readonly caminho = toSignal(
+    this.router.events.pipe(
+      filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd),
+      map((evento) => caminhoDe(evento.urlAfterRedirects)),
+    ),
+    { initialValue: caminhoDe(this.router.url) },
+  );
+  protected readonly mostrarBusca = computed(() => !ROTAS_SEM_BUSCA_NO_CABECALHO.includes(this.caminho()));
+
+  protected async buscar(evento: Event, campo: HTMLInputElement): Promise<void> {
+    evento.preventDefault();
+    const termo = campo.value.trim();
+    if (termo.length < TAMANHO_MINIMO_DO_TERMO) {
+      campo.reportValidity();
+      return;
+    }
+    campo.value = '';
+    await this.router.navigate(['/catalogo'], { queryParams: { nome: termo } });
+  }
 
   protected alternarMenu(): void {
     this.menuAberto.update((aberto) => !aberto);

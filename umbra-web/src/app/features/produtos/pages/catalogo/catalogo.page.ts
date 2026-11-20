@@ -11,16 +11,27 @@ import { CardExternoComponent } from '../../components/card-externo/card-externo
 import { CardProdutoComponent } from '../../components/card-produto/card-produto.component';
 import { PaginacaoComponent } from '../../components/paginacao/paginacao.component';
 import { CatalogoService } from '../../data/catalogo.service';
-import { CategoriaDeHardware, FiltroDaBusca, OrdenacaoDaBusca, TipoDeProduto } from '../../data/filtro-da-busca';
+import {
+  CategoriaDeHardware,
+  CodigoDaLoja,
+  DESCONTOS_MINIMOS,
+  FiltroDaBusca,
+  ORDENACOES_SO_DE_JOGO,
+  OrdenacaoDaBusca,
+  TipoDeProduto,
+} from '../../data/filtro-da-busca';
 import { ResultadoDaBusca } from '../../data/resultado-da-busca';
-import { ROTULO_DA_CATEGORIA, ROTULO_DA_ORDENACAO, ROTULO_DO_TIPO } from '../../data/rotulos';
+import { ROTULO_DA_CATEGORIA, ROTULO_DA_LOJA, ROTULO_DA_ORDENACAO, ROTULO_DO_TIPO } from '../../data/rotulos';
 import { EstadoDaBuscaExterna } from './estado-da-busca-externa';
 import {
   FILTRO_INICIAL,
   filtroDaUrl,
+  lojasPara,
   mesmoFiltro,
+  normalizarFiltro,
   normalizarTermo,
   parametrosDoFiltro,
+  reaisInteiros,
   situacaoDoTermo,
 } from './filtro-da-url';
 
@@ -43,12 +54,26 @@ export class CatalogoPage {
 
   protected readonly tipos = Object.entries(ROTULO_DO_TIPO) as [TipoDeProduto, string][];
   protected readonly categorias = Object.entries(ROTULO_DA_CATEGORIA) as [CategoriaDeHardware, string][];
-  protected readonly ordenacoes = Object.entries(ROTULO_DA_ORDENACAO) as [OrdenacaoDaBusca, string][];
+  protected readonly descontos = DESCONTOS_MINIMOS;
+  protected readonly rotuloDaLoja = ROTULO_DA_LOJA;
 
   protected readonly filtro = toSignal(
     this.rota.queryParamMap.pipe(map(filtroDaUrl), distinctUntilChanged(mesmoFiltro)),
     { initialValue: FILTRO_INICIAL },
   );
+
+  protected readonly ordenacoes = computed(() =>
+    (Object.entries(ROTULO_DA_ORDENACAO) as [OrdenacaoDaBusca, string][]).filter(
+      ([ordenacao]) => this.filtro().tipo === 'JOGO' || !ORDENACOES_SO_DE_JOGO.includes(ordenacao),
+    ),
+  );
+  protected readonly lojas = computed(() => lojasPara(this.filtro().tipo));
+  protected readonly filtrosAtivos = computed(() => {
+    const filtro = this.filtro();
+    return [filtro.precoMin, filtro.precoMax, filtro.descontoMin, filtro.loja].filter((valor) => valor !== null).length;
+  });
+  protected readonly faixaInvertida = signal(false);
+  protected readonly filtrosVisiveis = signal(false);
 
   protected readonly textoDigitado = signal(this.filtro().termo ?? '');
   protected readonly situacaoDoTexto = computed(() => situacaoDoTermo(this.textoDigitado()));
@@ -153,6 +178,24 @@ export class CatalogoPage {
     this.aplicar({ ordenacao: valor as OrdenacaoDaBusca, pagina: 0 });
   }
 
+  protected escolherPreco(campo: 'precoMin' | 'precoMax', valor: string): void {
+    const reais = reaisInteiros(valor);
+    const proximo = { ...this.filtro(), [campo]: reais };
+    const invertida = proximo.precoMin !== null && proximo.precoMax !== null && proximo.precoMax < proximo.precoMin;
+    this.faixaInvertida.set(invertida);
+    if (!invertida) {
+      this.aplicar({ [campo]: reais, pagina: 0 });
+    }
+  }
+
+  protected escolherDesconto(valor: string): void {
+    this.aplicar({ descontoMin: valor === '' ? null : Number(valor), pagina: 0 });
+  }
+
+  protected escolherLoja(valor: string): void {
+    this.aplicar({ loja: (valor || null) as CodigoDaLoja | null, pagina: 0 });
+  }
+
   protected irParaPagina(pagina: number): void {
     this.aplicar({ pagina });
   }
@@ -163,6 +206,7 @@ export class CatalogoPage {
 
   protected limparFiltros(): void {
     this.textoDigitado.set('');
+    this.faixaInvertida.set(false);
     this.aplicar(FILTRO_INICIAL);
   }
 
@@ -192,7 +236,7 @@ export class CatalogoPage {
   }
 
   private aplicar(mudanca: Partial<FiltroDaBusca>, substituir = false): void {
-    const proximo = { ...this.filtro(), ...mudanca };
+    const proximo = normalizarFiltro({ ...this.filtro(), ...mudanca });
     if (mesmoFiltro(proximo, this.filtro())) {
       return;
     }

@@ -8,7 +8,7 @@ import { PrecoProdutoComponent } from '../preco-produto/preco-produto.component'
   imports: [CapaProdutoComponent, PrecoProdutoComponent],
   templateUrl: './card-produto.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  host: { class: 'block h-full' },
 })
 export class CardProdutoComponent {
   readonly produto = input.required<ProdutoExibido>();

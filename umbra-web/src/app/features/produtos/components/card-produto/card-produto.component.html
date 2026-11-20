@@ -9,7 +9,7 @@
     class="aspect-[300/140] w-30 shrink-0 self-start rounded-peca tablet:w-full tablet:rounded-none"
   />
   <div class="flex min-w-0 flex-1 flex-col gap-1 tablet:p-3">
-    <h3 class="break-words text-interface font-medium">{{ produto().nome }}</h3>
+    <h3 class="line-clamp-2 min-h-[2lh] break-words text-interface font-medium" [title]="produto().nome">{{ produto().nome }}</h3>
     @if (produto().categoria; as categoria) {
       <p class="text-dado text-texto-secundario">{{ categoria }}</p>
     }

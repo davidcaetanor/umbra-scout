@@ -77,6 +77,20 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void promocaoJaEncerrada_naoEntraNasMelhoresOfertas() throws Exception {
+        long vigente = jogoComPreco("t44b-a5 Vigente", "STEAM", 4000, 8000, 50);
+        long encerrada = produto("t44b-a5 Encerrada", "JOGO");
+        jdbc.update("""
+                INSERT INTO preco (oferta_id, valor_centavos, valor_original_centavos, desconto_pct, disponivel,
+                                   origem_coleta, expira_em, coletado_em)
+                VALUES (?, 1000, 9000, 89, true, 'ITAD_API', ?, ?)
+                """, oferta(encerrada, "STEAM"), Timestamp.from(AGORA.minus(Duration.ofHours(2))),
+                Timestamp.from(AGORA.minus(Duration.ofDays(1))));
+
+        assertThat(ids(buscar("t44b-a5", "melhoresOfertas"))).containsExactly(vigente);
+    }
+
+    @Test
     void jogoGratuitoEmPromocao_entraSemErroDeDivisao() throws Exception {
         long gratis = jogoComPreco("t44b-a4 Gratis", "EPIC", 0, 7000, 100);
 

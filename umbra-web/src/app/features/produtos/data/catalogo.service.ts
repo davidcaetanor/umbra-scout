@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiConfiguration } from '../../../api/api-configuration';
 import { BuscarProdutos$Params, buscarProdutos } from '../../../api/fn/catalogo/buscar-produtos';
+import { destaquesDoCatalogo } from '../../../api/fn/catalogo/destaques-do-catalogo';
 import { BuscaProdutosResponse } from '../../../api/models/busca-produtos-response';
 import { OfertaResponse } from '../../../api/models/oferta-response';
 import { ProdutoExternoResponse } from '../../../api/models/produto-externo-response';
@@ -31,10 +32,18 @@ export class CatalogoService {
     );
   }
 
+  destaques(): Observable<readonly ProdutoDoCatalogo[]> {
+    return destaquesDoCatalogo(this.http, this.configuracao.rootUrl).pipe(
+      map((resposta) => resposta.body.conteudo.map(paraProduto)),
+    );
+  }
+
   private chamar(parametros: BuscarProdutos$Params): Observable<BuscaProdutosResponse> {
     return buscarProdutos(this.http, this.configuracao.rootUrl, parametros).pipe(map((resposta) => resposta.body));
   }
 }
+
+const CENTAVOS_POR_REAL = 100;
 
 function paraParametros(filtro: FiltroDaBusca): BuscarProdutos$Params {
   return {
@@ -42,6 +51,10 @@ function paraParametros(filtro: FiltroDaBusca): BuscarProdutos$Params {
     ...(filtro.tipo === null ? {} : { tipo: filtro.tipo }),
     ...(filtro.categoria === null ? {} : { categoria: filtro.categoria }),
     ordenacao: filtro.ordenacao,
+    ...(filtro.precoMin === null ? {} : { precoMin: filtro.precoMin * CENTAVOS_POR_REAL }),
+    ...(filtro.precoMax === null ? {} : { precoMax: filtro.precoMax * CENTAVOS_POR_REAL }),
+    ...(filtro.descontoMin === null ? {} : { descontoMin: filtro.descontoMin }),
+    ...(filtro.loja === null ? {} : { loja: filtro.loja }),
     page: filtro.pagina,
   };
 }

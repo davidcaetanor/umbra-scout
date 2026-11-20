@@ -22,6 +22,26 @@
       </ul>
     </nav>
 
+    @if (mostrarBusca()) {
+      <search class="ms-auto hidden min-w-0 flex-1 justify-end tablet:flex">
+        <form class="w-full max-w-64" (submit)="buscar($event, campoDeBusca)">
+          <label for="busca-cabecalho" class="sr-only">Buscar no catálogo</label>
+          <input
+            #campoDeBusca
+            id="busca-cabecalho"
+            type="search"
+            enterkeyhint="search"
+            autocomplete="off"
+            spellcheck="false"
+            minlength="3"
+            maxlength="100"
+            placeholder="Buscar no catálogo"
+            class="min-h-10 w-full rounded-controle border border-borda-campo bg-fundo px-3 text-interface"
+          />
+        </form>
+      </search>
+    }
+
     @if (autenticado()) {
       <div #conta class="relative ms-auto">
         <button

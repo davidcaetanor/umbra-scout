@@ -9,6 +9,7 @@ import { ProdutoDoCatalogo } from '../../data/produto-do-catalogo';
 import { ProdutoExterno } from '../../data/produto-externo';
 import { ResultadoDaBusca } from '../../data/resultado-da-busca';
 import { CatalogoPage } from './catalogo.page';
+import { FILTRO_INICIAL } from './filtro-da-url';
 
 const PRODUTO: ProdutoDoCatalogo = {
   id: 1,
@@ -85,6 +86,77 @@ describe('CatalogoPage', () => {
 
   afterEach(() => vi.useRealTimers());
 
+  function escolher(seletor: string, valor: string): void {
+    const campo = tela.querySelector<HTMLInputElement | HTMLSelectElement>(seletor)!;
+    campo.value = valor;
+    campo.dispatchEvent(new Event('change'));
+  }
+
+  it('ordenacoes de oferta e desconto minimo so aparecem para jogos', async () => {
+    await abrir('/catalogo?tipo=HARDWARE');
+    const opcoes = () => [...tela.querySelectorAll('#ordenacao option')].map((opcao) => opcao.getAttribute('value'));
+
+    expect(opcoes()).toEqual(['nome', 'menorPreco']);
+    expect(tela.querySelector('#desconto')).toBeNull();
+    expect([...tela.querySelectorAll('#loja option')].map((o) => o.getAttribute('value'))).toEqual(['', 'KABUM', 'TERABYTE']);
+
+    await harness.navigateByUrl('/catalogo?tipo=JOGO');
+    expect(opcoes()).toEqual(['nome', 'menorPreco', 'melhoresOfertas', 'maiorDesconto']);
+    expect(tela.querySelector('#desconto')).not.toBeNull();
+  });
+
+  it('faixa de preco, desconto e loja vao para a URL e voltam para a primeira pagina', async () => {
+    await abrir('/catalogo?tipo=JOGO&pagina=3');
+
+    escolher('#preco-min', '10');
+    await harness.fixture.whenStable();
+    escolher('#preco-max', '200');
+    await harness.fixture.whenStable();
+    escolher('#desconto', '50');
+    await harness.fixture.whenStable();
+    escolher('#loja', 'STEAM');
+    await harness.fixture.whenStable();
+
+    expect(url()).toBe('/catalogo?tipo=JOGO&precoMin=10&precoMax=200&descontoMin=50&loja=STEAM');
+    expect(catalogo.buscas.at(-1)).toMatchObject({ precoMin: 10, precoMax: 200, descontoMin: 50, loja: 'STEAM', pagina: 0 });
+  });
+
+  it('faixa invertida avisa no campo e nao busca', async () => {
+    await abrir('/catalogo?precoMin=300');
+    const buscasAntes = catalogo.buscas.length;
+
+    escolher('#preco-max', '100');
+    await harness.fixture.whenStable();
+
+    expect(tela.querySelector('#preco-dica')?.textContent).toContain('maior que o de');
+    expect(tela.querySelector('#preco-max')?.getAttribute('aria-invalid')).toBe('true');
+    expect(catalogo.buscas.length).toBe(buscasAntes);
+    expect(url()).toBe('/catalogo?precoMin=300');
+  });
+
+  it('trocar de jogo para hardware tira o criterio de oferta, o desconto e a loja de jogo', async () => {
+    await abrir('/catalogo?tipo=JOGO&ordenacao=melhoresOfertas&descontoMin=50&loja=GOG');
+
+    [...tela.querySelectorAll<HTMLButtonElement>('button.chip')].find((botao) => botao.textContent?.includes('Hardware'))!.click();
+    await harness.fixture.whenStable();
+
+    expect(url()).toBe('/catalogo?tipo=HARDWARE');
+  });
+
+  it('no celular os filtros ficam recolhidos e o botao conta os ativos', async () => {
+    await abrir('/catalogo?tipo=JOGO&precoMin=10&loja=GOG');
+    const botao = tela.querySelector<HTMLButtonElement>('button[aria-controls="filtros-da-busca"]')!;
+
+    expect(botao.textContent?.trim()).toBe('Filtros (2)');
+    expect(botao.getAttribute('aria-expanded')).toBe('false');
+
+    botao.click();
+    await harness.fixture.whenStable();
+
+    expect(botao.getAttribute('aria-expanded')).toBe('true');
+    expect(tela.querySelector('#filtros-da-busca')?.classList).toContain('grid');
+  });
+
   it('mostra o esqueleto, depois os cards e anuncia a contagem', async () => {
     await abrir();
 
@@ -100,7 +172,7 @@ describe('CatalogoPage', () => {
   it('le os filtros da URL e ignora os invalidos', async () => {
     await abrir('/catalogo?nome=hollow&tipo=FILME&pagina=2');
 
-    expect(catalogo.buscas[0]).toEqual({ termo: 'hollow', tipo: null, categoria: null, ordenacao: 'nome', pagina: 1 });
+    expect(catalogo.buscas[0]).toEqual({ ...FILTRO_INICIAL, termo: 'hollow', pagina: 1 });
   });
 
   it('busca uma vez so depois da pausa na digitacao e troca a URL sem empilhar historico', async () => {

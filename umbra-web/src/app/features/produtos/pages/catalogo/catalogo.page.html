@@ -58,7 +58,7 @@
             class="min-h-11 w-full rounded-controle border border-borda-campo bg-fundo px-3"
             (change)="escolherOrdenacao($any($event.target).value)"
           >
-            @for (ordenacao of ordenacoes; track ordenacao[0]) {
+            @for (ordenacao of ordenacoes(); track ordenacao[0]) {
               <option [value]="ordenacao[0]" [selected]="filtro().ordenacao === ordenacao[0]">Ordenar: {{ ordenacao[1] }}</option>
             }
           </select>
@@ -93,7 +93,87 @@
           </button>
         }
       </div>
+      <button
+        type="button"
+        class="botao-secundario inline-flex min-h-9 items-center px-3 text-apoio tablet:hidden"
+        aria-controls="filtros-da-busca"
+        [attr.aria-expanded]="filtrosVisiveis()"
+        (click)="filtrosVisiveis.set(!filtrosVisiveis())"
+      >
+        Filtros{{ filtrosAtivos() > 0 ? ' (' + filtrosAtivos() + ')' : '' }}
+      </button>
       <p role="status" class="ms-auto text-apoio text-texto-secundario">{{ contagem() }}</p>
+    </div>
+
+    <div
+      id="filtros-da-busca"
+      class="hidden gap-3 tablet:grid tablet:grid-cols-3"
+      [class.grid]="filtrosVisiveis()"
+    >
+      <fieldset class="flex min-w-0 flex-col gap-1">
+        <legend class="text-dado text-texto-secundario">Preço em reais</legend>
+        <div class="flex gap-2">
+          <label for="preco-min" class="sr-only">Preço mínimo em reais</label>
+          <input
+            id="preco-min"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="6"
+            placeholder="De"
+            class="min-h-11 w-full min-w-0 rounded-controle border border-borda-campo bg-fundo px-3"
+            [value]="filtro().precoMin ?? ''"
+            [attr.aria-describedby]="faixaInvertida() ? 'preco-dica' : null"
+            [attr.aria-invalid]="faixaInvertida()"
+            (change)="escolherPreco('precoMin', $any($event.target).value)"
+          />
+          <label for="preco-max" class="sr-only">Preço máximo em reais</label>
+          <input
+            id="preco-max"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="6"
+            placeholder="Até"
+            class="min-h-11 w-full min-w-0 rounded-controle border border-borda-campo bg-fundo px-3"
+            [value]="filtro().precoMax ?? ''"
+            [attr.aria-describedby]="faixaInvertida() ? 'preco-dica' : null"
+            [attr.aria-invalid]="faixaInvertida()"
+            (change)="escolherPreco('precoMax', $any($event.target).value)"
+          />
+        </div>
+        @if (faixaInvertida()) {
+          <p id="preco-dica" class="text-dado text-texto-erro">O valor de "até" precisa ser maior que o de "de".</p>
+        }
+      </fieldset>
+      @if (filtro().tipo === 'JOGO') {
+        <div class="flex min-w-0 flex-col gap-1">
+          <label for="desconto" class="text-dado text-texto-secundario">Desconto mínimo</label>
+          <select
+            id="desconto"
+            class="min-h-11 w-full rounded-controle border border-borda-campo bg-fundo px-3"
+            (change)="escolherDesconto($any($event.target).value)"
+          >
+            <option value="" [selected]="filtro().descontoMin === null">Qualquer</option>
+            @for (desconto of descontos; track desconto) {
+              <option [value]="desconto" [selected]="filtro().descontoMin === desconto">{{ desconto }}% ou mais</option>
+            }
+          </select>
+        </div>
+      }
+      <div class="flex min-w-0 flex-col gap-1">
+        <label for="loja" class="text-dado text-texto-secundario">Loja</label>
+        <select
+          id="loja"
+          class="min-h-11 w-full rounded-controle border border-borda-campo bg-fundo px-3"
+          (change)="escolherLoja($any($event.target).value)"
+        >
+          <option value="" [selected]="filtro().loja === null">Todas</option>
+          @for (loja of lojas(); track loja) {
+            <option [value]="loja" [selected]="filtro().loja === loja">{{ rotuloDaLoja[loja] }}</option>
+          }
+        </select>
+      </div>
     </div>
   </search>
 
