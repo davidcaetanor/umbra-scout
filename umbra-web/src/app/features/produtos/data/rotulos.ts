@@ -11,6 +11,7 @@ export const ROTULO_DA_CATEGORIA: Readonly<Record<CategoriaDeHardware, string>> 
   COOLER: 'Cooler',
   KIT_HARDWARE: 'Kit de hardware',
   PLACA_INTERFACE: 'Placa de interface',
+  OUTROS: 'Outros',
 };
 
 export const ROTULO_DO_TIPO: Readonly<Record<TipoDeProduto, string>> = {
