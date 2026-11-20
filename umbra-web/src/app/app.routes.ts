@@ -3,7 +3,11 @@ import { PaginaNaoEncontradaPage } from './core/erro/pagina-nao-encontrada/pagin
 import { autenticadoGuard } from './core/sessao';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'catalogo' },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadChildren: () => import('./features/produtos/produtos.routes').then((m) => m.INICIO_ROUTES),
+  },
   { path: 'catalogo', loadChildren: () => import('./features/produtos/produtos.routes').then((m) => m.PRODUTOS_ROUTES) },
   {
     path: 'monitoramentos',
