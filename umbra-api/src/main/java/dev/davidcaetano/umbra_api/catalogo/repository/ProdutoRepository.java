@@ -48,7 +48,8 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                AND (CAST(:precoMin AS BIGINT) IS NULL OR m.valor_centavos >= CAST(:precoMin AS BIGINT))
                AND (CAST(:precoMax AS BIGINT) IS NULL OR m.valor_centavos <= CAST(:precoMax AS BIGINT))
                AND (CAST(:descontoMin AS INTEGER) IS NULL OR m.desconto_pct >= CAST(:descontoMin AS INTEGER))
-               AND (CAST(:ordenacao AS TEXT) <> 'melhoresOfertas' OR m.valor_original_centavos > m.valor_centavos)
+               AND (CAST(:ordenacao AS TEXT) <> 'melhoresOfertas'
+                    OR (m.valor_original_centavos > m.valor_centavos AND (m.expira_em IS NULL OR m.expira_em > now())))
             """;
 
     String ORDEM_DO_CATALOGO = """
