@@ -18,6 +18,8 @@ spring:
     hibernate:
       ddl-auto: validate
 umbra:
+  ofertas:
+    validade-dos-destaques: 0s
   cors:
     origens: http://localhost:4200
   login-externo:
