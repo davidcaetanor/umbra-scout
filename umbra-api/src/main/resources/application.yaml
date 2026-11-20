@@ -97,6 +97,12 @@ umbra:
       cache-ttl: 6m
       prazo: 4s
       maximo-resultados: 5
+  ofertas:
+    peso-economia: 0.7
+    referencia-economia-centavos: 11342
+    destaques: 8
+    candidatos-dos-destaques: 100
+    validade-dos-destaques: 10m
   monitoramento:
     dias-para-descontinuado: 180
     externo:

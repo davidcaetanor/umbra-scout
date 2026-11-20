@@ -13,37 +13,62 @@ import java.util.Optional;
 
 public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
 
-    String FILTRO_DA_LISTAGEM = """
-             WHERE p.ativo
-               AND (CAST(:tipo AS TEXT) IS NULL OR p.tipo = :tipo)
-               AND (CAST(:categoria AS TEXT) IS NULL OR p.categoria = :categoria)
-            """;
-
-    String FILTRO_DO_CATALOGO = FILTRO_DA_LISTAGEM + """
-               AND normalizar_busca(p.nome) LIKE '%' || normalizar_busca(:termo) || '%'
-            """;
-
-    String RESUMO_COM_MELHOR_OFERTA = """
+    String COLUNAS_DO_RESUMO = """
             SELECT p.id, p.nome, p.tipo, p.categoria, p.imagem_url AS imagemUrl,
                    l.nome AS loja, m.url, m.valor_centavos AS valorCentavos,
                    m.valor_original_centavos AS valorOriginalCentavos, m.desconto_pct AS descontoPct,
                    m.expira_em AS expiraEm, m.coletado_em AS coletadoEm
+            """;
+
+    String MELHOR_OFERTA_DO_PRODUTO = """
               FROM produto p
               LEFT JOIN vw_melhor_oferta_atual m ON m.produto_id = p.id
               LEFT JOIN loja l ON l.id = m.loja_id
             """;
 
-    String CONSULTA_DA_LISTAGEM = RESUMO_COM_MELHOR_OFERTA + FILTRO_DA_LISTAGEM;
+    String OFERTA_DA_LOJA = """
+              FROM produto p
+              JOIN (SELECT DISTINCT ON (o.produto_id)
+                           o.produto_id, o.loja_id, o.url, v.valor_centavos, v.valor_original_centavos,
+                           v.desconto_pct, v.expira_em, v.coletado_em
+                      FROM oferta o
+                      JOIN vw_preco_atual v ON v.oferta_id = o.id
+                      JOIN loja lj ON lj.id = o.loja_id
+                     WHERE o.ativa AND v.disponivel AND lj.codigo = :loja
+                     ORDER BY o.produto_id, v.valor_centavos, o.id) m ON m.produto_id = p.id
+              JOIN loja l ON l.id = m.loja_id
+            """;
 
-    String CONTAGEM_DA_LISTAGEM = "SELECT count(*) FROM produto p" + FILTRO_DA_LISTAGEM;
+    String FILTRO_DO_CATALOGO = """
+             WHERE p.ativo
+               AND (CAST(:tipo AS TEXT) IS NULL OR p.tipo = :tipo)
+               AND (CAST(:categoria AS TEXT) IS NULL OR p.categoria = :categoria)
+               AND (CAST(:termo AS TEXT) IS NULL
+                    OR normalizar_busca(p.nome) LIKE '%' || normalizar_busca(CAST(:termo AS TEXT)) || '%')
+               AND (CAST(:precoMin AS BIGINT) IS NULL OR m.valor_centavos >= CAST(:precoMin AS BIGINT))
+               AND (CAST(:precoMax AS BIGINT) IS NULL OR m.valor_centavos <= CAST(:precoMax AS BIGINT))
+               AND (CAST(:descontoMin AS INTEGER) IS NULL OR m.desconto_pct >= CAST(:descontoMin AS INTEGER))
+               AND (CAST(:ordenacao AS TEXT) <> 'melhoresOfertas' OR m.valor_original_centavos > m.valor_centavos)
+            """;
 
-    String CONSULTA_DO_CATALOGO = RESUMO_COM_MELHOR_OFERTA + FILTRO_DO_CATALOGO;
-
-    String CONTAGEM_DO_CATALOGO = "SELECT count(*) FROM produto p" + FILTRO_DO_CATALOGO;
-
-    String ORDEM_POR_NOME = " ORDER BY p.nome, p.id";
-
-    String ORDEM_POR_MENOR_PRECO = " ORDER BY m.valor_centavos ASC NULLS LAST, p.id";
+    String ORDEM_DO_CATALOGO = """
+             ORDER BY
+               CASE WHEN CAST(:ordenacao AS TEXT) = 'melhoresOfertas' THEN
+                      CAST(:pesoEconomia AS DOUBLE PRECISION)
+                        * ln(1 + (m.valor_original_centavos - m.valor_centavos))
+                        / CAST(:logaritmoDaReferencia AS DOUBLE PRECISION)
+                    + (1 - CAST(:pesoEconomia AS DOUBLE PRECISION))
+                        * COALESCE((SELECT min(pr.valor_centavos)
+                                      FROM preco pr
+                                      JOIN oferta om ON om.id = pr.oferta_id
+                                     WHERE om.produto_id = p.id AND om.ativa AND pr.disponivel)
+                                   / NULLIF(CAST(m.valor_centavos AS DOUBLE PRECISION), 0), 1)
+               END DESC NULLS LAST,
+               CASE WHEN CAST(:ordenacao AS TEXT) = 'maiorDesconto' THEN m.desconto_pct END DESC NULLS LAST,
+               CASE WHEN CAST(:ordenacao AS TEXT) = 'menorPreco' THEN m.valor_centavos END ASC NULLS LAST,
+               CASE WHEN CAST(:ordenacao AS TEXT) = 'nome' THEN p.nome END,
+               p.id
+            """;
 
     List<ProdutoEntity> findByChaveItadIn(Collection<String> chavesItad);
 
@@ -51,29 +76,30 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
 
     Optional<ProdutoEntity> findByChaveItad(String chaveItad);
 
-    @Query(value = CONSULTA_DA_LISTAGEM + ORDEM_POR_NOME,
-            countQuery = CONTAGEM_DA_LISTAGEM, nativeQuery = true)
-    Page<ProdutoResumoProjecao> listarCatalogoPorNome(@Param("tipo") String tipo,
-                                                      @Param("categoria") String categoria,
-                                                      Pageable paginacao);
+    @Query(value = COLUNAS_DO_RESUMO + MELHOR_OFERTA_DO_PRODUTO + FILTRO_DO_CATALOGO + ORDEM_DO_CATALOGO,
+            countQuery = "SELECT count(*)" + MELHOR_OFERTA_DO_PRODUTO + FILTRO_DO_CATALOGO, nativeQuery = true)
+    Page<ProdutoResumoProjecao> buscarCatalogo(@Param("termo") String termo,
+                                               @Param("tipo") String tipo,
+                                               @Param("categoria") String categoria,
+                                               @Param("precoMin") Long precoMin,
+                                               @Param("precoMax") Long precoMax,
+                                               @Param("descontoMin") Integer descontoMin,
+                                               @Param("ordenacao") String ordenacao,
+                                               @Param("pesoEconomia") double pesoEconomia,
+                                               @Param("logaritmoDaReferencia") double logaritmoDaReferencia,
+                                               Pageable paginacao);
 
-    @Query(value = CONSULTA_DA_LISTAGEM + ORDEM_POR_MENOR_PRECO,
-            countQuery = CONTAGEM_DA_LISTAGEM, nativeQuery = true)
-    Page<ProdutoResumoProjecao> listarCatalogoPorMenorPreco(@Param("tipo") String tipo,
-                                                            @Param("categoria") String categoria,
-                                                            Pageable paginacao);
-
-    @Query(value = CONSULTA_DO_CATALOGO + ORDEM_POR_NOME,
-            countQuery = CONTAGEM_DO_CATALOGO, nativeQuery = true)
-    Page<ProdutoResumoProjecao> buscarCatalogoPorNome(@Param("termo") String termo,
-                                                      @Param("tipo") String tipo,
-                                                      @Param("categoria") String categoria,
-                                                      Pageable paginacao);
-
-    @Query(value = CONSULTA_DO_CATALOGO + ORDEM_POR_MENOR_PRECO,
-            countQuery = CONTAGEM_DO_CATALOGO, nativeQuery = true)
-    Page<ProdutoResumoProjecao> buscarCatalogoPorMenorPreco(@Param("termo") String termo,
-                                                            @Param("tipo") String tipo,
-                                                      @Param("categoria") String categoria,
-                                                            Pageable paginacao);
+    @Query(value = COLUNAS_DO_RESUMO + OFERTA_DA_LOJA + FILTRO_DO_CATALOGO + ORDEM_DO_CATALOGO,
+            countQuery = "SELECT count(*)" + OFERTA_DA_LOJA + FILTRO_DO_CATALOGO, nativeQuery = true)
+    Page<ProdutoResumoProjecao> buscarCatalogoDaLoja(@Param("loja") String loja,
+                                                     @Param("termo") String termo,
+                                                     @Param("tipo") String tipo,
+                                                     @Param("categoria") String categoria,
+                                                     @Param("precoMin") Long precoMin,
+                                                     @Param("precoMax") Long precoMax,
+                                                     @Param("descontoMin") Integer descontoMin,
+                                                     @Param("ordenacao") String ordenacao,
+                                                     @Param("pesoEconomia") double pesoEconomia,
+                                                     @Param("logaritmoDaReferencia") double logaritmoDaReferencia,
+                                                     Pageable paginacao);
 }

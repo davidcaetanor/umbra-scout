@@ -274,7 +274,7 @@ class ProdutoControllerTest extends IntegrationTestBase {
     @ValueSource(strings = {"MENOR_PRECO", "NOME", "menorpreco", "Nome"})
     void ordenacaoForaDaListaBranca_deveDevolver400ListandoOsCodigosAceitos(String valor) throws Exception {
         esperarParametroInvalido(mockMvc.perform(get("/produtos").param("ordenacao", valor)), "ordenacao")
-                .andExpect(jsonPath("$.erros[0].mensagem").value(containsString("valores aceitos: nome, menorPreco")))
+                .andExpect(jsonPath("$.erros[0].mensagem").value(containsString("valores aceitos: nome, menorPreco, melhoresOfertas, maiorDesconto")))
                 .andExpect(jsonPath("$.erros[0].mensagem").value(not(containsString("MENOR_PRECO"))));
     }
 

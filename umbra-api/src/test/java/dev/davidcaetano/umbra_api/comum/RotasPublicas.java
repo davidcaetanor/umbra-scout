@@ -14,6 +14,7 @@ public final class RotasPublicas {
             "POST /auth/login",
             "POST /auth/oauth2/token",
             "GET /produtos",
+            "GET /produtos/destaques",
             "GET /produtos/{id}",
             "GET /produtos/{id}/historico");
 
