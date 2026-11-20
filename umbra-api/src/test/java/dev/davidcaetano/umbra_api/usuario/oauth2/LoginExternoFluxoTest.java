@@ -109,7 +109,7 @@ class LoginExternoFluxoTest extends WireMockIntegrationTestBase {
     }
 
     @Test
-    void usuarioQueNegaAcessoNoDiscord_deveVoltarAoFrontComErro() throws Exception {
+    void usuarioQueCancelaNoDiscord_deveVoltarAoFrontComEntradaCancelada() throws Exception {
         MockHttpSession sessao = new MockHttpSession();
         String state = iniciarLogin(sessao);
 
@@ -118,7 +118,7 @@ class LoginExternoFluxoTest extends WireMockIntegrationTestBase {
                 .andExpect(status().isFound())
                 .andReturn();
 
-        assertThat(callback.getResponse().getRedirectedUrl()).isEqualTo(RETORNO_FRONT + "?erro=falha_no_provedor");
+        assertThat(callback.getResponse().getRedirectedUrl()).isEqualTo(RETORNO_FRONT + "?erro=entrada_cancelada");
         assertThat(sessao.isInvalid()).isTrue();
     }
 

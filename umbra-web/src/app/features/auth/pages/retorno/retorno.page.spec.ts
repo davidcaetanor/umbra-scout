@@ -83,7 +83,7 @@ describe('RetornoPage', () => {
     expect(tela.querySelector('[role="alert"]')?.textContent).toContain(frasesEmLinhas(mensagemDoMotivo(resultado)));
   });
 
-  it.each(['email_nao_verificado', 'conta_inativa', 'conta_vinculada_a_outra_identidade', 'falha_no_provedor'])(
+  it.each(['email_nao_verificado', 'conta_inativa', 'conta_vinculada_a_outra_identidade', 'falha_no_provedor', 'entrada_cancelada'])(
     'mostra o motivo %s vindo do backend sem trocar codigo',
     async (motivo) => {
       const tela = await abrir({ erro: motivo });
@@ -93,6 +93,11 @@ describe('RetornoPage', () => {
       expect(tela.querySelector('[role="alert"]')?.textContent).toContain(frasesEmLinhas(mensagemDoMotivo(motivo)));
     },
   );
+
+  it('diz que a entrada foi cancelada, sem culpar o provedor', () => {
+    expect(mensagemDoMotivo('entrada_cancelada')).toContain('cancelou');
+    expect(mensagemDoMotivo('entrada_cancelada')).not.toBe(mensagemDoMotivo('falha_no_provedor'));
+  });
 
   it('trata motivo desconhecido e retorno vazio como falha do provedor', async () => {
     expect(mensagemDoMotivo('inventado')).toBe(mensagemDoMotivo('falha_no_provedor'));
