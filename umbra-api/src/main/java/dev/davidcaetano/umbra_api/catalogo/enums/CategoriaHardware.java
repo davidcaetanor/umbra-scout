@@ -10,5 +10,6 @@ public enum CategoriaHardware {
     HD,
     COOLER,
     KIT_HARDWARE,
-    PLACA_INTERFACE
+    PLACA_INTERFACE,
+    OUTROS
 }

@@ -1011,7 +1011,7 @@
           "name" : "categoria",
           "required" : false,
           "schema" : {
-            "enum" : [ "CPU", "GPU", "PLACA_MAE", "MEMORIA_RAM", "FONTE", "SSD", "HD", "COOLER", "KIT_HARDWARE", "PLACA_INTERFACE" ],
+            "enum" : [ "CPU", "GPU", "PLACA_MAE", "MEMORIA_RAM", "FONTE", "SSD", "HD", "COOLER", "KIT_HARDWARE", "PLACA_INTERFACE", "OUTROS" ],
             "type" : "string"
           }
         }, {
