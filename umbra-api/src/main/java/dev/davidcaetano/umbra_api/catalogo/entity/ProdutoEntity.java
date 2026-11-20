@@ -85,18 +85,29 @@ public class ProdutoEntity {
         return strValidoSemEspacosLaterais(valorAtual).isEmpty();
     }
 
-    public void completarDadosAusentes(DadosProduto dados, OffsetDateTime dataHoraAgora) {
+    public void incorporarDadosDaColeta(DadosProduto dados, OffsetDateTime dataHoraAgora) {
 
         Objects.requireNonNull(dados, "dados é obrigatório");
 
         boolean nomeMudou = completarCampoAusente(nome, dados.nome(), v -> nome = v);
-        boolean categoriaMudou = completarCampoAusente(categoria, dados.categoria(), v -> categoria = v);
+        boolean categoriaMudou = tipo == TipoProduto.HARDWARE
+                ? acompanharCategoriaDaLoja(dados.categoria())
+                : completarCampoAusente(categoria, dados.categoria(), v -> categoria = v);
         boolean imagemUrlMudou = completarCampoAusente(imagemUrl, dados.imagemUrl(), v -> imagemUrl = v);
         boolean chaveItadMudou = completarCampoAusente(chaveItad, dados.chaveItad(), v -> chaveItad = v);
 
         if (nomeMudou || categoriaMudou || imagemUrlMudou || chaveItadMudou) {
             this.atualizadoEm = dataHoraAgora;
         }
+    }
+
+    private boolean acompanharCategoriaDaLoja(String categoriaDaLoja) {
+        Optional<String> valida = strValidoSemEspacosLaterais(categoriaDaLoja);
+        if (valida.isEmpty() || valida.get().equals(categoria)) {
+            return false;
+        }
+        categoria = valida.get();
+        return true;
     }
 
     private static boolean completarCampoAusente(String valorAtual, String valorNovo, Consumer<String> setter) {

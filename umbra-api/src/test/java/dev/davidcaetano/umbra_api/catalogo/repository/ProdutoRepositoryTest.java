@@ -64,7 +64,7 @@ class ProdutoRepositoryTest extends IntegrationTestBase {
         assertThat(produtoRepository.findByChaveItadIn(List.of(gid))).isEmpty();
 
         ProdutoEntity managed = produtoRepository.findById(id).orElseThrow();
-        managed.completarDadosAusentes(
+        managed.incorporarDadosDaColeta(
                 new DadosProduto(null, null, null, gid), PRIMEIRA_COLETA.plusHours(6));
         produtoRepository.flush();
 

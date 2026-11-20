@@ -146,7 +146,7 @@ public class ResolucaoDeGidFaltante {
 
         transactionTemplate.executeWithoutResult(status -> gidACarimbarPorProduto.forEach((produtoId, gid) ->
                 produtoRepository.findById(produtoId).orElseThrow()
-                        .completarDadosAusentes(new DadosProduto(null, null, null, gid), agora)));
+                        .incorporarDadosDaColeta(new DadosProduto(null, null, null, gid), agora)));
     }
 
     private static String identificadorItad(OfertaEntity oferta) {
