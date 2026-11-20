@@ -14,6 +14,7 @@ import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.mapper.ProdutoMapper;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
+import dev.davidcaetano.umbra_api.catalogo.properties.OfertasProperties;
 import dev.davidcaetano.umbra_api.catalogo.repository.LojaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaAtualProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
@@ -51,6 +52,7 @@ public class ProdutoService {
     private final LojaRepository lojaRepository;
     private final BuscaExternaService buscaExternaService;
     private final BuscaProperties buscaProperties;
+    private final OfertasProperties ofertasProperties;
     private final ProdutoMapper produtoMapper;
     private final Clock clock;
 
@@ -188,20 +190,20 @@ public class ProdutoService {
     private Page<ProdutoResumoProjecao> buscarNoCatalogo(FiltroDoCatalogo filtro,
                                                          OrdenacaoCatalogo ordenacao,
                                                          Pageable paginacao) {
-        String termo = filtro.termo();
         String codigoTipo = filtro.tipo() == null ? null : filtro.tipo().name();
         String codigoCategoria = filtro.categoria() == null ? null : filtro.categoria().name();
-        boolean porMenorPreco = ordenacao == OrdenacaoCatalogo.MENOR_PRECO;
+        String codigoOrdenacao = (ordenacao == null ? OrdenacaoCatalogo.NOME : ordenacao).toString();
 
-        if (termo == null) {
-            return porMenorPreco
-                    ? produtoRepository.listarCatalogoPorMenorPreco(codigoTipo, codigoCategoria, paginacao)
-                    : produtoRepository.listarCatalogoPorNome(codigoTipo, codigoCategoria, paginacao);
+        if (filtro.loja() == null) {
+            return produtoRepository.buscarCatalogo(filtro.termo(), codigoTipo, codigoCategoria,
+                    filtro.precoMinCentavos(), filtro.precoMaxCentavos(), filtro.descontoMin(), codigoOrdenacao,
+                    ofertasProperties.pesoEconomia(), ofertasProperties.logaritmoDaReferencia(), paginacao);
         }
 
-        return porMenorPreco
-                ? produtoRepository.buscarCatalogoPorMenorPreco(termo, codigoTipo, codigoCategoria, paginacao)
-                : produtoRepository.buscarCatalogoPorNome(termo, codigoTipo, codigoCategoria, paginacao);
+        return produtoRepository.buscarCatalogoDaLoja(filtro.loja().name(), filtro.termo(), codigoTipo,
+                codigoCategoria, filtro.precoMinCentavos(), filtro.precoMaxCentavos(), filtro.descontoMin(),
+                codigoOrdenacao, ofertasProperties.pesoEconomia(), ofertasProperties.logaritmoDaReferencia(),
+                paginacao);
     }
 
     private OfertaResponse melhorPrecoDo(ProdutoResumoProjecao produto, Instant agora) {

@@ -176,6 +176,18 @@
         "required" : [ "precoAlvoCentavos" ],
         "type" : "object"
       },
+      "DestaquesResponse" : {
+        "properties" : {
+          "conteudo" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProdutoResumoResponse"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "conteudo" ],
+        "type" : "object"
+      },
       "HistoricoResponse" : {
         "properties" : {
           "consultadoEm" : {
@@ -974,7 +986,7 @@
     },
     "/produtos" : {
       "get" : {
-        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. `categoria` vale só para hardware: com `tipo=JOGO` responde 400.",
+        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. `categoria` vale só para hardware: com `tipo=JOGO` responde 400. `melhoresOfertas`, `maiorDesconto` e `descontoMin` valem só com `tipo=JOGO`; `melhoresOfertas` traz só o que tem desconto, pela economia em reais e pela proximidade do mínimo histórico. Com `loja`, preço e ordem são os da oferta nessa loja.",
         "operationId" : "buscarProdutos",
         "parameters" : [ {
           "in" : "query",
@@ -1007,7 +1019,7 @@
           "name" : "ordenacao",
           "required" : false,
           "schema" : {
-            "enum" : [ "nome", "menorPreco" ],
+            "enum" : [ "nome", "menorPreco", "melhoresOfertas", "maiorDesconto" ],
             "type" : "string"
           }
         }, {
@@ -1016,6 +1028,50 @@
           "required" : false,
           "schema" : {
             "type" : "boolean"
+          }
+        }, {
+          "description" : "Preço mínimo do melhor preço atual, em centavos.",
+          "in" : "query",
+          "name" : "precoMin",
+          "required" : false,
+          "schema" : {
+            "description" : "Preço mínimo do melhor preço atual, em centavos.",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Preço máximo do melhor preço atual, em centavos.",
+          "in" : "query",
+          "name" : "precoMax",
+          "required" : false,
+          "schema" : {
+            "description" : "Preço máximo do melhor preço atual, em centavos.",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Desconto mínimo em percentual. Só com tipo=JOGO.",
+          "in" : "query",
+          "name" : "descontoMin",
+          "required" : false,
+          "schema" : {
+            "description" : "Desconto mínimo em percentual. Só com tipo=JOGO.",
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Loja. Com ela, preço e ordem passam a ser os dessa loja.",
+          "in" : "query",
+          "name" : "loja",
+          "required" : false,
+          "schema" : {
+            "description" : "Loja. Com ela, preço e ordem passam a ser os dessa loja.",
+            "enum" : [ "STEAM", "NUUVEM", "EPIC", "TERABYTE", "KABUM", "GOG", "GREEN_MAN_GAMING" ],
+            "type" : "string"
           }
         }, {
           "description" : "Página, a partir de 0.",
@@ -1059,6 +1115,30 @@
         },
         "security" : [ ],
         "summary" : "Busca no catálogo",
+        "tags" : [ "Catálogo" ]
+      }
+    },
+    "/produtos/destaques" : {
+      "get" : {
+        "description" : "Jogos com a maior economia, pela mesma pontuação de `melhoresOfertas`, com uma edição por jogo. Recalculado no máximo a cada 10 minutos.",
+        "operationId" : "destaquesDoCatalogo",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DestaquesResponse"
+                }
+              }
+            },
+            "description" : "Lista curta, já ordenada."
+          },
+          "500" : {
+            "$ref" : "#/components/responses/ErroInterno"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Destaques Umbra",
         "tags" : [ "Catálogo" ]
       }
     },

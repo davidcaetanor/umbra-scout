@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.catalogo.controller;
 
+import dev.davidcaetano.umbra_api.catalogo.service.DestaquesService;
 import dev.davidcaetano.umbra_api.catalogo.service.ProdutoService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -23,7 +24,8 @@ class ProdutoControllerIpDeOrigemTest {
 
     private final ProdutoService produtoService = mock(ProdutoService.class);
 
-    private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new ProdutoController(produtoService))
+    private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new ProdutoController(produtoService,
+                    mock(DestaquesService.class)))
             .setControllerAdvice(new CodigosDoCatalogoAdvice())
             .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .build();

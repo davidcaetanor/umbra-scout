@@ -2,8 +2,10 @@ package dev.davidcaetano.umbra_api.catalogo.controller;
 
 import dev.davidcaetano.umbra_api.catalogo.dto.request.BuscaProdutoRequest;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.BuscaProdutosResponse;
+import dev.davidcaetano.umbra_api.catalogo.dto.response.DestaquesResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.HistoricoResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.ProdutoResponse;
+import dev.davidcaetano.umbra_api.catalogo.service.DestaquesService;
 import dev.davidcaetano.umbra_api.catalogo.service.FiltroDoCatalogo;
 import dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistorico;
 import dev.davidcaetano.umbra_api.catalogo.service.ProdutoService;
@@ -24,14 +26,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProdutoController implements ProdutoApi {
 
     private final ProdutoService produtoService;
+    private final DestaquesService destaquesService;
 
     @Override
     @GetMapping
     public BuscaProdutosResponse buscar(@Valid @ModelAttribute BuscaProdutoRequest busca, Pageable paginacao,
                                         HttpServletRequest requisicao) {
         String ipDeOrigem = requisicao.getRemoteAddr();
-        FiltroDoCatalogo filtro = new FiltroDoCatalogo(busca.nome(), busca.tipo(), busca.categoria());
+        FiltroDoCatalogo filtro = new FiltroDoCatalogo(busca.nome(), busca.tipo(), busca.categoria(),
+                busca.precoMin(), busca.precoMax(), busca.descontoMin(), busca.loja());
         return produtoService.buscar(filtro, busca.ordenacao(), busca.incluirExterno(), paginacao, ipDeOrigem);
+    }
+
+    @Override
+    @GetMapping("/destaques")
+    public DestaquesResponse destaques() {
+        return destaquesService.destaques();
     }
 
     @Override
