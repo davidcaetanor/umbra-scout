@@ -7,11 +7,11 @@
       </span>
     }
   </p>
-  <p class="text-dado text-texto-secundario">
+  <p class="flex items-baseline gap-2 text-dado text-texto-secundario">
     @if (preco.original !== null) {
-      <span class="sr-only">De </span><s class="font-mono tabular-nums">{{ preco.original }}</s> ·
+      <span><span class="sr-only">De </span><s class="font-mono tabular-nums">{{ preco.original }}</s></span>
     }
-    {{ preco.loja }}
+    <span class="ms-auto truncate"><span class="sr-only">na </span>{{ preco.loja }}</span>
   </p>
 } @else {
   <p class="text-apoio text-texto-secundario">Indisponível agora</p>
