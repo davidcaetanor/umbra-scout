@@ -3,7 +3,7 @@
     <li>
       <button
         type="button"
-        class="flex min-h-12 w-full items-center justify-center gap-3 rounded-controle border border-borda-campo bg-superficie-elevada px-4 font-medium hover:border-texto-secundario disabled:cursor-wait disabled:opacity-70"
+        class="flex min-h-12 w-full items-center justify-center gap-3 botao-secundario bg-superficie-elevada px-4"
         [disabled]="saindo() !== null"
         [attr.aria-busy]="saindo() === provedor ? 'true' : null"
         (click)="escolher.emit(provedor)"
@@ -22,6 +22,9 @@
           }
         }
         <span>{{ verbo() }} com {{ nomes[provedor] }}</span>
+        @if (saindo() === provedor) {
+          <svg viewBox="0 0 24 24" class="size-5 motion-safe:animate-spin" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9" /></svg>
+        }
       </button>
     </li>
   }

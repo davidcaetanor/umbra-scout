@@ -2,9 +2,11 @@
   class="flex h-full gap-3 rounded-bloco border border-filete bg-fundo p-3 tablet:flex-col tablet:gap-0 tablet:overflow-hidden tablet:p-0"
 >
   <umbra-capa-produto
-    [imagem]="produto().imagem"
+    [capa]="produto().capa"
     [tipo]="produto().tipo"
-    class="size-16 shrink-0 overflow-hidden rounded-peca tablet:aspect-[460/215] tablet:size-auto tablet:w-full tablet:rounded-none"
+    tamanhos="(min-width: 64rem) 30vw, (min-width: 48rem) 45vw, 120px"
+    [prioritaria]="prioritaria()"
+    class="aspect-[300/140] w-30 shrink-0 self-start rounded-peca tablet:w-full tablet:rounded-none"
   />
   <div class="flex min-w-0 flex-1 flex-col gap-1 tablet:p-3">
     <h3 class="break-words text-interface font-medium">{{ produto().nome }}</h3>

@@ -23,6 +23,23 @@
     outline-offset: 2px;
   }
 
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  label[for],
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+
+  [aria-busy='true'] {
+    cursor: wait;
+  }
+
   .valor-monetario {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -61,5 +78,77 @@
     border-top-color: var(--color-ambiente);
     color: var(--color-texto);
     font-weight: 600;
+  }
+
+  .botao-principal,
+  .botao-secundario,
+  .chip {
+    border-radius: var(--radius-controle);
+    font-weight: 500;
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      color 150ms ease-out,
+      filter 150ms ease-out;
+  }
+
+  .botao-principal:active:not(:disabled),
+  .botao-secundario:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .botao-principal:disabled,
+  .botao-secundario:disabled {
+    opacity: 0.5;
+  }
+
+  .botao-principal[aria-busy='true'],
+  .botao-secundario[aria-busy='true'] {
+    opacity: 0.8;
+  }
+
+  .botao-principal {
+    background-color: var(--color-destaque);
+    color: var(--color-texto-escuro);
+    font-weight: 600;
+  }
+
+  .botao-principal:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  .botao-principal:active:not(:disabled) {
+    filter: brightness(0.92);
+  }
+
+  .botao-secundario,
+  .chip {
+    border: 1px solid var(--color-borda-campo);
+  }
+
+  .botao-secundario:hover:not(:disabled),
+  .chip:hover:not([aria-pressed='true']) {
+    background-color: var(--color-superficie-elevada);
+    border-color: var(--color-texto-secundario);
+  }
+
+  .botao-secundario:active:not(:disabled),
+  .chip:active:not([aria-pressed='true']) {
+    background-color: var(--color-filete);
+  }
+
+  .chip[aria-pressed='true'] {
+    background-color: var(--color-destaque);
+    border-color: var(--color-destaque);
+    color: var(--color-texto-escuro);
+  }
+
+  .link-texto {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .link-texto:hover {
+    text-decoration-thickness: 2px;
   }
 }

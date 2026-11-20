@@ -1,14 +1,18 @@
-@if (imagem() && !falhou()) {
+@if (fase() !== 'sem-imagem') {
   <img
-    [src]="imagem()"
+    [src]="endereco()"
+    [attr.srcset]="alternativas()"
+    [attr.sizes]="alternativas() ? tamanhos() : null"
     alt=""
-    width="460"
-    height="215"
-    loading="lazy"
+    width="300"
+    height="140"
+    [attr.loading]="prioritaria() ? 'eager' : 'lazy'"
     decoding="async"
     referrerpolicy="no-referrer"
-    class="size-full object-cover"
-    (error)="falhou.set(true)"
+    class="size-full object-cover opacity-0 motion-safe:transition-opacity motion-safe:duration-200"
+    [class.opacity-100]="carregada()"
+    (load)="carregada.set(true)"
+    (error)="falhou()"
   />
 } @else {
   <svg

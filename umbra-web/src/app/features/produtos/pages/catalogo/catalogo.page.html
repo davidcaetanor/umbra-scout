@@ -70,21 +70,25 @@
       <div role="group" aria-label="Tipo de produto" class="flex flex-wrap gap-2">
         <button
           type="button"
-          class="min-h-9 rounded-controle border px-3 font-medium"
-          [class]="filtro().tipo === null ? 'border-destaque bg-destaque text-texto-escuro' : 'border-borda-campo hover:bg-superficie-elevada'"
+          class="chip inline-flex min-h-9 items-center gap-1 px-3"
           [attr.aria-pressed]="filtro().tipo === null"
           (click)="escolherTipo(null)"
         >
+          @if (filtro().tipo === null) {
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+          }
           Todos
         </button>
         @for (tipo of tipos; track tipo[0]) {
           <button
             type="button"
-            class="min-h-9 rounded-controle border px-3 font-medium"
-            [class]="filtro().tipo === tipo[0] ? 'border-destaque bg-destaque text-texto-escuro' : 'border-borda-campo hover:bg-superficie-elevada'"
+            class="chip inline-flex min-h-9 items-center gap-1 px-3"
             [attr.aria-pressed]="filtro().tipo === tipo[0]"
             (click)="escolherTipo(tipo[0])"
           >
+            @if (filtro().tipo === tipo[0]) {
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+            }
             {{ tipo[1] }}
           </button>
         }
@@ -125,7 +129,7 @@
             </p>
             <button
               type="button"
-              class="mt-1 min-h-11 rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada"
+              class="mt-1 min-h-11 botao-secundario px-4"
               (click)="limparFiltros()"
             >
               Limpar filtros
@@ -139,8 +143,8 @@
 
     @if (dados(); as dados) {
       <ul class="grid gap-3 tablet:grid-cols-2 largo:grid-cols-3">
-        @for (produto of dados.produtos; track produto.id) {
-          <li><umbra-card-produto [produto]="produto" /></li>
+        @for (produto of dados.produtos; track produto.id; let posicao = $index) {
+          <li><umbra-card-produto [produto]="produto" [prioritaria]="posicao < 3" /></li>
         }
       </ul>
       <umbra-paginacao
@@ -157,7 +161,7 @@
       <p class="text-texto-secundario">Não achou? O Umbra procura também fora do catálogo.</p>
       <button
         type="button"
-        class="min-h-11 rounded-controle border border-borda-campo px-4 font-medium hover:bg-superficie-elevada"
+        class="min-h-11 botao-secundario px-4"
         (click)="buscarFora()"
       >
         Buscar também fora do catálogo

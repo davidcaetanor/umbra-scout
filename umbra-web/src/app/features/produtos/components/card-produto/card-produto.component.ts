@@ -12,4 +12,5 @@ import { PrecoProdutoComponent } from '../preco-produto/preco-produto.component'
 })
 export class CardProdutoComponent {
   readonly produto = input.required<ProdutoExibido>();
+  readonly prioritaria = input(false);
 }
