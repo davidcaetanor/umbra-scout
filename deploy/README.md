@@ -36,6 +36,8 @@ Login com Discord e Google: as credenciais vêm da aplicação registrada em cad
 
 Frontend (`web`): `UMBRA_WEB_API_URL` é a origem da API como o navegador a vê (`https://host`, sem caminho), e `UMBRA_WEB_LOGIN_GOOGLE` mostra ou oculta o botão do Google. As duas viram o `config.json` do front na partida do contêiner. O serviço recebe só essas duas variáveis, nunca o `.env` inteiro: tudo o que chega ao front é público. A origem do front precisa estar em `UMBRA_CORS_ORIGENS`, e `UMBRA_LOGIN_RETORNO_FRONT` aponta para `https://<host do front>/login/callback`. O contêiner roda sem root e com sistema de arquivos somente leitura.
 
+Imagens (`imagens`): o front serve as capas em `/imagens/itad/` e as entrega ao imgproxy, que busca a imagem no ITAD e devolve em WebP. Ele aceita só o tamanho pré-definido `capa` e só a origem do ITAD, não publica porta e não lê o `.env`. O contêiner roda sem root e com sistema de arquivos somente leitura. Sem cache na frente, cada pedido de imagem que o navegador ainda não tem converte de novo; o navegador guarda a capa por 30 dias.
+
 ## HTTPS
 
 A API escuta só em `127.0.0.1:8080` e não deve ser exposta em HTTP: login e token trafegam por ela. Na frente dela fica um proxy reverso com HTTPS no mesmo host, por exemplo o Caddy:

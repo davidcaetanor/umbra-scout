@@ -37,13 +37,12 @@
 	}
 
 	@imagemDoItad {
-		method GET HEAD
-		path /imagens/itad/*
+		method GET
+		path_regexp itad ^/imagens/itad/(.+)$
 	}
 	handle @imagemDoItad {
-		uri strip_prefix /imagens/itad
-		reverse_proxy https://assets.isthereanydeal.com {
-			header_up Host assets.isthereanydeal.com
+		rewrite * /_/capa/plain/https://assets.isthereanydeal.com/{re.itad.1}?
+		reverse_proxy {$UMBRA_WEB_IMAGENS_URL:http://imagens:8080} {
 			header_up -X-Forwarded-For
 			header_up -X-Forwarded-Host
 			header_up -X-Forwarded-Proto
@@ -51,9 +50,13 @@
 			header_up -Cookie
 			header_up -Authorization
 			header_down -Set-Cookie
-			header_down -Cache-Control
+
+			@falhou status 4xx 5xx
+			handle_response @falhou {
+				header Cache-Control "no-store"
+				copy_response
+			}
 		}
-		header Cache-Control "public, max-age=2592000"
 	}
 
 	handle /imagens/* {

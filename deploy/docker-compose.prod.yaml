@@ -60,6 +60,8 @@ services:
     environment:
       UMBRA_WEB_API_URL: ${UMBRA_WEB_API_URL}
       UMBRA_WEB_LOGIN_GOOGLE: ${UMBRA_WEB_LOGIN_GOOGLE:-false}
+    depends_on:
+      - imagens
     ports:
       - "127.0.0.1:8081:8080"
     read_only: true
@@ -74,6 +76,30 @@ services:
         max-size: "10m"
         max-file: "3"
     restart: unless-stopped
+
+  imagens:
+    image: darthsim/imgproxy:v4.0.24@sha256:5f3546e097bde5d2c568bf5110c4e3fb4af9bbe2cc5da6390067fda034a88db3
+    environment:
+      IMGPROXY_ONLY_PRESETS: "true"
+      IMGPROXY_PRESETS: capa=quality:75/format:webp
+      IMGPROXY_ALLOWED_SOURCES: https://assets.isthereanydeal.com/
+      IMGPROXY_MAX_SRC_RESOLUTION: "2"
+      IMGPROXY_MAX_SRC_FILE_SIZE: "2097152"
+      IMGPROXY_WORKERS: "2"
+      IMGPROXY_TTL: "2592000"
+    read_only: true
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   umbra_pgdata:
