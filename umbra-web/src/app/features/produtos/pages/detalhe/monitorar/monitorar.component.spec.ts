@@ -5,7 +5,7 @@ import { TokenDaSessao } from '../../../../../core/sessao';
 import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
 import { MonitorarComponent, SituacaoDoMonitoramento } from './monitorar.component';
-import { PIADAS } from './piadas-do-alvo';
+import { FAIXAS_DE_PIADAS } from './piadas-do-alvo';
 import { CHAVE_DO_RASCUNHO, RascunhoDoAlvo } from './rascunho-do-alvo';
 
 describe('MonitorarComponent', () => {
@@ -124,21 +124,28 @@ describe('MonitorarComponent', () => {
     expect(criados).toEqual([{ id: 9, precoAlvoCentavos: 14990 }]);
   });
 
-  it('alvo acima de R$ 5 mil recebe uma piada do rodízio no lugar do aviso comum', async () => {
+  it('alvo acima de R$ 5 mil recebe a piada da faixa no lugar do aviso comum', async () => {
     localStorage.clear();
-    criar.mockResolvedValue({ id: 9, precoAlvoCentavos: 12_000_000 });
+    criar.mockResolvedValue({ id: 9, precoAlvoCentavos: 600_000 });
     const tela = await abrir({ tipo: 'livre' });
+    const [delirio, naoEPeca, caroMasExiste] = FAIXAS_DE_PIADAS;
 
-    await enviar(tela, '120.000');
-    const primeira = TestBed.inject(AvisoService).atual();
     await enviar(tela, '5.000,00');
     const comum = TestBed.inject(AvisoService).atual();
     await enviar(tela, '5.000,01');
-    const segunda = TestBed.inject(AvisoService).atual();
+    const leve = TestBed.inject(AvisoService).atual();
+    await enviar(tela, '50.000');
+    const ironia = TestBed.inject(AvisoService).atual();
+    await enviar(tela, '120.000');
+    const absurdo = TestBed.inject(AvisoService).atual();
+    await enviar(tela, '6000');
+    const leveDeNovo = TestBed.inject(AvisoService).atual();
 
-    expect(primeira).toEqual({ texto: PIADAS[0].texto, detalhe: 'Alvo salvo.', figura: PIADAS[0].figura });
     expect(comum?.texto).toBe('Monitoramento criado. O Umbra avisa quando o preço chegar lá.');
-    expect(segunda?.texto).toBe(PIADAS[1].texto);
+    expect(leve).toEqual({ texto: caroMasExiste.piadas[0].texto, detalhe: 'Alvo salvo.', figura: caroMasExiste.piadas[0].figura });
+    expect(ironia?.texto).toBe(naoEPeca.piadas[0].texto);
+    expect(absurdo?.texto).toBe(delirio.piadas[0].texto);
+    expect(leveDeNovo?.texto).toBe(caroMasExiste.piadas[1].texto);
   });
 
   it('mostra o digitando enquanto grava', async () => {

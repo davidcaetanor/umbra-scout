@@ -20,7 +20,7 @@ import { MascoteComponent } from '../../../../../shared/mascote/mascote.componen
 import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProduto } from '../../../data/monitoramento-do-produto';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
-import { RodizioDePiadas, alvoExorbitante } from './piadas-do-alvo';
+import { RodizioDePiadas, faixaDoAlvo } from './piadas-do-alvo';
 import { LeituraDoAlvo, lerAlvo, textoDoAlvo } from './preco-alvo';
 import { RascunhoDoAlvo } from './rascunho-do-alvo';
 
@@ -117,8 +117,9 @@ export class MonitorarComponent {
   }
 
   private avisarCriacao(alvo: number): void {
-    if (alvoExorbitante(alvo)) {
-      const piada = this.piadas.proxima();
+    const faixa = faixaDoAlvo(alvo);
+    if (faixa !== null) {
+      const piada = this.piadas.proxima(faixa);
       this.avisos.mostrarLongo({ texto: piada.texto, detalhe: 'Alvo salvo.', figura: piada.figura });
       return;
     }
