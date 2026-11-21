@@ -1,4 +1,4 @@
-import { configuracaoDoGrafico } from './configuracao-do-grafico';
+import { configuracaoDoGrafico, rotuloSemRepetir } from './configuracao-do-grafico';
 import { CoresDoTema } from './cores-do-tema';
 import { GraficoExibido } from './grafico-exibido';
 
@@ -31,7 +31,7 @@ describe('configuração do gráfico', () => {
   it('desenha as linhas em degraus com as cores do tema e a segunda tracejada', () => {
     const [primeira, segunda] = configuracaoDoGrafico(GRAFICO, CORES).data.datasets;
 
-    expect(primeira).toMatchObject({ label: 'Steam', stepped: true, borderColor: CORES.linha1, borderDash: [] });
+    expect(primeira).toMatchObject({ label: 'Steam', stepped: true, borderColor: CORES.linha1, borderDash: [], pointHoverBackgroundColor: CORES.linha1 });
     expect(segunda).toMatchObject({ label: 'GOG', borderColor: CORES.linha3, borderDash: [6, 4] });
   });
 
@@ -75,5 +75,31 @@ describe('configuração do gráfico', () => {
     const filtro = opcoes.plugins!.tooltip!.filter as (item: { datasetIndex: number }) => boolean;
     expect(filtro({ datasetIndex: 1 })).toBe(true);
     expect(filtro({ datasetIndex: 2 })).toBe(false);
+  });
+
+  it('não repete a mesma data no eixo', () => {
+    const dia = Date.parse('2026-11-21T03:00:00Z');
+    expect(rotuloSemRepetir(dia, undefined)).toBe('21/11');
+    expect(rotuloSemRepetir(dia + 3_600_000, dia)).toBeNull();
+    expect(rotuloSemRepetir(dia + 86_400_000, dia)).toBe('22/11');
+  });
+
+  it('não deixa o eixo de preço passar abaixo de zero', () => {
+    const eixoY = configuracaoDoGrafico(GRAFICO, CORES).options!.scales!['y']! as { afterDataLimits: (eixo: { min: number }) => void };
+    const negativo = { min: -500 };
+    const positivo = { min: 300 };
+
+    eixoY.afterDataLimits(negativo);
+    eixoY.afterDataLimits(positivo);
+
+    expect(negativo.min).toBe(0);
+    expect(positivo.min).toBe(300);
+  });
+
+  it('a dica usa a cor da linha', () => {
+    const dica = configuracaoDoGrafico(GRAFICO, CORES).options!.plugins!.tooltip!.callbacks!;
+    const cor = (dica.labelColor as (item: unknown) => { backgroundColor: string }).call(null, { dataset: { borderColor: CORES.linha3 } });
+
+    expect(cor.backgroundColor).toBe(CORES.linha3);
   });
 });

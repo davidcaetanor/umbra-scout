@@ -24,6 +24,9 @@ export function configuracaoDoGrafico(grafico: GraficoExibido, cores: CoresDoTem
     spanGaps: false,
     pointRadius: 0,
     pointHitRadius: 8,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: corDaLinha[linha.cor],
+    pointHoverBorderWidth: 0,
     order: 3,
   }));
   return {
@@ -48,11 +51,14 @@ export function configuracaoDoGrafico(grafico: GraficoExibido, cores: CoresDoTem
           ticks: {
             color: cores.rotulo,
             maxTicksLimit: MAXIMO_DE_MARCAS_NO_EIXO,
-            callback: (valor) => diaEMes(Number(valor)),
+            callback: (valor, indice, marcas) => rotuloSemRepetir(Number(valor), marcas[indice - 1]?.value),
           },
         },
         y: {
           grace: '10%',
+          afterDataLimits: (eixo) => {
+            eixo.min = Math.max(0, eixo.min);
+          },
           grid: { color: cores.grade },
           border: { display: false },
           ticks: { color: cores.rotulo, maxTicksLimit: 5, callback: (valor) => reais(Number(valor)) },
@@ -63,6 +69,11 @@ export function configuracaoDoGrafico(grafico: GraficoExibido, cores: CoresDoTem
         tooltip: {
           filter: (item) => item.datasetIndex < linhas.length,
           callbacks: {
+            labelColor: (item) => ({
+              borderColor: item.dataset.borderColor as string,
+              backgroundColor: item.dataset.borderColor as string,
+              borderWidth: 2,
+            }),
             title: (itens) => (itens[0] ? diaEMes(itens[0].parsed.x ?? 0) : ''),
             label: (item) => `${item.dataset.label ?? ''}: ${reais(item.parsed.y ?? 0)}`,
           },
@@ -129,4 +140,9 @@ function marcas(grafico: GraficoExibido, cores: CoresDoTema): Conjunto[] {
     });
   }
   return conjuntos;
+}
+
+export function rotuloSemRepetir(valor: number, anterior: number | undefined): string | null {
+  const rotulo = diaEMes(valor);
+  return anterior !== undefined && diaEMes(anterior) === rotulo ? null : rotulo;
 }

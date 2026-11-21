@@ -191,4 +191,19 @@ describe('legenda', () => {
       ['linha-3', 'GOG'],
     ]);
   });
+
+  it('alvo acima de duas vezes o maior preço sai da escala e a legenda explica', () => {
+    const longe = contexto({ alvoCentavos: 10_000_000 });
+
+    expect(graficoExibido(longe).alvo).toBeNull();
+    expect(legendaExibida(longe).at(-1)).toMatchObject({ marca: 'alvo', valor: 'R$ 100.000,00', detalhe: 'acima da escala do gráfico' });
+    expect(graficoExibido(contexto({ alvoCentavos: 10_000 })).alvo).toBe(10_000);
+    expect(graficoExibido(contexto({ alvoCentavos: 10_001 })).alvo).toBeNull();
+  });
+
+  it('por loja mede a escala só pelas lojas marcadas', () => {
+    expect(graficoExibido(contexto({ lojas: ['Steam'], alvoCentavos: 10_000 })).alvo).toBe(10_000);
+    expect(graficoExibido(contexto({ lojas: ['Steam'], alvoCentavos: 10_001 })).alvo).toBeNull();
+    expect(graficoExibido(contexto({ lojas: ['Nuuvem'], alvoCentavos: 14_000 })).alvo).toBe(14_000);
+  });
 });

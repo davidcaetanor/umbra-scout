@@ -7,6 +7,7 @@ import { OfertaDaLoja } from '../../data/produto-detalhado';
 
 export const DIA_MS = 86_400_000;
 export const MAXIMO_DE_LOJAS_NO_GRAFICO = 2;
+export const ALVO_NA_ESCALA_ATE_VEZES_O_MAIOR_PRECO = 2;
 
 const DIAS_DO_PERIODO: Readonly<Record<PeriodoDoHistorico, number>> = { '30d': 30, '90d': 90, '1a': 365 };
 const ROTULO_DO_PERIODO: Readonly<Record<PeriodoDoHistorico, string>> = { '30d': '30 dias', '90d': '90 dias', '1a': '1 ano' };
@@ -129,7 +130,7 @@ export function graficoExibido(contexto: ContextoDoGrafico): GraficoExibido {
     linhas,
     minimo: !porLoja && historico.minimo !== null ? minimoExibido(historico.melhorPreco, historico.minimo, inicio, fim) : null,
     hoje: melhorOferta === null ? null : { x: fim, y: melhorOferta.valorCentavos },
-    alvo: alvoCentavos,
+    alvo: alvoNaEscala(contexto) ? alvoCentavos : null,
     resumo: resumo(contexto),
   };
 }
@@ -162,9 +163,24 @@ export function legendaExibida(contexto: ContextoDoGrafico): CelulaDaLegenda[] {
     });
   }
   if (alvoCentavos !== null) {
-    celulas.push({ marca: 'alvo', titulo: 'Alvo de busca', valor: reais(alvoCentavos), detalhe: null });
+    celulas.push({
+      marca: 'alvo',
+      titulo: 'Alvo de busca',
+      valor: reais(alvoCentavos),
+      detalhe: alvoNaEscala(contexto) ? null : 'acima da escala do gráfico',
+    });
   }
   return celulas;
+}
+
+export function alvoNaEscala({ historico, melhorOferta, alvoCentavos, lojas }: ContextoDoGrafico): boolean {
+  if (alvoCentavos === null) {
+    return false;
+  }
+  const series = lojas === null ? [historico.melhorPreco] : historico.porLoja.filter((serie) => lojas.includes(serie.loja)).map((serie) => serie.pontos);
+  const precos = series.flat().map((ponto) => ponto.valorCentavos);
+  const maior = Math.max(0, melhorOferta?.valorCentavos ?? 0, ...precos.filter((valor): valor is number => valor !== null));
+  return maior === 0 || alvoCentavos <= maior * ALVO_NA_ESCALA_ATE_VEZES_O_MAIOR_PRECO;
 }
 
 export function lojasIniciais(historico: HistoricoDoProduto): string[] {
