@@ -31,6 +31,7 @@ function oferta(parcial: Partial<OfertaResponse> = {}): OfertaResponse {
     url: 'https://loja.exemplo/jogo',
     valorCentavos: 9990,
     valorOriginalCentavos: null,
+    verificadoEm: '2026-11-19T10:00:00Z',
     ...parcial,
   };
 }
