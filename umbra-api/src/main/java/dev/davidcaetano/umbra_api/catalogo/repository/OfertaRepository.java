@@ -5,9 +5,11 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.TipoProduto;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public interface OfertaRepository extends JpaRepository<OfertaEntity, Long> {
     @Query(value = """
             SELECT l.nome AS loja, o.url, v.valor_centavos AS valorCentavos,
                    v.valor_original_centavos AS valorOriginalCentavos, v.desconto_pct AS descontoPct,
-                   v.expira_em AS expiraEm, v.coletado_em AS coletadoEm
+                   v.expira_em AS expiraEm, v.coletado_em AS coletadoEm, o.verificado_em AS verificadoEm
               FROM oferta o
               JOIN loja l ON l.id = o.loja_id
               JOIN vw_preco_atual v ON v.oferta_id = o.id
@@ -44,4 +46,8 @@ public interface OfertaRepository extends JpaRepository<OfertaEntity, Long> {
              ORDER BY v.valor_centavos, o.id
             """, nativeQuery = true)
     List<OfertaAtualProjecao> findDisponiveisComPrecoAtualPorProdutoId(@Param("produtoId") Long produtoId);
+
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE OfertaEntity o SET o.verificadoEm = :verificadoEm WHERE o.id IN :ids")
+    int registrarVerificacao(@Param("ids") Collection<Long> ids, @Param("verificadoEm") OffsetDateTime verificadoEm);
 }

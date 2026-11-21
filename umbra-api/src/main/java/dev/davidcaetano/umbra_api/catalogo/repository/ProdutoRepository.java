@@ -17,12 +17,14 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
             SELECT p.id, p.nome, p.tipo, p.categoria, p.imagem_url AS imagemUrl,
                    l.nome AS loja, m.url, m.valor_centavos AS valorCentavos,
                    m.valor_original_centavos AS valorOriginalCentavos, m.desconto_pct AS descontoPct,
-                   m.expira_em AS expiraEm, m.coletado_em AS coletadoEm
+                   m.expira_em AS expiraEm, m.coletado_em AS coletadoEm, m.verificado_em AS verificadoEm
             """;
 
     String MELHOR_OFERTA_DO_PRODUTO = """
               FROM produto p
-              LEFT JOIN vw_melhor_oferta_atual m ON m.produto_id = p.id
+              LEFT JOIN (SELECT mo.*, om.verificado_em
+                           FROM vw_melhor_oferta_atual mo
+                           JOIN oferta om ON om.id = mo.oferta_id) m ON m.produto_id = p.id
               LEFT JOIN loja l ON l.id = m.loja_id
             """;
 
@@ -30,7 +32,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
               FROM produto p
               JOIN (SELECT DISTINCT ON (o.produto_id)
                            o.produto_id, o.loja_id, o.url, v.valor_centavos, v.valor_original_centavos,
-                           v.desconto_pct, v.expira_em, v.coletado_em
+                           v.desconto_pct, v.expira_em, v.coletado_em, o.verificado_em
                       FROM oferta o
                       JOIN vw_preco_atual v ON v.oferta_id = o.id
                       JOIN loja lj ON lj.id = o.loja_id

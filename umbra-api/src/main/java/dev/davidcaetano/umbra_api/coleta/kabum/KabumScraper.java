@@ -10,6 +10,7 @@ import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumAtributosResponse;
+import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCampanhaResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumCatalogoResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumFotosResponse;
 import dev.davidcaetano.umbra_api.coleta.kabum.dto.response.KabumProdutoResponse;
@@ -19,6 +20,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -52,6 +57,7 @@ public class KabumScraper implements Scraper {
     }
 
     private final KabumClient kabumClient;
+    private final Clock clock;
 
     @Override
     public OrigemColeta fonte() {
@@ -61,6 +67,7 @@ public class KabumScraper implements Scraper {
     @Override
     public ResultadoColeta coletar() {
         CatalogoBruto catalogo = buscarCatalogoCompleto();
+        Instant agora = clock.instant();
 
         List<OfertaColetada> resultado = new ArrayList<>();
         Set<Long> idsVistos = new LinkedHashSet<>();
@@ -98,7 +105,7 @@ public class KabumScraper implements Scraper {
                 continue;
             }
 
-            resultado.add(toOfertaColetada(produto, categoria));
+            resultado.add(toOfertaColetada(produto, categoria, agora));
         }
 
         if (marketplaceInesperado > 0) {
@@ -150,14 +157,31 @@ public class KabumScraper implements Scraper {
         return null;
     }
 
-    private static OfertaColetada toOfertaColetada(KabumProdutoResponse item, String categoria) {
+    private static OfertaColetada toOfertaColetada(KabumProdutoResponse item, String categoria, Instant agora) {
         KabumAtributosResponse atributos = item.attributes();
-
-        boolean temDesconto = atributos.discountPercentage() != 0;
+        Optional<KabumCampanhaResponse> campanha = campanhaVigente(atributos, agora);
 
         boolean disponivel = atributos.available()
                 && atributos.stock() > 0
                 && atributos.priceWithDiscount().compareTo(BigDecimal.ZERO) > 0;
+
+        long valorCentavos;
+        Long valorOriginalCentavos;
+        Short descontoPct;
+        OffsetDateTime expiraEm;
+
+        if (campanha.isPresent()) {
+            valorCentavos = paraCentavos(campanha.get().priceWithDiscount());
+            valorOriginalCentavos = paraCentavos(atributos.priceWithDiscount());
+            descontoPct = (short) campanha.get().discountPercentage();
+            expiraEm = OffsetDateTime.ofInstant(Instant.ofEpochSecond(campanha.get().endsAt()), ZoneOffset.UTC);
+        } else {
+            boolean temDesconto = atributos.discountPercentage() != 0;
+            valorCentavos = paraCentavos(atributos.priceWithDiscount());
+            valorOriginalCentavos = temDesconto ? paraCentavos(atributos.price()) : null;
+            descontoPct = temDesconto ? (short) atributos.discountPercentage() : null;
+            expiraEm = null;
+        }
 
         return new OfertaColetada(
                 CodigoLoja.KABUM,
@@ -168,13 +192,26 @@ public class KabumScraper implements Scraper {
                 "https://www.kabum.com.br/produto/" + item.id() + "/" + atributos.productLink(),
                 fotoDoCard(atributos.photos()),
                 null,
-                paraCentavos(atributos.priceWithDiscount()),
-                temDesconto ? paraCentavos(atributos.price()) : null,
-                temDesconto ? (short) atributos.discountPercentage() : null,
+                valorCentavos,
+                valorOriginalCentavos,
+                descontoPct,
                 disponivel,
                 OrigemColeta.KABUM_API,
-                null
+                expiraEm
         );
+    }
+
+    private static Optional<KabumCampanhaResponse> campanhaVigente(KabumAtributosResponse atributos, Instant agora) {
+        long agoraEmSegundos = agora.getEpochSecond();
+
+        return Optional.ofNullable(atributos.campanha())
+                .filter(campanha -> !campanha.isLoggedUserExclusive())
+                .filter(campanha -> campanha.priceWithDiscount() != null
+                        && campanha.priceWithDiscount().compareTo(BigDecimal.ZERO) > 0
+                        && campanha.priceWithDiscount().compareTo(atributos.priceWithDiscount()) < 0)
+                .filter(campanha -> campanha.startsAt() != null && campanha.startsAt() <= agoraEmSegundos)
+                .filter(campanha -> campanha.endsAt() != null && agoraEmSegundos < campanha.endsAt())
+                .filter(campanha -> campanha.quantityAvailable() == null || campanha.quantityAvailable() > 0);
     }
 
     private static String fotoDoCard(KabumFotosResponse fotos) {

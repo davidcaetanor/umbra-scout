@@ -11,4 +11,6 @@ public interface UltimoPrecoProjecao {
     boolean isDisponivel();
 
     Instant getColetadoEm();
+
+    Instant getExpiraEm();
 }

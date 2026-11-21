@@ -23,10 +23,11 @@ public interface MonitoramentoRepository extends Repository<MonitoramentoEntity,
                    ) < now() - make_interval(days => :diasParaDescontinuado), FALSE) AS aparentementeDescontinuado,
                    l.nome AS loja, m.url, m.valor_centavos AS valorCentavos,
                    m.valor_original_centavos AS valorOriginalCentavos, m.desconto_pct AS descontoPct,
-                   m.expira_em AS expiraEm, m.coletado_em AS coletadoEm
+                   m.expira_em AS expiraEm, m.coletado_em AS coletadoEm, om.verificado_em AS verificadoEm
               FROM monitoramento mo
               JOIN produto p ON p.id = mo.produto_id
               LEFT JOIN vw_melhor_oferta_atual m ON m.produto_id = p.id
+              LEFT JOIN oferta om ON om.id = m.oferta_id
               LEFT JOIN loja l ON l.id = m.loja_id
              WHERE mo.usuario_id = :usuarioId
             """;

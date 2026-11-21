@@ -31,6 +31,8 @@ public interface ProdutoMapper {
 
     OfertaResponse paraOferta(OfertaAtualProjecao oferta, boolean gratuito, boolean promocaoEncerrada);
 
+    @Mapping(target = "coletadoEm", source = "coletadoEm")
+    @Mapping(target = "verificadoEm", source = "coletadoEm")
     OfertaResponse paraOferta(OfertaExterna oferta, String loja, Instant coletadoEm, boolean gratuito,
                               boolean promocaoEncerrada);
 

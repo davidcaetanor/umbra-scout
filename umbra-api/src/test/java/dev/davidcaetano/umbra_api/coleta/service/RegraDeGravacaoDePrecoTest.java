@@ -71,4 +71,15 @@ class RegraDeGravacaoDePrecoTest {
         assertThat(regraComJanelaDe30.devePersistir(false, com29Dias, 1000L, true, AGORA)).isFalse();
         assertThat(regraComJanelaDe30.devePersistir(false, com31Dias, 1000L, true, AGORA)).isTrue();
     }
+
+    @Test
+    void deveGravarQuandoACampanhaForRenovadaComOMesmoValorEOutraExpiracao() {
+        Instant fimAntigo = AGORA.plus(Duration.ofDays(1));
+        Instant fimNovo = AGORA.plus(Duration.ofDays(8));
+        UltimoPreco ultimo = new UltimoPreco(1000L, true, UMA_HORA_ATRAS, fimAntigo);
+
+        assertThat(regra.devePersistir(false, ultimo, 1000L, true, fimNovo, AGORA)).isTrue();
+        assertThat(regra.devePersistir(false, ultimo, 1000L, true, null, AGORA)).isTrue();
+        assertThat(regra.devePersistir(false, ultimo, 1000L, true, fimAntigo, AGORA)).isFalse();
+    }
 }

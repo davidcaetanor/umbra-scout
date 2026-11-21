@@ -52,6 +52,9 @@ public class OfertaEntity {
     @Column(nullable = false)
     private OffsetDateTime atualizadoEm;
 
+    @Column(nullable = false)
+    private OffsetDateTime verificadoEm;
+
     public static OfertaEntity nova(ProdutoEntity produto,
                                     LojaEntity loja,
                                     String identificadorLoja,
@@ -73,6 +76,7 @@ public class OfertaEntity {
         oferta.url = url;
         oferta.criadoEm = dataHoraAgora;
         oferta.atualizadoEm = dataHoraAgora;
+        oferta.verificadoEm = dataHoraAgora;
 
         return oferta;
     }

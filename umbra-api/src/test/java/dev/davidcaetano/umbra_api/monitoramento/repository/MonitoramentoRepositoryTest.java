@@ -122,6 +122,19 @@ class MonitoramentoRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveTrazerOVerificadoEmDaOfertaDaMelhorOferta() {
+        Long dono = inserirUsuario("verificado@umbra.dev");
+        Long produtoId = inserirProduto("Celeste");
+        Long ofertaId = inserirOferta(produtoId, "GOG", "celeste-gog");
+        inserirPreco(ofertaId, 2000, true, diasAtras(15));
+        Instant verificadoEm = Instant.parse("2026-11-21T06:45:00Z");
+        jdbc.update("UPDATE oferta SET verificado_em = ? WHERE id = ?", Timestamp.from(verificadoEm), ofertaId);
+        MonitoramentoEntity monitoramento = monitorar(dono, produtoId, 1500, AGORA);
+
+        assertThat(resumo(monitoramento).getVerificadoEm()).isEqualTo(verificadoEm);
+    }
+
+    @Test
     void naoDeveSinalizarDescontinuadoQuandoOJogoSegueAVendaComPrecoEstavelHaMaisDe180Dias() {
         Long dono = inserirUsuario("estavel@umbra.dev");
         Long produtoId = inserirProduto("Stardew Valley");

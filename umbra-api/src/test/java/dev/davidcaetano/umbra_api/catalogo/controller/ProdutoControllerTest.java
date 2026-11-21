@@ -372,6 +372,29 @@ class ProdutoControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void verificadoEm_deveSairNoDetalheENaListagemIndependenteDoColetadoEm() throws Exception {
+        long id = produto("t45-verificado Cooler", "HARDWARE", null, true);
+        long ofertaId = oferta(id, "KABUM", true);
+        preco(ofertaId, 14999, null, true, null);
+        jdbc.update("UPDATE preco SET coletado_em = '2026-11-06T06:45:00Z' WHERE oferta_id = ?", ofertaId);
+        jdbc.update("UPDATE oferta SET verificado_em = '2026-11-21T06:45:00Z' WHERE id = ?", ofertaId);
+
+        mockMvc.perform(get("/produtos/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ofertas[0].coletadoEm").value("2026-11-06T06:45:00Z"))
+                .andExpect(jsonPath("$.ofertas[0].verificadoEm").value("2026-11-21T06:45:00Z"))
+                .andExpect(jsonPath("$.melhorPreco.verificadoEm").value("2026-11-21T06:45:00Z"));
+
+        mockMvc.perform(get("/produtos").param("nome", "t45-verificado"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[0].melhorPreco.verificadoEm").value("2026-11-21T06:45:00Z"));
+
+        mockMvc.perform(get("/produtos").param("nome", "t45-verificado").param("loja", "KABUM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[0].melhorPreco.verificadoEm").value("2026-11-21T06:45:00Z"));
+    }
+
+    @Test
     void empateDeValor_deveDarAMesmaLojaNaListagemENoDetalhe() throws Exception {
         long id = produto("t212a-c12 Empate", "JOGO", null, true);
         preco(oferta(id, "STEAM", true), 5000, null, true, null);

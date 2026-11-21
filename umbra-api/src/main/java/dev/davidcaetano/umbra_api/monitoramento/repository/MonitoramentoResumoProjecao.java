@@ -33,4 +33,7 @@ public interface MonitoramentoResumoProjecao {
     Instant getExpiraEm();
 
     Instant getColetadoEm();
+
+
+    Instant getVerificadoEm();
 }
