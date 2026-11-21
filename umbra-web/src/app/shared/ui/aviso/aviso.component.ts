@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AvisoService } from './aviso.service';
+import { EstadoMascote } from '../../mascote/estado-mascote';
+import { MascoteComponent } from '../../mascote/mascote.component';
+import { Aviso, AvisoService, RetratoDoAviso } from './aviso.service';
 
 @Component({
   selector: 'umbra-aviso',
+  imports: [MascoteComponent],
   templateUrl: './aviso.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -11,4 +14,12 @@ import { AvisoService } from './aviso.service';
 })
 export class AvisoComponent {
   protected readonly avisos = inject(AvisoService);
+
+  protected retratoDe(aviso: Aviso): RetratoDoAviso {
+    return aviso.figura.tipo === 'retrato' ? aviso.figura.retrato : 'feliz';
+  }
+
+  protected estadoDe(aviso: Aviso): EstadoMascote {
+    return aviso.figura.tipo === 'sprite' ? aviso.figura.estado : 'comemorando';
+  }
 }

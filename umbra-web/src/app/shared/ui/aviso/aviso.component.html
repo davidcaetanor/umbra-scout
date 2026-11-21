@@ -3,14 +3,26 @@
     <div
       class="pointer-events-auto flex items-center gap-3 rounded-bloco border border-filete bg-superficie-elevada py-2 ps-2 pe-1 shadow-lg"
     >
-      <img
-        [src]="'/mascote/retratos/' + aviso.retrato + '.png'"
-        alt=""
-        width="48"
-        height="48"
-        class="size-12 shrink-0 [image-rendering:pixelated]"
-      />
-      <p class="min-w-0 flex-1 text-interface">{{ aviso.texto }}</p>
+      @switch (aviso.figura.tipo) {
+        @case ('retrato') {
+          <img
+            [src]="'/mascote/retratos/' + retratoDe(aviso) + '.png'"
+            alt=""
+            width="48"
+            height="48"
+            class="size-12 shrink-0 [image-rendering:pixelated]"
+          />
+        }
+        @case ('sprite') {
+          <umbra-mascote [estado]="estadoDe(aviso)" tamanho="mini" class="shrink-0" />
+        }
+      }
+      <p class="flex min-w-0 flex-1 flex-col">
+        <span class="text-interface">{{ aviso.texto }}</span>
+        @if (aviso.detalhe; as detalhe) {
+          <span class="text-apoio text-texto-secundario">{{ detalhe }}</span>
+        }
+      </p>
       <button
         type="button"
         class="min-h-11 min-w-11 shrink-0 rounded-controle text-texto-secundario hover:text-texto"
