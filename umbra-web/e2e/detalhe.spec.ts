@@ -134,6 +134,23 @@ test.describe('T4.5, detalhe do produto', () => {
     await expect(page.getByRole('list', { name: 'Legenda do histórico' })).toContainText('Alvo de busca');
   });
 
+  test('alvo acima de R$ 5 mil recebe piada do Umbra; acima de R$ 150 mil é recusado', async ({ page }, info) => {
+    await comSessao(page);
+    await simularProduto(page);
+    await simularMonitoramentos(page, [], { status: 201, json: { id: 9, produtoId: 42, precoAlvoCentavos: 12_000_000 } });
+    await page.goto('/catalogo/42');
+
+    await page.getByLabel('Preço alvo').fill('150.000,01');
+    await page.getByRole('button', { name: 'Monitorar' }).click();
+    await expect(page.getByRole('alert')).toHaveText('O alvo vai até R$ 150.000,00.');
+
+    await page.getByLabel('Preço alvo').fill('120.000');
+    await page.getByRole('button', { name: 'Monitorar' }).click();
+    const aviso = page.getByRole('status').filter({ hasText: 'Alvo salvo.' });
+    await expect(aviso).toContainText('em promoção?');
+    await info.attach('piada', { body: await page.screenshot(), contentType: 'image/png' });
+  });
+
   test('quem já monitora vê o alvo; conflito ao criar leva a Meus monitoramentos', async ({ page }) => {
     await comSessao(page);
     await simularProduto(page);

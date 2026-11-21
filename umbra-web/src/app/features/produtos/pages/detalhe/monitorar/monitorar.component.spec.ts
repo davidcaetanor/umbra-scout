@@ -5,6 +5,7 @@ import { TokenDaSessao } from '../../../../../core/sessao';
 import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
 import { MonitorarComponent, SituacaoDoMonitoramento } from './monitorar.component';
+import { PIADAS } from './piadas-do-alvo';
 import { CHAVE_DO_RASCUNHO, RascunhoDoAlvo } from './rascunho-do-alvo';
 
 describe('MonitorarComponent', () => {
@@ -70,7 +71,16 @@ describe('MonitorarComponent', () => {
     expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Informe o preço alvo.');
 
     await enviar(tela, 'abc');
-    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Use um valor em reais, como 149,90.');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Use só números, como 149,90 ou 149.90.');
+
+    await enviar(tela, '-10');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Use só números, como 149,90 ou 149.90.');
+
+    await enviar(tela, '0');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('O alvo precisa ser maior que zero.');
+
+    await enviar(tela, '150.000,01');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('O alvo vai até R$ 150.000,00.');
     expect(tela.querySelector('#preco-alvo')?.getAttribute('aria-invalid')).toBe('true');
     expect(criar).not.toHaveBeenCalled();
   });
@@ -86,6 +96,17 @@ describe('MonitorarComponent', () => {
     expect(TestBed.inject(RascunhoDoAlvo).retomar(42)).toBe(14990);
   });
 
+  it('aceita o máximo com separador de milhar e ponto decimal', async () => {
+    criar.mockResolvedValue({ id: 9, precoAlvoCentavos: 15_000_000 });
+    const tela = await abrir({ tipo: 'livre' });
+
+    await enviar(tela, '150.000,00');
+    expect(criar).toHaveBeenLastCalledWith(42, 15_000_000);
+
+    await enviar(tela, '149.90');
+    expect(criar).toHaveBeenLastCalledWith(42, 14990);
+  });
+
   it('cria o monitoramento, avisa com o retrato feliz e entrega o resultado', async () => {
     criar.mockResolvedValue({ id: 9, precoAlvoCentavos: 14990 });
     const tela = await abrir({ tipo: 'livre' });
@@ -97,9 +118,27 @@ describe('MonitorarComponent', () => {
     expect(criar).toHaveBeenCalledWith(42, 14990);
     expect(TestBed.inject(AvisoService).atual()).toEqual({
       texto: 'Monitoramento criado. O Umbra avisa quando o preço chegar lá.',
-      retrato: 'feliz',
+      detalhe: null,
+      figura: { tipo: 'retrato', retrato: 'feliz' },
     });
     expect(criados).toEqual([{ id: 9, precoAlvoCentavos: 14990 }]);
+  });
+
+  it('alvo acima de R$ 5 mil recebe uma piada do rodízio no lugar do aviso comum', async () => {
+    localStorage.clear();
+    criar.mockResolvedValue({ id: 9, precoAlvoCentavos: 12_000_000 });
+    const tela = await abrir({ tipo: 'livre' });
+
+    await enviar(tela, '120.000');
+    const primeira = TestBed.inject(AvisoService).atual();
+    await enviar(tela, '5.000,00');
+    const comum = TestBed.inject(AvisoService).atual();
+    await enviar(tela, '5.000,01');
+    const segunda = TestBed.inject(AvisoService).atual();
+
+    expect(primeira).toEqual({ texto: PIADAS[0].texto, detalhe: 'Alvo salvo.', figura: PIADAS[0].figura });
+    expect(comum?.texto).toBe('Monitoramento criado. O Umbra avisa quando o preço chegar lá.');
+    expect(segunda?.texto).toBe(PIADAS[1].texto);
   });
 
   it('mostra o digitando enquanto grava', async () => {
@@ -132,7 +171,7 @@ describe('MonitorarComponent', () => {
 
     criar.mockRejectedValueOnce(new ErroDaApi({ tipo: 'invalido', campos: [] }));
     await enviar(tela, '10');
-    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Use um valor em reais, como 149,90.');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Use só números, como 149,90 ou 149.90.');
   });
 
   it('logado retoma o rascunho deste produto e põe o foco no botão', async () => {

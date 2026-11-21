@@ -20,7 +20,8 @@ import { MascoteComponent } from '../../../../../shared/mascote/mascote.componen
 import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProduto } from '../../../data/monitoramento-do-produto';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
-import { centavosDoAlvo, textoDoAlvo } from './preco-alvo';
+import { RodizioDePiadas, alvoExorbitante } from './piadas-do-alvo';
+import { LeituraDoAlvo, lerAlvo, textoDoAlvo } from './preco-alvo';
 import { RascunhoDoAlvo } from './rascunho-do-alvo';
 
 export type SituacaoDoMonitoramento =
@@ -30,6 +31,13 @@ export type SituacaoDoMonitoramento =
   | { readonly tipo: 'monitorado'; readonly monitoramento: MonitoramentoDoProduto };
 
 const ROTA_DOS_MONITORAMENTOS = '/monitoramentos';
+
+const MENSAGEM_DO_ALVO: Readonly<Record<Exclude<LeituraDoAlvo['tipo'], 'valido'>, string>> = {
+  vazio: 'Informe o preço alvo.',
+  invalido: 'Use só números, como 149,90 ou 149.90.',
+  zero: 'O alvo precisa ser maior que zero.',
+  'acima-do-maximo': 'O alvo vai até R$ 150.000,00.',
+};
 
 @Component({
   selector: 'umbra-monitorar',
@@ -44,6 +52,7 @@ export class MonitorarComponent {
   private readonly monitoramentos = inject(MonitoramentoDoProdutoService);
   private readonly avisos = inject(AvisoService);
   private readonly rascunho = inject(RascunhoDoAlvo);
+  private readonly piadas = inject(RodizioDePiadas);
 
   readonly produtoId = input.required<number>();
   readonly gratuito = input.required<boolean>();
@@ -93,11 +102,12 @@ export class MonitorarComponent {
     if (this.salvando()) {
       return;
     }
-    const alvo = centavosDoAlvo(this.texto());
-    if (alvo === null) {
-      this.erro.set(this.texto().trim() === '' ? 'Informe o preço alvo.' : 'Use um valor em reais, como 149,90.');
+    const leitura = lerAlvo(this.texto());
+    if (leitura.tipo !== 'valido') {
+      this.erro.set(MENSAGEM_DO_ALVO[leitura.tipo]);
       return;
     }
+    const alvo = leitura.centavos;
     if (this.sessao.vigente() === null) {
       this.rascunho.guardar(this.produtoId(), alvo);
       await this.router.navigate([ROTA_DE_ENTRADA], { queryParams: { returnUrl: this.router.url } });
@@ -106,11 +116,20 @@ export class MonitorarComponent {
     await this.criar(alvo);
   }
 
+  private avisarCriacao(alvo: number): void {
+    if (alvoExorbitante(alvo)) {
+      const piada = this.piadas.proxima();
+      this.avisos.mostrarLongo({ texto: piada.texto, detalhe: 'Alvo salvo.', figura: piada.figura });
+      return;
+    }
+    this.avisos.mostrar('Monitoramento criado. O Umbra avisa quando o preço chegar lá.');
+  }
+
   private async criar(alvo: number): Promise<void> {
     this.salvando.set(true);
     try {
       const monitoramento = await this.monitoramentos.criar(this.produtoId(), alvo);
-      this.avisos.mostrar('Monitoramento criado. O Umbra avisa quando o preço chegar lá.');
+      this.avisarCriacao(alvo);
       this.criado.emit(monitoramento);
     } catch (falha) {
       const caso = casoDe(falha);
@@ -119,7 +138,7 @@ export class MonitorarComponent {
         await this.router.navigateByUrl(ROTA_DOS_MONITORAMENTOS);
         return;
       }
-      this.erro.set(caso.tipo === 'invalido' ? 'Use um valor em reais, como 149,90.' : mensagemDoCaso(caso));
+      this.erro.set(caso.tipo === 'invalido' ? MENSAGEM_DO_ALVO.invalido : mensagemDoCaso(caso));
     } finally {
       this.salvando.set(false);
     }
