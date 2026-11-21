@@ -1,0 +1,37 @@
+<ul
+  class="grid grid-cols-1 gap-0.5 overflow-hidden rounded-bloco border-2 border-filete bg-filete min-[30rem]:grid-cols-2 largo:grid-cols-[repeat(auto-fit,minmax(0,1fr))]"
+  aria-label="Legenda do histórico"
+>
+  @for (celula of celulas(); track celula.marca) {
+    <li class="flex items-start gap-3 bg-superficie px-3 py-2.5">
+      <span class="mt-1.5 flex h-3 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+        @switch (celula.marca) {
+          @case ('hoje') {
+            <span class="size-3 rounded-full bg-destaque"></span>
+          }
+          @case ('linha-1') {
+            <span class="h-0.5 w-5 bg-historico-1"></span>
+          }
+          @case ('linha-3') {
+            <span class="w-5 border-t-2 border-dashed border-historico-3"></span>
+          }
+          @case ('minimo') {
+            <span class="size-2.5 rotate-45 bg-texto"></span>
+          }
+          @case ('alvo') {
+            <span class="w-5 border-t-2 border-dotted border-ambiente"></span>
+          }
+        }
+      </span>
+      <span class="flex min-w-0 flex-col">
+        <span class="text-apoio text-texto-secundario">{{ celula.titulo }}</span>
+        @if (celula.valor !== null) {
+          <span class="font-mono text-valor tabular-nums">{{ celula.valor }}</span>
+        }
+        @if (celula.detalhe !== null) {
+          <span class="text-dado text-texto-secundario">{{ celula.detalhe }}</span>
+        }
+      </span>
+    </li>
+  }
+</ul>
