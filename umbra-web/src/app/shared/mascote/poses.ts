@@ -27,6 +27,7 @@ function pose(definicao: DefinicaoDePose): PoseMascote {
 }
 
 export const ESCALA_POR_TAMANHO: Readonly<Record<TamanhoMascote, number>> = {
+  mini: 1,
   pequeno: 2,
   grande: 3,
 };
@@ -64,6 +65,15 @@ export const POSES: Readonly<Record<EstadoMascote, Readonly<Partial<Record<Direc
   },
   ocioso: {
     south: pose({ nome: 'ocioso-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 8, fps: 6, repeticao: UMA_VEZ }),
+  },
+  desmaiando: {
+    south: pose({ nome: 'desmaiando-south', largura: 92, sobraAbaixoDosPes: 13, quadroDeRepouso: 8, fps: 8, repeticao: UMA_VEZ }),
+  },
+  patrao: {
+    south: pose({ nome: 'patrao-south', largura: 92, sobraAbaixoDosPes: 14, quadroDeRepouso: 0, fps: 8, repeticao: LOOP }),
+  },
+  velhinho: {
+    south: pose({ nome: 'velhinho-south', largura: 92, sobraAbaixoDosPes: 12, quadroDeRepouso: 0, fps: 6, repeticao: LOOP }),
   },
 };
 
