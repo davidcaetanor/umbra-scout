@@ -149,6 +149,10 @@ class IsolamentoEntreUsuariosTest extends IntegrationTestBase {
         como(dono, get("/monitoramentos"))
                 .andExpect(jsonPath("$.totalElementos").value(1))
                 .andExpect(jsonPath("$.conteudo[0].id").value(monitoramentoDoDono));
+        como(intruso, get("/monitoramentos").param("produtoId", produto.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElementos").value(0))
+                .andExpect(jsonPath("$.conteudo").isEmpty());
     }
 
     @Test
