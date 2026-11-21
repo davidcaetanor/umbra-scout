@@ -43,6 +43,7 @@ const OFERTA: OfertaDaLoja = {
   gratuito: false,
   endereco: 'https://loja.exemplo',
   coletadoEm: '2026-11-21T10:00:00Z',
+  expiraEm: null,
 };
 
 function contexto(parcial: Partial<ContextoDoGrafico> = {}): ContextoDoGrafico {

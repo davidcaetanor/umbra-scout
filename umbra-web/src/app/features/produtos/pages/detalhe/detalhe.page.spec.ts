@@ -26,6 +26,7 @@ const PRODUTO: ProdutoDetalhado = {
     gratuito: false,
     endereco: 'https://loja.exemplo/gog',
     coletadoEm: '2026-11-21T10:00:00Z',
+    expiraEm: null,
   },
   ofertas: [
     {
@@ -35,6 +36,7 @@ const PRODUTO: ProdutoDetalhado = {
       gratuito: false,
       endereco: 'https://loja.exemplo/gog',
       coletadoEm: '2026-11-21T10:00:00Z',
+      expiraEm: null,
     },
     {
       loja: 'Steam',
@@ -43,6 +45,7 @@ const PRODUTO: ProdutoDetalhado = {
       gratuito: false,
       endereco: 'https://loja.exemplo/steam',
       coletadoEm: '2026-11-20T10:00:00Z',
+      expiraEm: null,
     },
   ],
 };
@@ -221,7 +224,7 @@ describe('DetalhePage', () => {
     const tela = await abrir();
 
     expect(buscar).not.toHaveBeenCalled();
-    expect(texto(tela)).toContain('você entra na sua conta e volta para cá');
+    expect(tela.querySelector('#preco-alvo')).not.toBeNull();
   });
 
   it('hardware não mostra a coluna de desconto', async () => {

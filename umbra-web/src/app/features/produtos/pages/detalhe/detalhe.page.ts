@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, resource, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { carregarEstado, casoDe, mensagemDoErro } from '../../../../core/erro';
 import { PaginaNaoEncontradaPage } from '../../../../core/erro/pagina-nao-encontrada/pagina-nao-encontrada.page';
@@ -7,12 +8,14 @@ import { diaMesEAno, hora } from '../../../../shared/formatacao/data-curta';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { EstadoDoBloco, dadosDe } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
-import { CapaProdutoComponent } from '../../components/capa-produto/capa-produto.component';
 import { GraficoHistoricoComponent } from '../../components/grafico-historico/grafico-historico.component';
 import { LegendaHistoricoComponent } from '../../components/legenda-historico/legenda-historico.component';
 import { PrecoProdutoComponent } from '../../components/preco-produto/preco-produto.component';
 import { OfertaExibida } from '../../components/tabela-lojas/oferta-exibida';
 import { TabelaLojasComponent } from '../../components/tabela-lojas/tabela-lojas.component';
+import { TopoExibido } from '../../components/topo-produto/topo-exibido';
+import { TopoHardwareComponent } from '../../components/topo-produto/topo-hardware.component';
+import { TopoJogoComponent } from '../../components/topo-produto/topo-jogo.component';
 import { HistoricoDoProduto, PeriodoDoHistorico } from '../../data/historico-do-produto';
 import { MonitoramentoDoProduto } from '../../data/monitoramento-do-produto';
 import { MonitoramentoDoProdutoService } from '../../data/monitoramento-do-produto.service';
@@ -28,8 +31,8 @@ import {
   opcoesDePeriodo,
   periodoEfetivo,
   temHistorico,
-  valorDoMinimo,
 } from './historico-exibido';
+import { leituraDoPreco } from './leitura-do-preco';
 import { MonitorarComponent, SituacaoDoMonitoramento } from './monitorar/monitorar.component';
 
 const ID_VALIDO = /^[1-9]\d{0,14}$/;
@@ -39,15 +42,17 @@ const TITULO_NAO_ENCONTRADO = 'Página não encontrada';
 @Component({
   selector: 'umbra-detalhe-page',
   imports: [
-    CapaProdutoComponent,
     EstadoDoBlocoComponent,
     GraficoHistoricoComponent,
     LegendaHistoricoComponent,
     MascoteComponent,
     MonitorarComponent,
+    NgTemplateOutlet,
     PaginaNaoEncontradaPage,
     PrecoProdutoComponent,
     TabelaLojasComponent,
+    TopoHardwareComponent,
+    TopoJogoComponent,
   ],
   templateUrl: './detalhe.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -185,9 +190,19 @@ export class DetalhePage {
     const maisRecente = Math.max(...instantes);
     return `${diaMesEAno(maisRecente)} às ${hora(maisRecente)}`;
   });
-  protected readonly menorRegistrado = computed(() => {
-    const minimo = this.historico()?.minimo;
-    return minimo ? valorDoMinimo(minimo) : null;
+  protected readonly topo = computed<TopoExibido | null>(() => {
+    const produto = this.produto();
+    if (produto === null) {
+      return null;
+    }
+    const historico = this.historico();
+    return {
+      nome: produto.nome,
+      tipo: produto.tipo,
+      rotulo: produto.tipo === 'JOGO' ? 'Jogo' : (produto.categoria ?? 'Hardware'),
+      capa: produto.capa,
+      leitura: historico === null ? null : leituraDoPreco(produto.melhorOferta, historico.minimo, historico.consultadoEm),
+    };
   });
   protected readonly observadoDesde = computed(() => {
     const desde = this.historico()?.observadoDesde;

@@ -9,6 +9,7 @@ export interface OfertaDaLoja {
   readonly gratuito: boolean;
   readonly endereco: string;
   readonly coletadoEm: string;
+  readonly expiraEm: number | null;
 }
 
 export interface ProdutoDetalhado {

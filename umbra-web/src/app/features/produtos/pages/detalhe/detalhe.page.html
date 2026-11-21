@@ -5,26 +5,24 @@
   @if (produto(); as produto) {
     <article class="flex flex-col gap-8">
       <header class="grid gap-6 largo:grid-cols-[minmax(0,1fr)_22rem] largo:items-start">
-        <div class="flex flex-col gap-4 tablet:flex-row tablet:items-start tablet:gap-6">
-          <umbra-capa-produto
-            [capa]="produto.capa"
-            [tipo]="produto.tipo"
-            tamanhos="(min-width: 48rem) 300px, 100vw"
-            [prioritaria]="true"
-            class="aspect-[300/140] w-full shrink-0 rounded-peca tablet:w-75"
+        <ng-template #monitorar>
+          <umbra-monitorar
+            [produtoId]="produto.id"
+            [gratuito]="produto.melhorOferta?.gratuito ?? false"
+            [situacao]="situacaoDoMonitoramento()"
+            (criado)="aoCriarMonitoramento($event)"
           />
-          <div class="flex min-w-0 flex-col gap-2">
-            <p class="text-apoio text-texto-secundario">
-              {{ produto.tipo === 'JOGO' ? 'Jogo' : (produto.categoria ?? 'Hardware') }}
-            </p>
-            <h1 class="font-titulo text-secao break-words">{{ produto.nome }}</h1>
-            @if (menorRegistrado(); as menor) {
-              <p class="text-apoio text-texto-secundario">
-                Menor registrado <span class="font-mono tabular-nums text-texto">{{ menor }}</span>
-              </p>
-            }
-          </div>
-        </div>
+        </ng-template>
+
+        @if (topo(); as topo) {
+          @if (topo.tipo === 'JOGO') {
+            <umbra-topo-jogo [topo]="topo" />
+          } @else {
+            <umbra-topo-hardware [topo]="topo">
+              <ng-container [ngTemplateOutlet]="monitorar" />
+            </umbra-topo-hardware>
+          }
+        }
 
         <div class="flex flex-col gap-4">
           <section class="rounded-bloco border-2 border-filete bg-superficie p-4" aria-labelledby="titulo-melhor-preco">
@@ -41,12 +39,9 @@
               </a>
             }
           </section>
-          <umbra-monitorar
-            [produtoId]="produto.id"
-            [gratuito]="produto.melhorOferta?.gratuito ?? false"
-            [situacao]="situacaoDoMonitoramento()"
-            (criado)="aoCriarMonitoramento($event)"
-          />
+          @if (produto.tipo === 'JOGO') {
+            <ng-container [ngTemplateOutlet]="monitorar" />
+          }
         </div>
       </header>
 

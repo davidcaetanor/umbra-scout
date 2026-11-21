@@ -171,7 +171,7 @@ export function lojasIniciais(historico: HistoricoDoProduto): string[] {
   return historico.porLoja.slice(0, MAXIMO_DE_LOJAS_NO_GRAFICO).map((serie) => serie.loja);
 }
 
-export function valorDoMinimo(minimo: MinimoDoHistorico): string {
+function valorDoMinimo(minimo: MinimoDoHistorico): string {
   return minimo.valorCentavos === 0 ? 'Grátis' : reais(minimo.valorCentavos);
 }
 
