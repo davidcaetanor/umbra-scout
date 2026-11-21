@@ -290,6 +290,21 @@ class ColetaServiceTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveGravarPrecoQuandoACampanhaForRenovadaComOMesmoValor() {
+        gravar(oferta(CodigoLoja.KABUM, "909143", TipoProduto.HARDWARE, "Cooler", null, 10299L, true,
+                OrigemColeta.KABUM_API, INSTANTE_RODADA_1.plusDays(1)));
+
+        avancar(java.time.Duration.ofHours(12));
+
+        gravar(oferta(CodigoLoja.KABUM, "909143", TipoProduto.HARDWARE, "Cooler", null, 10299L, true,
+                OrigemColeta.KABUM_API, INSTANTE_RODADA_1.plusDays(8)));
+
+        assertThat(precosDa("909143")).extracting(PrecoEntity::getExpiraEm)
+                .extracting(OffsetDateTime::toInstant)
+                .containsExactly(INSTANTE_RODADA_1.plusDays(1).toInstant(), INSTANTE_RODADA_1.plusDays(8).toInstant());
+    }
+
+    @Test
     void deveGravarPrecoQuandoValorMudar() {
         gravar(oferta(CodigoLoja.STEAM, "730", TipoProduto.JOGO, "Counter-Strike 2",
                 "gid-cs2", 8990L, true, OrigemColeta.STEAM_API));

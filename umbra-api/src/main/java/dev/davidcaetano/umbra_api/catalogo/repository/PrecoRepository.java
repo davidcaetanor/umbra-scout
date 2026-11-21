@@ -14,7 +14,8 @@ import java.util.Optional;
 public interface PrecoRepository extends JpaRepository<PrecoEntity, Long> {
 
     @Query(value = """
-            SELECT oferta_id AS ofertaId, valor_centavos AS valorCentavos, disponivel, coletado_em AS coletadoEm
+            SELECT oferta_id AS ofertaId, valor_centavos AS valorCentavos, disponivel, coletado_em AS coletadoEm,
+                   expira_em AS expiraEm
               FROM vw_preco_atual
              WHERE oferta_id IN (:ofertaIds)
             """, nativeQuery = true)
@@ -22,7 +23,8 @@ public interface PrecoRepository extends JpaRepository<PrecoEntity, Long> {
 
     @Query(value = """
             SELECT DISTINCT ON (oferta_id)
-                   oferta_id AS ofertaId, valor_centavos AS valorCentavos, disponivel, coletado_em AS coletadoEm
+                   oferta_id AS ofertaId, valor_centavos AS valorCentavos, disponivel, coletado_em AS coletadoEm,
+                   expira_em AS expiraEm
               FROM preco
              WHERE oferta_id IN (:ofertaIds)
                AND origem_coleta = :#{#origem.name()}

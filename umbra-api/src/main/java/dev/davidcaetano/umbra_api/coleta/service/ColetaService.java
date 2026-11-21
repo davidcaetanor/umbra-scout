@@ -267,10 +267,12 @@ public class ColetaService {
         UltimoPrecoProjecao ultimoPreco = contexto.ultimoPrecoPorSerie()
                 .get(new SerieDePreco(ofertaId, ofertaColetada.origemColeta()));
         UltimoPreco ultimoPrecoConhecido = ultimoPreco == null ? null
-                : new UltimoPreco(ultimoPreco.getValorCentavos(), ultimoPreco.isDisponivel(), ultimoPreco.getColetadoEm());
+                : new UltimoPreco(ultimoPreco.getValorCentavos(), ultimoPreco.isDisponivel(), ultimoPreco.getColetadoEm(),
+                        ultimoPreco.getExpiraEm());
 
         return regraDeGravacaoDePreco.devePersistir(ofertaNova, ultimoPrecoConhecido,
-                ofertaColetada.valorCentavos(), ofertaColetada.disponivel(), agora.toInstant());
+                ofertaColetada.valorCentavos(), ofertaColetada.disponivel(),
+                ofertaColetada.expiry() == null ? null : ofertaColetada.expiry().toInstant(), agora.toInstant());
     }
 
     private ContextoDoChunk carregarContexto(List<GrupoDeOfertas> grupos, Map<CodigoLoja, LojaEntity> lojasPorCodigo) {

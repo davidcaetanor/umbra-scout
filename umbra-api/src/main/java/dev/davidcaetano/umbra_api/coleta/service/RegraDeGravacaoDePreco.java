@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 @Component
 final class RegraDeGravacaoDePreco {
@@ -17,6 +18,11 @@ final class RegraDeGravacaoDePreco {
 
     boolean devePersistir(boolean ofertaNova, UltimoPreco ultimoPreco, long valorCentavos,
                            boolean disponivel, Instant agora) {
+        return devePersistir(ofertaNova, ultimoPreco, valorCentavos, disponivel, null, agora);
+    }
+
+    boolean devePersistir(boolean ofertaNova, UltimoPreco ultimoPreco, long valorCentavos,
+                           boolean disponivel, Instant expiraEm, Instant agora) {
 
         if (ofertaNova || ultimoPreco == null) {
             return true;
@@ -24,9 +30,10 @@ final class RegraDeGravacaoDePreco {
 
         boolean valorMudou = ultimoPreco.valorCentavos() != valorCentavos;
         boolean disponibilidadeMudou = ultimoPreco.disponivel() != disponivel;
+        boolean expiracaoMudou = !Objects.equals(ultimoPreco.expiraEm(), expiraEm);
         boolean janelaDeVivacidadeExpirou = ultimoPreco.coletadoEm()
                 .isBefore(agora.minus(gravacao.janelaVivacidadeDias(), ChronoUnit.DAYS));
 
-        return valorMudou || disponibilidadeMudou || janelaDeVivacidadeExpirou;
+        return valorMudou || disponibilidadeMudou || expiracaoMudou || janelaDeVivacidadeExpirou;
     }
 }
