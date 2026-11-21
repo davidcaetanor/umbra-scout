@@ -2,6 +2,7 @@ package dev.davidcaetano.umbra_api.monitoramento.controller;
 
 import dev.davidcaetano.umbra_api.monitoramento.dto.request.AlterarMonitoramentoRequest;
 import dev.davidcaetano.umbra_api.monitoramento.dto.request.CriarMonitoramentoRequest;
+import dev.davidcaetano.umbra_api.monitoramento.dto.request.FiltroDeMonitoramentosRequest;
 import dev.davidcaetano.umbra_api.monitoramento.dto.response.MonitoramentoResponse;
 import dev.davidcaetano.umbra_api.monitoramento.dto.response.MonitoramentosResponse;
 import dev.davidcaetano.umbra_api.monitoramento.service.MonitoramentoService;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,8 +42,10 @@ public class MonitoramentoController implements MonitoramentoApi {
 
     @Override
     @GetMapping
-    public MonitoramentosResponse listar(@AuthenticationPrincipal UsuarioAutenticado usuario, Pageable paginacao) {
-        return monitoramentoService.listar(usuario, paginacao);
+    public MonitoramentosResponse listar(@AuthenticationPrincipal UsuarioAutenticado usuario,
+                                         @Valid @ModelAttribute FiltroDeMonitoramentosRequest filtro,
+                                         Pageable paginacao) {
+        return monitoramentoService.listar(usuario, filtro.produtoId(), paginacao);
     }
 
     @Override

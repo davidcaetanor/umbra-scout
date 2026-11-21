@@ -62,11 +62,10 @@ public class MonitoramentoService {
     }
 
     @Transactional(readOnly = true)
-    public MonitoramentosResponse listar(UsuarioAutenticado usuario, Pageable paginacao) {
+    public MonitoramentosResponse listar(UsuarioAutenticado usuario, Long produtoId, Pageable paginacao) {
         exigirContaAtiva(usuario);
         Instant agora = clock.instant();
-        Page<MonitoramentoResumoProjecao> pagina = monitoramentoRepository.listarDoUsuario(usuario.id(),
-                monitoramentoProperties.diasParaDescontinuado(),
+        Page<MonitoramentoResumoProjecao> pagina = paginaDoUsuario(usuario.id(), produtoId,
                 PageRequest.of(paginacao.getPageNumber(), paginacao.getPageSize()));
 
         List<MonitoramentoResponse> conteudo = pagina.getContent().stream()
@@ -75,6 +74,14 @@ public class MonitoramentoService {
 
         return new MonitoramentosResponse(conteudo, pagina.getNumber(), pagina.getSize(),
                 pagina.getTotalElements(), pagina.getTotalPages());
+    }
+
+    private Page<MonitoramentoResumoProjecao> paginaDoUsuario(Long usuarioId, Long produtoId, Pageable paginacao) {
+        int diasParaDescontinuado = monitoramentoProperties.diasParaDescontinuado();
+        return produtoId == null
+                ? monitoramentoRepository.listarDoUsuario(usuarioId, diasParaDescontinuado, paginacao)
+                : monitoramentoRepository.listarDoUsuarioPorProduto(usuarioId, produtoId, diasParaDescontinuado,
+                        paginacao);
     }
 
     @Transactional

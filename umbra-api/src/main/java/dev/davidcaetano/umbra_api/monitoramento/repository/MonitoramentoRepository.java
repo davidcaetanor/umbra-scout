@@ -50,6 +50,14 @@ public interface MonitoramentoRepository extends Repository<MonitoramentoEntity,
                                                       @Param("diasParaDescontinuado") int diasParaDescontinuado,
                                                       Pageable paginacao);
 
+    @Query(value = RESUMO + " AND mo.produto_id = :produtoId ORDER BY mo.criado_em DESC, mo.id DESC",
+            countQuery = "SELECT count(*) FROM monitoramento WHERE usuario_id = :usuarioId AND produto_id = :produtoId",
+            nativeQuery = true)
+    Page<MonitoramentoResumoProjecao> listarDoUsuarioPorProduto(@Param("usuarioId") Long usuarioId,
+                                                                @Param("produtoId") Long produtoId,
+                                                                @Param("diasParaDescontinuado") int diasParaDescontinuado,
+                                                                Pageable paginacao);
+
     @Query(value = RESUMO + " AND mo.id = :id", nativeQuery = true)
     Optional<MonitoramentoResumoProjecao> buscarResumoDoUsuario(@Param("id") Long id,
                                                                 @Param("usuarioId") Long usuarioId,

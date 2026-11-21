@@ -3,6 +3,7 @@ package dev.davidcaetano.umbra_api.monitoramento.controller;
 import dev.davidcaetano.umbra_api.comum.openapi.RespostaDeErro;
 import dev.davidcaetano.umbra_api.monitoramento.dto.request.AlterarMonitoramentoRequest;
 import dev.davidcaetano.umbra_api.monitoramento.dto.request.CriarMonitoramentoRequest;
+import dev.davidcaetano.umbra_api.monitoramento.dto.request.FiltroDeMonitoramentosRequest;
 import dev.davidcaetano.umbra_api.monitoramento.dto.response.MonitoramentoResponse;
 import dev.davidcaetano.umbra_api.monitoramento.dto.response.MonitoramentosResponse;
 import dev.davidcaetano.umbra_api.usuario.service.UsuarioAutenticado;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
@@ -35,14 +37,17 @@ public interface MonitoramentoApi {
                                                 CriarMonitoramentoRequest pedido);
 
     @Operation(operationId = "listarMonitoramentos", summary = "Monitoramentos do usuário",
-            description = "Ordem fixa, do mais recente ao mais antigo; `sort` não é aceito.")
+            description = "Ordem fixa, do mais recente ao mais antigo; `sort` não é aceito. Com `produtoId`, "
+                    + "devolve só o monitoramento daquele produto, se existir.")
     @Parameter(name = "page", in = ParameterIn.QUERY, description = "Página, a partir de 0.",
             schema = @Schema(type = "integer", format = "int32", minimum = "0", defaultValue = "0"))
     @Parameter(name = "size", in = ParameterIn.QUERY, description = "Itens por página; acima de 20 vira 20.",
             schema = @Schema(type = "integer", format = "int32", minimum = "1", maximum = "20", defaultValue = "20"))
     @ApiResponse(responseCode = "200", description = "Página de monitoramentos.")
+    @ApiResponse(responseCode = "400", ref = RespostaDeErro.REF_PARAMETRO_INVALIDO)
     @ApiResponse(responseCode = "404", ref = RespostaDeErro.REF_NAO_ENCONTRADO)
     MonitoramentosResponse listar(@Parameter(hidden = true) UsuarioAutenticado usuario,
+                                  @ParameterObject FiltroDeMonitoramentosRequest filtro,
                                   @Parameter(hidden = true) Pageable paginacao);
 
     @Operation(operationId = "alterarMonitoramento", summary = "Pausa, reativa ou troca o alvo",
