@@ -5,13 +5,11 @@ import { ApiConfiguration } from '../../../api/api-configuration';
 import { BuscarProdutos$Params, buscarProdutos } from '../../../api/fn/catalogo/buscar-produtos';
 import { destaquesDoCatalogo } from '../../../api/fn/catalogo/destaques-do-catalogo';
 import { BuscaProdutosResponse } from '../../../api/models/busca-produtos-response';
-import { OfertaResponse } from '../../../api/models/oferta-response';
 import { ProdutoExternoResponse } from '../../../api/models/produto-externo-response';
 import { ProdutoResumoResponse } from '../../../api/models/produto-resumo-response';
-import { reais } from '../../../shared/formatacao/reais';
 import { CategoriaDeHardware, FiltroDaBusca } from './filtro-da-busca';
 import { capaPelaOrigem } from './imagem-pela-origem';
-import { PrecoDoProduto } from './preco-do-produto';
+import { precoDaOferta } from './preco-da-oferta';
 import { ProdutoDoCatalogo } from './produto-do-catalogo';
 import { ProdutoExterno } from './produto-externo';
 import { ResultadoDaBusca } from './resultado-da-busca';
@@ -75,7 +73,7 @@ function paraProduto(produto: ProdutoResumoResponse): ProdutoDoCatalogo {
     tipo: produto.tipo,
     capa: capaPelaOrigem(produto.imagemUrl),
     categoria: produto.categoria ? (ROTULO_DA_CATEGORIA[produto.categoria as CategoriaDeHardware] ?? null) : null,
-    preco: produto.melhorPreco ? paraPreco(produto.melhorPreco) : null,
+    preco: produto.melhorPreco ? precoDaOferta(produto.melhorPreco) : null,
   };
 }
 
@@ -84,22 +82,7 @@ function paraProdutoExterno(produto: ProdutoExternoResponse): ProdutoExterno {
     gid: produto.gid,
     nome: produto.nome,
     capa: capaPelaOrigem(produto.imagemUrl),
-    preco: paraPreco(produto.melhorPreco),
+    preco: precoDaOferta(produto.melhorPreco),
     enderecoDaLoja: produto.melhorPreco.url,
-  };
-}
-
-function paraPreco(oferta: OfertaResponse): PrecoDoProduto {
-  const emPromocao =
-    !oferta.gratuito &&
-    !oferta.promocaoEncerrada &&
-    (oferta.descontoPct ?? 0) > 0 &&
-    oferta.valorOriginalCentavos !== null &&
-    oferta.valorOriginalCentavos > oferta.valorCentavos;
-  return {
-    atual: oferta.gratuito ? 'Grátis' : reais(oferta.valorCentavos),
-    original: emPromocao && oferta.valorOriginalCentavos !== null ? reais(oferta.valorOriginalCentavos) : null,
-    descontoPct: emPromocao ? oferta.descontoPct : null,
-    loja: oferta.loja,
   };
 }
