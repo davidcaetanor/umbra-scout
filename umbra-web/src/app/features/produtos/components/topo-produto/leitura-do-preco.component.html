@@ -1,10 +1,9 @@
 <p
   class="flex flex-col rounded-e-bloco border-s-4 bg-superficie px-4 py-2.5"
-  [class.border-historico-1]="leitura().noMinimo"
-  [class.border-borda-campo]="!leitura().noMinimo"
+  [class.border-historico-1]="leitura().tom === 'bom'"
+  [class.border-borda-campo]="leitura().tom === 'costume'"
+  [class.border-ambiente]="leitura().tom === 'mais-barato'"
 >
   <span class="text-valor font-medium">{{ leitura().titulo }}</span>
-  @if (leitura().detalhe; as detalhe) {
-    <span class="text-apoio text-texto-secundario">{{ detalhe }}</span>
-  }
+  <span class="text-apoio text-texto-secundario">{{ leitura().detalhe }}</span>
 </p>

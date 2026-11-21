@@ -1,10 +1,12 @@
 import { CapaExibida } from '../capa-exibida';
 import { TipoExibido } from '../tipo-exibido';
 
+export type TomDaLeitura = 'bom' | 'costume' | 'mais-barato';
+
 export interface LeituraExibida {
   readonly titulo: string;
-  readonly detalhe: string | null;
-  readonly noMinimo: boolean;
+  readonly detalhe: string;
+  readonly tom: TomDaLeitura;
 }
 
 export interface TopoExibido {
