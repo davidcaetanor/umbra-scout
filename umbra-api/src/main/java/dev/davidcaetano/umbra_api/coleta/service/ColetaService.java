@@ -26,6 +26,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -191,6 +192,7 @@ public class ColetaService {
         int ofertasCriadas = 0;
         int precosGravados = 0;
         int precosInalterados = 0;
+        Set<Long> ofertasVerificadas = new HashSet<>();
 
         for (GrupoDeOfertas grupo : grupos) {
             List<OfertaColetada> ofertasDoGrupo = grupo.ofertas();
@@ -214,6 +216,8 @@ public class ColetaService {
                     oferta.atualizarUrl(ofertaColetada.url(), agora);
                 }
 
+                ofertasVerificadas.add(oferta.getId());
+
                 if (devePersistirPreco(ofertaNova, oferta.getId(), ofertaColetada, contexto, agora)) {
                     precoRepository.save(PrecoEntity.novo(oferta, ofertaColetada.valorCentavos(),
                             ofertaColetada.valorOriginalCentavos(), ofertaColetada.descontoPct(),
@@ -224,6 +228,10 @@ public class ColetaService {
                     precosInalterados++;
                 }
             }
+        }
+
+        for (List<Long> bloco : emBlocos(ofertasVerificadas, TAMANHO_BLOCO_CONSULTA)) {
+            ofertaRepository.registrarVerificacao(bloco, agora);
         }
 
         return new Contadores(produtosCriados, ofertasCriadas, precosGravados, precosInalterados);

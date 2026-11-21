@@ -290,6 +290,21 @@ class ColetaServiceTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveAvancarVerificadoEmACadaRodadaMesmoSemGravarPreco() {
+        gravar(pecaKabum("909143", 14999L, true));
+
+        avancar(java.time.Duration.ofHours(12));
+
+        gravar(pecaKabum("909143", 14999L, true));
+
+        entityManager.flush();
+        OffsetDateTime verificadoEm = jdbc.queryForObject(
+                "SELECT verificado_em FROM oferta WHERE identificador_loja = '909143'", OffsetDateTime.class);
+        assertThat(precoRepository.count()).isEqualTo(1);
+        assertThat(verificadoEm).isEqualTo(INSTANTE_RODADA_1.plusHours(12));
+    }
+
+    @Test
     void deveGravarPrecoQuandoACampanhaForRenovadaComOMesmoValor() {
         gravar(oferta(CodigoLoja.KABUM, "909143", TipoProduto.HARDWARE, "Cooler", null, 10299L, true,
                 OrigemColeta.KABUM_API, INSTANTE_RODADA_1.plusDays(1)));
