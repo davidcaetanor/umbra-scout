@@ -15,6 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -260,6 +263,74 @@ class KabumScraperTest extends WireMockIntegrationTestBase {
         } finally {
             pararDeCapturar(logs);
         }
+    }
+
+    private static final long INICIO_PASSADO = 1_700_000_000L;
+    private static final long FIM_FUTURO = 4_102_444_800L;
+
+    private static String itemComCampanha(long id, String campanha) {
+        return """
+                {
+                  "type": "product",
+                  "id": %d,
+                  "attributes": {
+                    "menu": "Hardware/Coolers/Air Cooler",
+                    "title": "Cooler %d",
+                    "price": 166.66,
+                    "price_with_discount": 149.99,
+                    "discount_percentage": 10,
+                    "available": true,
+                    "stock": 5,
+                    "is_marketplace": false,
+                    "is_openbox": false,
+                    "product_link": "cooler-%d",
+                    "prime": null,
+                    "offer": %s
+                  }
+                }
+                """.formatted(id, id, id, campanha);
+    }
+
+    private static String campanha(long inicio, long fim, int quantidade, boolean exclusivaDeLogado) {
+        return """
+                {"id": "1018284", "name": "OFERTAS KABUM", "starts_at": %d, "ends_at": %d,
+                 "quantity_available": %d, "price": 114.43, "price_with_discount": 102.99,
+                 "discount_percentage": 31, "is_logged_user_exclusive": %b}"""
+                .formatted(inicio, fim, quantidade, exclusivaDeLogado);
+    }
+
+    @Test
+    void coletar_deveUsarOPrecoDaCampanhaPublicaVigenteComOPrecoSemCampanhaComoOriginal() {
+        stubPagina(1, catalogoResponse(1, 1,
+                itemComCampanha(909143, campanha(INICIO_PASSADO, FIM_FUTURO, 18, false))));
+
+        OfertaColetada oferta = kabumScraper.coletar().ofertas().getFirst();
+
+        assertThat(oferta.valorCentavos()).isEqualTo(10299L);
+        assertThat(oferta.valorOriginalCentavos()).isEqualTo(14999L);
+        assertThat(oferta.descontoPct()).isEqualTo((short) 31);
+        assertThat(oferta.expiry()).isEqualTo(OffsetDateTime.ofInstant(Instant.ofEpochSecond(FIM_FUTURO), ZoneOffset.UTC));
+        assertThat(oferta.disponivel()).isTrue();
+    }
+
+    @Test
+    void coletar_deveIgnorarCampanhaExclusivaDeLogadoVencidaFuturaOuEsgotada() {
+        long agora = Instant.now().getEpochSecond();
+        stubPagina(1, catalogoResponse(1, 1,
+                itemComCampanha(1, campanha(INICIO_PASSADO, FIM_FUTURO, 18, true)),
+                itemComCampanha(2, campanha(INICIO_PASSADO, agora - 60, 18, false)),
+                itemComCampanha(3, campanha(FIM_FUTURO - 60, FIM_FUTURO, 18, false)),
+                itemComCampanha(4, campanha(INICIO_PASSADO, FIM_FUTURO, 0, false)),
+                itemComCampanha(5, "null")));
+
+        List<OfertaColetada> ofertas = kabumScraper.coletar().ofertas();
+
+        assertThat(ofertas).hasSize(5).allSatisfy(oferta -> {
+            assertThat(oferta.valorCentavos()).isEqualTo(14999L);
+            assertThat(oferta.valorOriginalCentavos()).isEqualTo(16666L);
+            assertThat(oferta.descontoPct()).isEqualTo((short) 10);
+            assertThat(oferta.expiry()).isNull();
+        });
     }
 
     @Test

@@ -30,6 +30,10 @@ public record KabumAtributosResponse(
         String productLink,
 
         KabumPrimeResponse prime,
+
+        @JsonProperty("offer")
+        KabumCampanhaResponse campanha,
+
         KabumFotosResponse photos
 ) {
 }
