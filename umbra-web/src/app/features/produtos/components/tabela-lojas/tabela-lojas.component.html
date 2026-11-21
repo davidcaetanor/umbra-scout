@@ -1,0 +1,78 @@
+<ul class="grid gap-0.5 overflow-hidden rounded-bloco border-2 border-filete bg-filete tablet:hidden">
+  @for (oferta of ofertas(); track oferta.loja) {
+    <li class="flex items-center gap-3 bg-superficie px-3 py-3">
+      <div class="flex min-w-0 flex-1 flex-col">
+        <span class="font-medium">{{ oferta.loja }}</span>
+        @if (oferta.maisBarata) {
+          <span class="text-dado font-medium text-destaque">Mais barato</span>
+        }
+        <span class="flex flex-wrap items-baseline gap-x-2">
+          <span class="font-mono text-valor tabular-nums" [class.text-destaque]="oferta.maisBarata">{{ oferta.preco.atual }}</span>
+          @if (oferta.preco.original !== null) {
+            <s class="font-mono text-dado tabular-nums text-texto-secundario"><span class="sr-only">De </span>{{ oferta.preco.original }}</s>
+          }
+          @if (mostrarDesconto() && oferta.preco.descontoPct !== null) {
+            <span class="text-dado text-apoio">-{{ oferta.preco.descontoPct }}%</span>
+          }
+        </span>
+      </div>
+      <a
+        [href]="oferta.endereco"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="botao-secundario inline-flex min-h-11 shrink-0 items-center px-3 text-apoio"
+      >
+        Ver na loja<span class="sr-only"> {{ oferta.loja }} (abre em nova aba)</span>
+      </a>
+    </li>
+  }
+</ul>
+
+<div class="hidden overflow-hidden rounded-bloco border-2 border-filete tablet:block">
+  <table class="w-full border-collapse text-start">
+    <thead class="bg-superficie-elevada text-apoio text-texto-secundario">
+      <tr>
+        <th scope="col" class="px-4 py-2.5 text-start font-medium">Loja</th>
+        <th scope="col" class="px-4 py-2.5 text-end font-medium">Preço atual</th>
+        <th scope="col" class="px-4 py-2.5 text-end font-medium">Preço cheio</th>
+        @if (mostrarDesconto()) {
+          <th scope="col" class="px-4 py-2.5 text-end font-medium">Desconto</th>
+        }
+        <th scope="col" class="px-4 py-2.5 text-end font-medium"><span class="sr-only">Ação</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (oferta of ofertas(); track oferta.loja) {
+        <tr class="border-t border-filete bg-superficie">
+          <th scope="row" class="px-4 py-3 text-start font-medium">
+            {{ oferta.loja }}
+            @if (oferta.maisBarata) {
+              <span class="ms-2 rounded-mini bg-destaque-fundo px-1.5 text-dado font-medium text-destaque">Mais barato</span>
+            }
+          </th>
+          <td class="px-4 py-3 text-end font-mono tabular-nums" [class.text-destaque]="oferta.maisBarata">{{ oferta.preco.atual }}</td>
+          <td class="px-4 py-3 text-end font-mono tabular-nums text-texto-secundario">{{ oferta.preco.original ?? oferta.preco.atual }}</td>
+          @if (mostrarDesconto()) {
+            <td class="px-4 py-3 text-end">
+              @if (oferta.preco.descontoPct !== null) {
+                <span class="font-mono tabular-nums text-apoio">-{{ oferta.preco.descontoPct }}%</span>
+              } @else {
+                <span class="text-dado text-texto-secundario">Sem desconto</span>
+              }
+            </td>
+          }
+          <td class="px-4 py-3 text-end">
+            <a
+              [href]="oferta.endereco"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="botao-secundario inline-flex min-h-10 items-center px-3 text-apoio"
+            >
+              Ver na loja<span class="sr-only"> {{ oferta.loja }} (abre em nova aba)</span>
+            </a>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

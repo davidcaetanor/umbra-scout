@@ -7,8 +7,11 @@ export type EstadoMascote =
   | 'perdido'
   | 'pausado'
   | 'acenando'
-  | 'ocioso';
+  | 'ocioso'
+  | 'desmaiando'
+  | 'patrao'
+  | 'velhinho';
 
 export type DirecaoMascote = 'south' | 'east' | 'north' | 'west';
 
-export type TamanhoMascote = 'pequeno' | 'grande';
+export type TamanhoMascote = 'mini' | 'pequeno' | 'grande';

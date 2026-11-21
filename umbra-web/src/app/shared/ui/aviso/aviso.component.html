@@ -1,0 +1,38 @@
+<div role="status" aria-live="polite" class="w-full max-w-sm">
+  @if (avisos.atual(); as aviso) {
+    <div
+      class="pointer-events-auto flex items-center gap-3 rounded-bloco border border-filete bg-superficie-elevada py-2 ps-2 pe-1 shadow-lg"
+    >
+      @switch (aviso.figura.tipo) {
+        @case ('retrato') {
+          <img
+            [src]="'/mascote/retratos/' + retratoDe(aviso) + '.png'"
+            alt=""
+            width="48"
+            height="48"
+            class="size-12 shrink-0 [image-rendering:pixelated]"
+          />
+        }
+        @case ('sprite') {
+          <umbra-mascote [estado]="estadoDe(aviso)" tamanho="mini" class="shrink-0" />
+        }
+      }
+      <p class="flex min-w-0 flex-1 flex-col">
+        <span class="text-interface">{{ aviso.texto }}</span>
+        @if (aviso.detalhe; as detalhe) {
+          <span class="text-apoio text-texto-secundario">{{ detalhe }}</span>
+        }
+      </p>
+      <button
+        type="button"
+        class="min-h-11 min-w-11 shrink-0 rounded-controle text-texto-secundario hover:text-texto"
+        aria-label="Fechar aviso"
+        (click)="avisos.fechar()"
+      >
+        <svg aria-hidden="true" viewBox="0 0 20 20" class="mx-auto size-4" fill="currentColor">
+          <path d="m5.5 4.1 4.5 4.5 4.5-4.5 1.4 1.4-4.5 4.5 4.5 4.5-1.4 1.4-4.5-4.5-4.5 4.5-1.4-1.4 4.5-4.5-4.5-4.5z" />
+        </svg>
+      </button>
+    </div>
+  }
+</div>

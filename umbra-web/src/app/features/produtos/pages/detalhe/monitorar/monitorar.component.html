@@ -1,0 +1,78 @@
+<section class="rounded-bloco border-2 border-filete bg-superficie p-4" aria-labelledby="titulo-monitorar">
+  <h2 id="titulo-monitorar" class="font-titulo text-subtitulo">Monitorar</h2>
+
+  @if (gratuito()) {
+    <p class="mt-2 text-texto-secundario">Este produto está grátis agora. Não há preço para monitorar.</p>
+  } @else {
+    @switch (modo()) {
+      @case ('conferindo') {
+        <p class="mt-2 text-texto-secundario" aria-live="polite">Conferindo seus monitoramentos…</p>
+      }
+      @case ('monitorado') {
+        <p class="mt-2">
+          Você já monitora este produto com alvo de
+          <span class="font-mono tabular-nums text-ambiente">{{ alvoAtual() }}</span>.
+        </p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <a routerLink="/monitoramentos" class="botao-secundario inline-flex min-h-11 items-center px-4">
+            Ver em Meus monitoramentos
+          </a>
+          <button type="button" class="botao-secundario inline-flex min-h-11 items-center px-4" (click)="editarAtual()">
+            Alterar alvo
+          </button>
+        </div>
+      }
+      @default {
+        <form class="mt-3 flex flex-col gap-1.5" novalidate (submit)="enviar($event)">
+          <label for="preco-alvo" class="font-medium">Preço alvo</label>
+          <div class="flex flex-col gap-2 min-[30rem]:flex-row">
+            <div
+              class="flex min-h-12 flex-1 items-center rounded-controle border bg-fundo focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-foco"
+              [class.border-borda-campo]="!erro()"
+              [class.border-erro]="erro()"
+              [class.border-2]="erro()"
+            >
+              <span class="ps-3 font-mono text-texto-secundario" aria-hidden="true">R$</span>
+              <input
+                #campo
+                id="preco-alvo"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                maxlength="14"
+                [value]="texto()"
+                [attr.aria-invalid]="erro() ? 'true' : null"
+                aria-describedby="dica-preco-alvo"
+                [attr.aria-errormessage]="erro() ? 'erro-preco-alvo' : null"
+                class="min-h-11 w-full min-w-0 flex-1 bg-transparent px-2 font-mono text-valor tabular-nums outline-none"
+                (input)="digitar($event)"
+              />
+            </div>
+            <button
+              #botao
+              type="submit"
+              class="botao-principal inline-flex min-h-12 items-center justify-center gap-2 px-5 text-valor"
+              [attr.aria-busy]="salvando() ? 'true' : null"
+            >
+              @if (salvando()) {
+                <umbra-mascote estado="digitando" />
+                Salvando…
+              } @else {
+                {{ editando() ? 'Salvar' : 'Monitorar' }}
+              }
+            </button>
+            @if (editando()) {
+              <button type="button" class="botao-secundario inline-flex min-h-12 items-center justify-center px-4" (click)="cancelarEdicao()">
+                Cancelar
+              </button>
+            }
+          </div>
+          <p id="dica-preco-alvo" class="text-apoio text-texto-secundario">O alvo vale para todas as lojas monitoradas.</p>
+          @if (erro(); as mensagem) {
+            <p id="erro-preco-alvo" role="alert" class="text-apoio text-erro">{{ mensagem }}</p>
+          }
+        </form>
+      }
+    }
+  }
+</section>
