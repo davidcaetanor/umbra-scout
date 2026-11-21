@@ -277,6 +277,43 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void listar_comProdutoIdDeveDevolverSomenteOMonitoramentoDaqueleProduto() throws Exception {
+        Long usuario = inserirUsuario("filtro@umbra.dev");
+        Long procurado = inserirProduto("Procurado");
+        Long monitorado = criar(usuario, procurado, 1500);
+        criar(usuario, inserirProduto("Outro"), 1000);
+
+        como(usuario, get("/monitoramentos").param("produtoId", procurado.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo.length()").value(1))
+                .andExpect(jsonPath("$.conteudo[0].id").value(monitorado))
+                .andExpect(jsonPath("$.conteudo[0].produtoId").value(procurado))
+                .andExpect(jsonPath("$.conteudo[0].precoAlvoCentavos").value(1500))
+                .andExpect(jsonPath("$.totalElementos").value(1));
+    }
+
+    @Test
+    void listar_comProdutoIdNaoMonitoradoDeveDevolverPaginaVazia() throws Exception {
+        Long usuario = inserirUsuario("vazio@umbra.dev");
+        criar(usuario, inserirProduto("Monitorado"), 1000);
+
+        como(usuario, get("/monitoramentos").param("produtoId", inserirProduto("Livre").toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isEmpty())
+                .andExpect(jsonPath("$.totalElementos").value(0));
+    }
+
+    @Test
+    void listar_deveResponder400ParaProdutoIdInvalido() throws Exception {
+        Long usuario = inserirUsuario("invalido@umbra.dev");
+
+        for (String invalido : new String[] {"0", "-3", "abc"}) {
+            como(usuario, get("/monitoramentos").param("produtoId", invalido))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void alterar_devePausarEReativarSemMudarOAlvo() throws Exception {
         Long usuario = inserirUsuario("pausa@umbra.dev");
         Long monitoramento = criar(usuario, inserirProduto("Pausa"), 1000);
