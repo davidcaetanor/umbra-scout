@@ -29,4 +29,7 @@ public interface ProdutoResumoProjecao {
     Instant getExpiraEm();
 
     Instant getColetadoEm();
+
+
+    Instant getVerificadoEm();
 }
