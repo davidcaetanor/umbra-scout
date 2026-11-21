@@ -4,7 +4,7 @@
   @if (gratuito()) {
     <p class="mt-2 text-texto-secundario">Este produto está grátis agora. Não há preço para monitorar.</p>
   } @else {
-    @switch (situacao().tipo) {
+    @switch (modo()) {
       @case ('conferindo') {
         <p class="mt-2 text-texto-secundario" aria-live="polite">Conferindo seus monitoramentos…</p>
       }
@@ -13,9 +13,14 @@
           Você já monitora este produto com alvo de
           <span class="font-mono tabular-nums text-ambiente">{{ alvoAtual() }}</span>.
         </p>
-        <a routerLink="/monitoramentos" class="botao-secundario mt-3 inline-flex min-h-11 items-center px-4">
-          Ver em Meus monitoramentos
-        </a>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <a routerLink="/monitoramentos" class="botao-secundario inline-flex min-h-11 items-center px-4">
+            Ver em Meus monitoramentos
+          </a>
+          <button type="button" class="botao-secundario inline-flex min-h-11 items-center px-4" (click)="editarAtual()">
+            Alterar alvo
+          </button>
+        </div>
       }
       @default {
         <form class="mt-3 flex flex-col gap-1.5" novalidate (submit)="enviar($event)">
@@ -29,6 +34,7 @@
             >
               <span class="ps-3 font-mono text-texto-secundario" aria-hidden="true">R$</span>
               <input
+                #campo
                 id="preco-alvo"
                 type="text"
                 inputmode="decimal"
@@ -52,9 +58,14 @@
                 <umbra-mascote estado="digitando" />
                 Salvando…
               } @else {
-                Monitorar
+                {{ editando() ? 'Salvar' : 'Monitorar' }}
               }
             </button>
+            @if (editando()) {
+              <button type="button" class="botao-secundario inline-flex min-h-12 items-center justify-center px-4" (click)="cancelarEdicao()">
+                Cancelar
+              </button>
+            }
           </div>
           <p id="dica-preco-alvo" class="text-apoio text-texto-secundario">O alvo vale para todas as lojas monitoradas.</p>
           @if (erro(); as mensagem) {

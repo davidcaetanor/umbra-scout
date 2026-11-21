@@ -57,19 +57,22 @@ export class MonitorarComponent {
   readonly produtoId = input.required<number>();
   readonly gratuito = input.required<boolean>();
   readonly situacao = input.required<SituacaoDoMonitoramento>();
-  readonly criado = output<MonitoramentoDoProduto>();
+  readonly mudou = output<MonitoramentoDoProduto | null>();
 
   private readonly botao = viewChild<ElementRef<HTMLButtonElement>>('botao');
+  private readonly campo = viewChild<ElementRef<HTMLInputElement>>('campo');
 
   protected readonly texto = signal('');
   protected readonly erro = signal<string | null>(null);
   protected readonly salvando = signal(false);
+  protected readonly editando = signal(false);
   protected readonly alvoAtual = computed(() => {
     const situacao = this.situacao();
     return situacao.tipo === 'monitorado' ? reais(situacao.monitoramento.precoAlvoCentavos) : null;
   });
 
   private focarAoAparecer = false;
+  private focarCampoAoAparecer = false;
 
   constructor() {
     if (this.sessao.vigente() !== null) {
@@ -81,6 +84,12 @@ export class MonitorarComponent {
         this.focarAoAparecer = false;
         botao.nativeElement.focus();
       }
+      const campo = this.campo();
+      if (this.focarCampoAoAparecer && campo) {
+        this.focarCampoAoAparecer = false;
+        campo.nativeElement.focus();
+        campo.nativeElement.select();
+      }
     });
   }
 
@@ -90,6 +99,30 @@ export class MonitorarComponent {
       this.texto.set(textoDoAlvo(retomado));
       this.focarAoAparecer = true;
     }
+  }
+
+  protected readonly modo = computed(() => {
+    const tipo = this.situacao().tipo;
+    return tipo === 'monitorado' && this.editando() ? 'editando' : tipo;
+  });
+
+  protected editarAtual(): void {
+    const situacao = this.situacao();
+    if (situacao.tipo === 'monitorado') {
+      this.iniciarEdicao(situacao.monitoramento);
+    }
+  }
+
+  private iniciarEdicao(monitoramento: MonitoramentoDoProduto): void {
+    this.texto.set(textoDoAlvo(monitoramento.precoAlvoCentavos));
+    this.erro.set(null);
+    this.editando.set(true);
+    this.focarCampoAoAparecer = true;
+  }
+
+  protected cancelarEdicao(): void {
+    this.editando.set(false);
+    this.erro.set(null);
   }
 
   protected digitar(evento: Event): void {
@@ -113,25 +146,51 @@ export class MonitorarComponent {
       await this.router.navigate([ROTA_DE_ENTRADA], { queryParams: { returnUrl: this.router.url } });
       return;
     }
+    const situacao = this.situacao();
+    if (this.editando() && situacao.tipo === 'monitorado') {
+      await this.alterar(situacao.monitoramento.id, alvo);
+      return;
+    }
     await this.criar(alvo);
   }
 
-  private avisarCriacao(alvo: number): void {
+  private avisar(alvo: number, resumo: string, textoComum: string): void {
     const faixa = faixaDoAlvo(alvo);
     if (faixa !== null) {
       const piada = this.piadas.proxima(faixa);
-      this.avisos.mostrarLongo({ texto: piada.texto, detalhe: 'Alvo salvo.', figura: piada.figura });
+      this.avisos.mostrarLongo({ texto: piada.texto, detalhe: resumo, figura: piada.figura });
       return;
     }
-    this.avisos.mostrar('Monitoramento criado. O Umbra avisa quando o preço chegar lá.');
+    this.avisos.mostrar(textoComum);
+  }
+
+  private async alterar(id: number, alvo: number): Promise<void> {
+    this.salvando.set(true);
+    try {
+      const monitoramento = await this.monitoramentos.alterarAlvo(id, alvo);
+      this.avisar(alvo, 'Alvo atualizado.', 'Alvo atualizado. O Umbra segue de olho.');
+      this.editando.set(false);
+      this.mudou.emit(monitoramento);
+    } catch (falha) {
+      const caso = casoDe(falha);
+      if (caso.tipo === 'nao-encontrado') {
+        this.avisos.mostrar('Esse monitoramento não existe mais. Crie de novo.', 'confuso');
+        this.editando.set(false);
+        this.mudou.emit(null);
+        return;
+      }
+      this.erro.set(caso.tipo === 'invalido' ? MENSAGEM_DO_ALVO.invalido : mensagemDoCaso(caso));
+    } finally {
+      this.salvando.set(false);
+    }
   }
 
   private async criar(alvo: number): Promise<void> {
     this.salvando.set(true);
     try {
       const monitoramento = await this.monitoramentos.criar(this.produtoId(), alvo);
-      this.avisarCriacao(alvo);
-      this.criado.emit(monitoramento);
+      this.avisar(alvo, 'Alvo salvo.', 'Monitoramento criado. O Umbra avisa quando o preço chegar lá.');
+      this.mudou.emit(monitoramento);
     } catch (falha) {
       const caso = casoDe(falha);
       if (caso.tipo === 'conflito') {

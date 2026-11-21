@@ -201,7 +201,7 @@ export class DetalhePage {
       tipo: produto.tipo,
       rotulo: produto.tipo === 'JOGO' ? 'Jogo' : (produto.categoria ?? 'Hardware'),
       capa: produto.capa,
-      leitura: historico === null ? null : leituraDoPreco(produto.melhorOferta, historico.minimo, historico.consultadoEm),
+      leitura: historico === null ? null : leituraDoPreco(produto.melhorOferta, historico),
     };
   });
   protected readonly observadoDesde = computed(() => {
@@ -250,7 +250,7 @@ export class DetalhePage {
     this.recursoDoHistorico.reload();
   }
 
-  protected aoCriarMonitoramento(monitoramento: MonitoramentoDoProduto): void {
+  protected aoMudarMonitoramento(monitoramento: MonitoramentoDoProduto | null): void {
     this.recursoDoMonitoramento.set({ tipo: 'sucesso', dados: monitoramento });
   }
 }

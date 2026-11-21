@@ -11,13 +11,14 @@ import { CHAVE_DO_RASCUNHO, RascunhoDoAlvo } from './rascunho-do-alvo';
 describe('MonitorarComponent', () => {
   let fixture: ComponentFixture<MonitorarComponent>;
   let criar: ReturnType<typeof vi.fn>;
+  let alterarAlvo: ReturnType<typeof vi.fn>;
   let logado: boolean;
 
   async function abrir(situacao: SituacaoDoMonitoramento, gratuito = false): Promise<HTMLElement> {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: MonitoramentoDoProdutoService, useValue: { criar } },
+        { provide: MonitoramentoDoProdutoService, useValue: { criar, alterarAlvo } },
         { provide: TokenDaSessao, useValue: { vigente: () => (logado ? 'token' : null) } },
       ],
     });
@@ -41,6 +42,7 @@ describe('MonitorarComponent', () => {
   beforeEach(() => {
     sessionStorage.clear();
     criar = vi.fn();
+    alterarAlvo = vi.fn();
     logado = true;
   });
 
@@ -111,7 +113,7 @@ describe('MonitorarComponent', () => {
     criar.mockResolvedValue({ id: 9, precoAlvoCentavos: 14990 });
     const tela = await abrir({ tipo: 'livre' });
     const criados: unknown[] = [];
-    fixture.componentInstance.criado.subscribe((monitoramento) => criados.push(monitoramento));
+    fixture.componentInstance.mudou.subscribe((monitoramento) => criados.push(monitoramento));
 
     await enviar(tela, '149,90');
 
@@ -188,5 +190,94 @@ describe('MonitorarComponent', () => {
 
     expect(tela.querySelector<HTMLInputElement>('#preco-alvo')?.value).toBe('72,40');
     expect(document.activeElement).toBe(tela.querySelector('button[type="submit"]'));
+  });
+
+  describe('alterar o alvo', () => {
+    const MONITORADO: SituacaoDoMonitoramento = { tipo: 'monitorado', monitoramento: { id: 9, precoAlvoCentavos: 14990 } };
+    const botaoChamado = (tela: HTMLElement, nome: string) =>
+      [...tela.querySelectorAll('button')].find((item) => item.textContent?.trim() === nome);
+
+    async function abrirEdicao(): Promise<HTMLElement> {
+      const tela = await abrir(MONITORADO);
+      botaoChamado(tela, 'Alterar alvo')!.click();
+      await fixture.whenStable();
+      return tela;
+    }
+
+    it('abre o campo com o alvo atual e o foco nele', async () => {
+      const tela = await abrirEdicao();
+      const campo = tela.querySelector<HTMLInputElement>('#preco-alvo')!;
+
+      expect(campo.value).toBe('149,90');
+      expect(document.activeElement).toBe(campo);
+      expect(botaoChamado(tela, 'Salvar')).toBeDefined();
+    });
+
+    it('cancelar volta ao resumo sem chamar a API', async () => {
+      const tela = await abrirEdicao();
+
+      botaoChamado(tela, 'Cancelar')!.click();
+      await fixture.whenStable();
+
+      expect(tela.querySelector('form')).toBeNull();
+      expect(tela.textContent).toContain('R$ 149,90');
+      expect(alterarAlvo).not.toHaveBeenCalled();
+    });
+
+    it('salva o alvo novo, avisa e entrega o monitoramento atualizado', async () => {
+      alterarAlvo.mockResolvedValue({ id: 9, precoAlvoCentavos: 9990 });
+      const tela = await abrirEdicao();
+      const mudancas: unknown[] = [];
+      fixture.componentInstance.mudou.subscribe((monitoramento) => mudancas.push(monitoramento));
+
+      await enviar(tela, '99,90');
+
+      expect(alterarAlvo).toHaveBeenCalledWith(9, 9990);
+      expect(criar).not.toHaveBeenCalled();
+      expect(TestBed.inject(AvisoService).atual()?.texto).toBe('Alvo atualizado. O Umbra segue de olho.');
+      expect(mudancas).toEqual([{ id: 9, precoAlvoCentavos: 9990 }]);
+      expect(tela.querySelector('form')).toBeNull();
+    });
+
+    it('alvo novo acima de R$ 5 mil também recebe piada', async () => {
+      localStorage.clear();
+      alterarAlvo.mockResolvedValue({ id: 9, precoAlvoCentavos: 600_000 });
+      const tela = await abrirEdicao();
+
+      await enviar(tela, '6000');
+
+      expect(TestBed.inject(AvisoService).atual()?.detalhe).toBe('Alvo atualizado.');
+    });
+
+    it('valida o alvo novo como na criação', async () => {
+      const tela = await abrirEdicao();
+
+      await enviar(tela, '150.000,01');
+
+      expect(tela.querySelector('[role="alert"]')?.textContent).toBe('O alvo vai até R$ 150.000,00.');
+      expect(alterarAlvo).not.toHaveBeenCalled();
+    });
+
+    it('monitoramento apagado em outra aba avisa e volta ao formulário de criar', async () => {
+      alterarAlvo.mockRejectedValue(new ErroDaApi({ tipo: 'nao-encontrado' }));
+      const tela = await abrirEdicao();
+      const mudancas: unknown[] = [];
+      fixture.componentInstance.mudou.subscribe((monitoramento) => mudancas.push(monitoramento));
+
+      await enviar(tela, '99,90');
+
+      expect(mudancas).toEqual([null]);
+      expect(TestBed.inject(AvisoService).atual()?.texto).toBe('Esse monitoramento não existe mais. Crie de novo.');
+    });
+
+    it('outras falhas ficam no formulário com a mensagem', async () => {
+      alterarAlvo.mockRejectedValue(new ErroDaApi({ tipo: 'regra', detalhe: 'Produto grátis não tem alvo.' }));
+      const tela = await abrirEdicao();
+
+      await enviar(tela, '99,90');
+
+      expect(tela.querySelector('[role="alert"]')?.textContent).toBe('Produto grátis não tem alvo.');
+      expect(botaoChamado(tela, 'Salvar')).toBeDefined();
+    });
   });
 });

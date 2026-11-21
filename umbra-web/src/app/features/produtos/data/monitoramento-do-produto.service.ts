@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Api } from '../../../api/api';
+import { alterarMonitoramento } from '../../../api/fn/monitoramento/alterar-monitoramento';
 import { criarMonitoramento } from '../../../api/fn/monitoramento/criar-monitoramento';
 import { listarMonitoramentos } from '../../../api/fn/monitoramento/listar-monitoramentos';
 import { MonitoramentoResponse } from '../../../api/models/monitoramento-response';
@@ -17,6 +18,10 @@ export class MonitoramentoDoProdutoService {
 
   async criar(produtoId: number, precoAlvoCentavos: number): Promise<MonitoramentoDoProduto> {
     return paraMonitoramento(await this.api.invoke(criarMonitoramento, { body: { produtoId, precoAlvoCentavos } }));
+  }
+
+  async alterarAlvo(id: number, precoAlvoCentavos: number): Promise<MonitoramentoDoProduto> {
+    return paraMonitoramento(await this.api.invoke(alterarMonitoramento, { id, body: { precoAlvoCentavos } }));
   }
 }
 

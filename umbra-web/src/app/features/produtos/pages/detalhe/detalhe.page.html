@@ -10,7 +10,7 @@
             [produtoId]="produto.id"
             [gratuito]="produto.melhorOferta?.gratuito ?? false"
             [situacao]="situacaoDoMonitoramento()"
-            (criado)="aoCriarMonitoramento($event)"
+            (mudou)="aoMudarMonitoramento($event)"
           />
         </ng-template>
 

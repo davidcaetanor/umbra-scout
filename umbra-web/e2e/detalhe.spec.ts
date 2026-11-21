@@ -151,6 +151,30 @@ test.describe('T4.5, detalhe do produto', () => {
     await info.attach('piada', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
+  test('quem monitora altera o alvo no detalhe e o gráfico acompanha', async ({ page }) => {
+    await comSessao(page);
+    await simularProduto(page);
+    await simularMonitoramentos(page, [{ id: 9, produtoId: 42, precoAlvoCentavos: 6000 }]);
+    let corpo: unknown = null;
+    await page.route(`${API}/monitoramentos/9`, (rota) => {
+      corpo = rota.request().postDataJSON();
+      return rota.fulfill({ json: { id: 9, produtoId: 42, precoAlvoCentavos: 5500 } });
+    });
+    await page.goto('/catalogo/42');
+
+    await page.getByRole('button', { name: 'Alterar alvo' }).click();
+    const campo = page.getByLabel('Preço alvo');
+    await expect(campo).toHaveValue('60,00');
+    await expect(campo).toBeFocused();
+    await campo.fill('55.00');
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByRole('status').filter({ hasText: 'Alvo atualizado' })).toBeVisible();
+    expect(corpo).toEqual({ precoAlvoCentavos: 5500 });
+    await expect(page.getByText('Você já monitora este produto com alvo de')).toContainText('R$ 55,00');
+    await expect(page.getByRole('list', { name: 'Legenda do histórico' })).toContainText('R$ 55,00');
+  });
+
   test('quem já monitora vê o alvo; conflito ao criar leva a Meus monitoramentos', async ({ page }) => {
     await comSessao(page);
     await simularProduto(page);
