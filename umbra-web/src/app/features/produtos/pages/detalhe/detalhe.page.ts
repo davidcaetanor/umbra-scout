@@ -157,6 +157,7 @@ export class DetalhePage {
       historico,
       periodo: this.periodo(),
       melhorOferta: produto.melhorOferta,
+      ofertas: produto.ofertas,
       alvoCentavos: this.alvoCentavos(),
       lojas: this.porLoja() ? this.lojasEscolhidas() : null,
     };

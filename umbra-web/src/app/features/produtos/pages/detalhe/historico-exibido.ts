@@ -25,6 +25,7 @@ export interface ContextoDoGrafico {
   readonly historico: HistoricoDoProduto;
   readonly periodo: PeriodoDoHistorico;
   readonly melhorOferta: OfertaDaLoja | null;
+  readonly ofertas: readonly OfertaDaLoja[];
   readonly alvoCentavos: number | null;
   readonly lojas: readonly string[] | null;
 }
@@ -148,11 +149,7 @@ export function legendaExibida(contexto: ContextoDoGrafico): CelulaDaLegenda[] {
   if (lojas === null) {
     celulas.push({ marca: 'linha-1', titulo: 'Melhor preço do dia', valor: null, detalhe: 'entre as lojas' });
   } else {
-    historico.porLoja
-      .filter((serie) => lojas.includes(serie.loja))
-      .forEach((serie, posicao) =>
-        celulas.push({ marca: posicao === 0 ? 'linha-1' : 'linha-3', titulo: serie.loja, valor: null, detalhe: 'preço do dia' }),
-      );
+    celulas.push(...celulasDasLojas(historico.porLoja.filter((serie) => lojas.includes(serie.loja)).map((serie) => serie.loja), contexto.ofertas));
   }
   if (lojas === null && historico.minimo !== null) {
     celulas.push({
@@ -171,6 +168,37 @@ export function legendaExibida(contexto: ContextoDoGrafico): CelulaDaLegenda[] {
     });
   }
   return celulas;
+}
+
+function celulasDasLojas(lojas: readonly string[], ofertas: readonly OfertaDaLoja[]): CelulaDaLegenda[] {
+  const hoje = lojas.map((loja) => ofertas.find((oferta) => oferta.loja === loja) ?? null);
+  return lojas.map((loja, posicao) => {
+    const oferta = hoje[posicao];
+    const outra = hoje.length === 2 ? { loja: lojas[1 - posicao], oferta: hoje[1 - posicao] } : null;
+    return {
+      marca: posicao === 0 ? 'linha-1' : 'linha-3',
+      titulo: loja,
+      valor: oferta?.preco.atual ?? null,
+      detalhe: comparacao(oferta, outra),
+    };
+  });
+}
+
+function comparacao(oferta: OfertaDaLoja | null, outra: { loja: string; oferta: OfertaDaLoja | null } | null): string | null {
+  if (oferta === null) {
+    return 'Indisponível hoje';
+  }
+  if (outra === null) {
+    return null;
+  }
+  if (outra.oferta === null) {
+    return 'única com oferta hoje';
+  }
+  const diferenca = oferta.valorCentavos - outra.oferta.valorCentavos;
+  if (diferenca === 0) {
+    return 'mesmo preço da outra loja';
+  }
+  return diferenca < 0 ? 'a mais barata das duas' : `${reais(diferenca)} acima da ${outra.loja}`;
 }
 
 export function alvoNaEscala({ historico, melhorOferta, alvoCentavos, lojas }: ContextoDoGrafico): boolean {

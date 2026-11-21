@@ -47,7 +47,7 @@ const OFERTA: OfertaDaLoja = {
 };
 
 function contexto(parcial: Partial<ContextoDoGrafico> = {}): ContextoDoGrafico {
-  return { historico: HISTORICO, periodo: '90d', melhorOferta: OFERTA, alvoCentavos: null, lojas: null, ...parcial };
+  return { historico: HISTORICO, periodo: '90d', melhorOferta: OFERTA, ofertas: [OFERTA], alvoCentavos: null, lojas: null, ...parcial };
 }
 
 describe('períodos do histórico', () => {
@@ -190,6 +190,35 @@ describe('legenda', () => {
       ['linha-1', 'Steam'],
       ['linha-3', 'GOG'],
     ]);
+  });
+
+  describe('preço de hoje por loja', () => {
+    const steam = { ...OFERTA, loja: 'Steam', valorCentavos: 9989, preco: { ...OFERTA.preco, atual: 'R$ 99,89', loja: 'Steam' } };
+    const gog = { ...OFERTA, loja: 'GOG', valorCentavos: 49950, preco: { ...OFERTA.preco, atual: 'R$ 499,50', loja: 'GOG' } };
+    const lojasDa = (ofertas: OfertaDaLoja[], lojas = ['Steam', 'GOG']) =>
+      legendaExibida(contexto({ lojas, ofertas })).filter((celula) => celula.marca !== 'hoje').map(({ valor, detalhe }) => [valor, detalhe]);
+
+    it('mostra o preço de cada uma e a diferença na mais cara', () => {
+      expect(lojasDa([steam, gog])).toEqual([
+        ['R$ 99,89', 'a mais barata das duas'],
+        ['R$ 499,50', 'R$ 399,61 acima da Steam'],
+      ]);
+    });
+
+    it('preço igual e loja sem oferta hoje', () => {
+      expect(lojasDa([steam, { ...gog, valorCentavos: 9989 }])).toEqual([
+        ['R$ 99,89', 'mesmo preço da outra loja'],
+        ['R$ 499,50', 'mesmo preço da outra loja'],
+      ]);
+      expect(lojasDa([steam])).toEqual([
+        ['R$ 99,89', 'única com oferta hoje'],
+        [null, 'Indisponível hoje'],
+      ]);
+    });
+
+    it('uma loja só mostra o preço sem comparação', () => {
+      expect(lojasDa([steam, gog], ['GOG'])).toEqual([['R$ 499,50', null]]);
+    });
   });
 
   it('alvo acima de duas vezes o maior preço sai da escala e a legenda explica', () => {
