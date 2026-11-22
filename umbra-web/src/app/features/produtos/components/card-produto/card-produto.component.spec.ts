@@ -1,5 +1,6 @@
 import { ComponentRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ProdutoExibido } from '../produto-exibido';
 import { CardProdutoComponent } from './card-produto.component';
 
@@ -28,6 +29,7 @@ describe('CardProdutoComponent', () => {
   }
 
   beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(CardProdutoComponent);
     referencia = fixture.componentRef;
   });
@@ -89,5 +91,21 @@ describe('CardProdutoComponent', () => {
 
     expect(card.textContent).toContain('Indisponível agora');
     expect(imagem(card)).toBeNull();
+  });
+
+  it('com endereço, o nome vira o link que cobre o card inteiro', async () => {
+    referencia.setInput('endereco', '/catalogo/42');
+    const card = await mostrar(PRODUTO);
+    const link = card.querySelector('h3 a');
+
+    expect(link?.getAttribute('href')).toBe('/catalogo/42');
+    expect(link?.textContent).toBe('Placa RTX');
+    expect(link?.classList).toContain('after:inset-0');
+  });
+
+  it('sem endereço, o nome fica sem link', async () => {
+    const card = await mostrar(PRODUTO);
+
+    expect(card.querySelector('a')).toBeNull();
   });
 });

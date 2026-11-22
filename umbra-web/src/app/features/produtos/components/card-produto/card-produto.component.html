@@ -1,5 +1,5 @@
 <article
-  class="flex h-full gap-3 rounded-bloco border border-filete bg-fundo p-3 tablet:flex-col tablet:gap-0 tablet:overflow-hidden tablet:p-0"
+  class="relative flex h-full gap-3 rounded-bloco border border-filete bg-fundo p-3 transition-colors duration-150 has-[a:hover]:border-borda-campo has-[a:hover]:bg-superficie has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-foco tablet:flex-col tablet:gap-0 tablet:overflow-hidden tablet:p-0"
 >
   <umbra-capa-produto
     [capa]="produto().capa"
@@ -9,7 +9,13 @@
     class="aspect-[300/140] w-30 shrink-0 self-start rounded-peca tablet:w-full tablet:rounded-none"
   />
   <div class="flex min-w-0 flex-1 flex-col gap-1 tablet:p-3">
-    <h3 class="line-clamp-2 min-h-[2lh] break-words text-interface font-medium" [title]="produto().nome">{{ produto().nome }}</h3>
+    <h3 class="line-clamp-2 min-h-[2lh] break-words text-interface font-medium" [title]="produto().nome">
+      @if (endereco(); as endereco) {
+        <a [routerLink]="endereco" class="outline-none after:absolute after:inset-0 after:rounded-bloco">{{ produto().nome }}</a>
+      } @else {
+        {{ produto().nome }}
+      }
+    </h3>
     @if (produto().categoria; as categoria) {
       <p class="text-dado text-texto-secundario">{{ categoria }}</p>
     }

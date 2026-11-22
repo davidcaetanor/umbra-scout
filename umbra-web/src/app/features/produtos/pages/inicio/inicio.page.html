@@ -87,6 +87,7 @@
             <umbra-card-produto
               [produto]="produto"
               [prioritaria]="posicao < cardsNaPrimeiraFileira"
+              [endereco]="'/catalogo/' + produto.id"
             />
           </li>
         }

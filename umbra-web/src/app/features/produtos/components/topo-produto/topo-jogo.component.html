@@ -1,0 +1,16 @@
+<div class="relative overflow-hidden rounded-bloco">
+  <umbra-capa-produto
+    [capa]="topo().capa"
+    [tipo]="topo().tipo"
+    tamanhos="(min-width: 64rem) 46rem, 100vw"
+    [prioritaria]="true"
+    class="aspect-[300/140] w-full"
+  />
+  <div class="bg-superficie px-4 py-3 tablet:absolute tablet:inset-x-0 tablet:bottom-0 tablet:bg-fundo/85">
+    <p class="text-apoio text-texto-secundario">{{ topo().rotulo }}</p>
+    <h1 class="font-titulo text-secao break-words">{{ topo().nome }}</h1>
+  </div>
+</div>
+@if (topo().leitura; as leitura) {
+  <umbra-leitura-do-preco [leitura]="leitura" />
+}

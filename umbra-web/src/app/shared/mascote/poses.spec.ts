@@ -11,10 +11,13 @@ const ESTADOS: readonly EstadoMascote[] = [
   'pausado',
   'acenando',
   'ocioso',
+  'desmaiando',
+  'patrao',
+  'velhinho',
 ];
 
 describe('POSES', () => {
-  it('cobre os nove estados do componente com a vista de frente', () => {
+  it('cobre todos os estados do componente com a vista de frente', () => {
     expect(Object.keys(POSES).sort()).toEqual([...ESTADOS].sort());
     ESTADOS.forEach((estado) => expect(POSES[estado].south).toBeDefined());
   });

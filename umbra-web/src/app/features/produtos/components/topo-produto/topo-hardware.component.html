@@ -1,0 +1,19 @@
+<div class="flex flex-col gap-4 min-[30rem]:flex-row min-[30rem]:items-start">
+  <umbra-capa-produto
+    [capa]="topo().capa"
+    [tipo]="topo().tipo"
+    tamanhos="(min-width: 30rem) 176px, 100vw"
+    [prioritaria]="true"
+    class="aspect-square w-full shrink-0 rounded-peca min-[30rem]:w-44"
+  />
+  <div class="flex min-w-0 flex-1 flex-col gap-3">
+    <div>
+      <p class="text-apoio text-texto-secundario">{{ topo().rotulo }}</p>
+      <h1 class="font-titulo text-secao break-words">{{ topo().nome }}</h1>
+    </div>
+    @if (topo().leitura; as leitura) {
+      <umbra-leitura-do-preco [leitura]="leitura" />
+    }
+  </div>
+</div>
+<ng-content />
