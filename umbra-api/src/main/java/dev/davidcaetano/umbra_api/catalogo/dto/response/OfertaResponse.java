@@ -13,5 +13,6 @@ public record OfertaResponse(
         boolean gratuito,
         @Nullable Instant expiraEm,
         boolean promocaoEncerrada,
-        Instant coletadoEm) {
+        Instant coletadoEm,
+        Instant verificadoEm) {
 }

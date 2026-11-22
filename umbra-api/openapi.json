@@ -377,9 +377,13 @@
           "valorOriginalCentavos" : {
             "format" : "int64",
             "type" : [ "integer", "null" ]
+          },
+          "verificadoEm" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         },
-        "required" : [ "coletadoEm", "descontoPct", "expiraEm", "gratuito", "loja", "promocaoEncerrada", "url", "valorCentavos", "valorOriginalCentavos" ],
+        "required" : [ "coletadoEm", "descontoPct", "expiraEm", "gratuito", "loja", "promocaoEncerrada", "url", "valorCentavos", "valorOriginalCentavos", "verificadoEm" ],
         "type" : "object"
       },
       "PontoHistoricoResponse" : {

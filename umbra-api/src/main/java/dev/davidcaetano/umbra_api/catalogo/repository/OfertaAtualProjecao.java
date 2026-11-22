@@ -17,4 +17,7 @@ public interface OfertaAtualProjecao {
     Instant getExpiraEm();
 
     Instant getColetadoEm();
+
+
+    Instant getVerificadoEm();
 }
