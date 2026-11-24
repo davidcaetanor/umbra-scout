@@ -59,8 +59,9 @@ async function simular(page: Page, itens: unknown[]): Promise<{ removidos: numbe
       estado.itens = estado.itens.filter((item) => item.id !== id);
       return rota.fulfill({ status: 204 });
     }
-    const corpo = rota.request().postDataJSON() as { ativo: boolean };
-    const item = { ...estado.itens.find((atual) => atual.id === id)!, ativo: corpo.ativo };
+    const corpo = rota.request().postDataJSON() as { ativo?: boolean; precoAlvoCentavos?: number };
+    const item = { ...estado.itens.find((atual) => atual.id === id)!, ...corpo };
+    estado.itens = estado.itens.map((atual) => (atual.id === id ? item : atual));
     return rota.fulfill({ json: item });
   });
   return estado;
@@ -131,6 +132,29 @@ for (const { nome, largura, altura } of LARGURAS) {
       await expect(page.getByRole('heading', { level: 2, name: /Placa de vídeo RTX/ })).toBeFocused();
       await expect(page.getByRole('status').filter({ hasText: 'Black Myth: Wukong removido' })).toHaveCount(1);
       expect(estado.removidos).toEqual([2]);
+    });
+
+    test('alterar o alvo pelo teclado sem sair da tela', async ({ page }, info) => {
+      await comSessao(page);
+      await simular(page, LISTA);
+      await page.goto('/monitoramentos');
+
+      const alterar = page.getByRole('button', { name: 'Alterar alvo de Black Myth: Wukong' });
+      await alterar.focus();
+      await page.keyboard.press('Enter');
+
+      const campo = page.getByLabel('Novo alvo');
+      await expect(campo).toBeFocused();
+      await expect(campo).toHaveValue('150,00');
+      await info.attach(`${nome}-alterar-alvo`, { body: await page.screenshot(), contentType: 'image/png' });
+
+      await campo.fill('120,50');
+      await page.keyboard.press('Enter');
+
+      await expect(campo).toBeHidden();
+      await expect(page).toHaveURL(/\/monitoramentos$/);
+      await expect(alterar).toBeFocused();
+      await expect(page.getByRole('listitem').filter({ hasText: 'Black Myth: Wukong' })).toContainText('R$ 120,50');
     });
 
     test('pausar troca o rótulo e mantém o foco no botão', async ({ page }) => {
