@@ -2,7 +2,7 @@
   <umbra-capa-produto [capa]="produto().capa" tipo="JOGO" class="aspect-[300/140] w-30 shrink-0 rounded-peca" />
   <div class="flex min-w-0 flex-1 flex-col gap-1">
     <h3 class="break-words text-interface font-medium">{{ produto().nome }}</h3>
-    <umbra-preco-produto [preco]="produto().preco" />
+    <umbra-preco-produto [preco]="produto().preco" class="w-fit max-w-full" />
   </div>
   <div class="flex w-full flex-wrap items-center gap-2 tablet:w-auto">
     @if (monitorando(); as monitorando) {
