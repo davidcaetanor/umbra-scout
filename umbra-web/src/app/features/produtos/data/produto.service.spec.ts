@@ -15,7 +15,7 @@ function oferta(parcial: Partial<OfertaResponse> = {}): OfertaResponse {
     expiraEm: null,
     gratuito: false,
     loja: 'Steam',
-    promocaoEncerrada: false,
+    situacao: 'vigente',
     url: 'https://loja.exemplo/jogo',
     valorCentavos: 9990,
     valorOriginalCentavos: null,
@@ -48,7 +48,7 @@ describe('serviços do detalhe do produto', () => {
       imagemUrl: null,
       melhorPreco: oferta({ loja: 'KaBuM!', valorCentavos: 100 }),
       ofertas: [
-        oferta({ loja: 'Terabyte', valorCentavos: 200, promocaoEncerrada: true, descontoPct: 10, valorOriginalCentavos: 300 }),
+        oferta({ loja: 'Terabyte', valorCentavos: 200, situacao: 'promocao-vencida-sem-coleta', descontoPct: 10, valorOriginalCentavos: 300 }),
         oferta({ loja: 'KaBuM!', valorCentavos: 100 }),
       ],
     });

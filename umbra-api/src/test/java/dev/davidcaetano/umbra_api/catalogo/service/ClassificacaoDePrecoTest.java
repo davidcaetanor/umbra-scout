@@ -1,5 +1,6 @@
 package dev.davidcaetano.umbra_api.catalogo.service;
 
+import dev.davidcaetano.umbra_api.catalogo.enums.SituacaoDoPreco;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -32,22 +33,58 @@ class ClassificacaoDePrecoTest {
     }
 
     @Test
-    void promocaoEncerrada_semExpiracao_naoEstaEncerrada() {
-        assertThat(ClassificacaoDePreco.promocaoEncerrada(null, AGORA)).isFalse();
+    void situacao_semPrazoVerificadaHaPouco_eVigente() {
+        assertThat(ClassificacaoDePreco.situacao(null, AGORA.minus(Duration.ofHours(2)), AGORA))
+                .isEqualTo(SituacaoDoPreco.VIGENTE);
     }
 
     @Test
-    void promocaoEncerrada_expiracaoUmSegundoAntes_estaEncerrada() {
-        assertThat(ClassificacaoDePreco.promocaoEncerrada(AGORA.minus(Duration.ofSeconds(1)), AGORA)).isTrue();
+    void situacao_semPrazoVerificadaHaExatas24Horas_aindaEVigente() {
+        assertThat(ClassificacaoDePreco.situacao(null, AGORA.minus(Duration.ofHours(24)), AGORA))
+                .isEqualTo(SituacaoDoPreco.VIGENTE);
     }
 
     @Test
-    void promocaoEncerrada_expiracaoUmSegundoDepois_naoEstaEncerrada() {
-        assertThat(ClassificacaoDePreco.promocaoEncerrada(AGORA.plus(Duration.ofSeconds(1)), AGORA)).isFalse();
+    void situacao_semPrazoVerificadaHaMaisDe24Horas_estaAtrasada() {
+        assertThat(ClassificacaoDePreco.situacao(null, AGORA.minus(Duration.ofHours(24)).minusSeconds(1), AGORA))
+                .isEqualTo(SituacaoDoPreco.VERIFICACAO_ATRASADA);
     }
 
     @Test
-    void promocaoEncerrada_expiracaoExatamenteAgora_naoEstaEncerrada() {
-        assertThat(ClassificacaoDePreco.promocaoEncerrada(AGORA, AGORA)).isFalse();
+    void situacao_prazoNoFuturoComVerificacaoAntiga_estaNoPrazoSemAlarme() {
+        assertThat(ClassificacaoDePreco.situacao(AGORA.plus(Duration.ofDays(7)), AGORA.minus(Duration.ofDays(5)), AGORA))
+                .isEqualTo(SituacaoDoPreco.PROMOCAO_NO_PRAZO);
+    }
+
+    @Test
+    void situacao_prazoVencidoSemColetaDepois_vencidaSemColeta() {
+        assertThat(ClassificacaoDePreco.situacao(AGORA.minus(Duration.ofSeconds(1)), AGORA.minus(Duration.ofHours(1)), AGORA))
+                .isEqualTo(SituacaoDoPreco.PROMOCAO_VENCIDA_SEM_COLETA);
+    }
+
+    @Test
+    void situacao_prazoExatamenteAgoraSemColetaDepois_vencidaSemColeta() {
+        assertThat(ClassificacaoDePreco.situacao(AGORA, AGORA.minus(Duration.ofMinutes(5)), AGORA))
+                .isEqualTo(SituacaoDoPreco.PROMOCAO_VENCIDA_SEM_COLETA);
+    }
+
+    @Test
+    void situacao_prazoVencidoComColetaDepoisDoPrazo_voltaAVigente() {
+        assertThat(ClassificacaoDePreco.situacao(AGORA.minus(Duration.ofHours(3)), AGORA.minus(Duration.ofHours(1)), AGORA))
+                .isEqualTo(SituacaoDoPreco.VIGENTE);
+    }
+
+    @Test
+    void situacao_prazoVencidoComColetaDepoisMasAntigaDe24Horas_estaAtrasada() {
+        assertThat(ClassificacaoDePreco.situacao(AGORA.minus(Duration.ofDays(3)), AGORA.minus(Duration.ofDays(2)), AGORA))
+                .isEqualTo(SituacaoDoPreco.VERIFICACAO_ATRASADA);
+    }
+
+    @Test
+    void valeParaAviso_soVigenteEPromocaoNoPrazo() {
+        assertThat(SituacaoDoPreco.VIGENTE.valeParaAviso()).isTrue();
+        assertThat(SituacaoDoPreco.PROMOCAO_NO_PRAZO.valeParaAviso()).isTrue();
+        assertThat(SituacaoDoPreco.VERIFICACAO_ATRASADA.valeParaAviso()).isFalse();
+        assertThat(SituacaoDoPreco.PROMOCAO_VENCIDA_SEM_COLETA.valeParaAviso()).isFalse();
     }
 }

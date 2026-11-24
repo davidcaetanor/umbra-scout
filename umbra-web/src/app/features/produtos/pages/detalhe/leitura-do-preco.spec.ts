@@ -14,6 +14,7 @@ const OFERTA: OfertaDaLoja = {
   coletadoEm: '2026-11-21T10:00:00Z',
   expiraEm: null,
   verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
+  situacao: 'vigente',
 };
 
 const HISTORICO: HistoricoDoProduto = {

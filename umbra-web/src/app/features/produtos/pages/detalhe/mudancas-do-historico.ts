@@ -2,11 +2,9 @@ import { diaEMes, diaMesEAno } from '../../../../shared/formatacao/data-curta';
 import { reais } from '../../../../shared/formatacao/reais';
 import { MudancaExibida } from '../../components/lista-de-mudancas/mudanca-exibida';
 import { HistoricoDoProduto, MinimoDoHistorico, PontoDoHistorico, SerieDaLoja } from '../../data/historico-do-produto';
-import { DIA_MS } from './historico-exibido';
 
 export const MUDANCAS_PARA_MOSTRAR_O_GRAFICO = 2;
 export const VARIACAO_RELEVANTE = 0.05;
-export const DIAS_PARA_DADO_ANTIGO = 2;
 
 interface Mudanca {
   readonly instante: number;
@@ -64,16 +62,6 @@ export function fraseSemGrafico(historico: HistoricoDoProduto): string | null {
     return `Sem mudança de preço desde ${diaMesEAno(desde)}`;
   }
   return `Mudou uma vez: ${descricao(unica)} em ${diaEMes(unica.instante)}`;
-}
-
-export function verificacao(verificadoEm: readonly number[], agora: number): { readonly texto: string; readonly antiga: boolean } | null {
-  const validas = verificadoEm.filter((instante) => Number.isFinite(instante));
-  if (validas.length === 0) {
-    return null;
-  }
-  const ultima = Math.max(...validas);
-  const quando = diaMesEAno(ultima) === diaMesEAno(agora) ? 'hoje' : `em ${diaMesEAno(ultima)}`;
-  return { texto: `Verificado ${quando}`, antiga: agora - ultima > DIAS_PARA_DADO_ANTIGO * DIA_MS };
 }
 
 function descricao({ de, para }: Mudanca): string {

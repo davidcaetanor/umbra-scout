@@ -7,6 +7,7 @@ import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaAtualProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoRepository;
+import dev.davidcaetano.umbra_api.catalogo.enums.SituacaoDoPreco;
 import dev.davidcaetano.umbra_api.catalogo.service.ClassificacaoDePreco;
 import dev.davidcaetano.umbra_api.monitoramento.AlvoEmProdutoGratuitoException;
 import dev.davidcaetano.umbra_api.monitoramento.MonitoramentoDuplicadoException;
@@ -178,10 +179,10 @@ public class MonitoramentoService {
         }
 
         long valor = resumo.getValorCentavos();
-        boolean promocaoEncerrada = ClassificacaoDePreco.promocaoEncerrada(resumo.getExpiraEm(), agora);
+        SituacaoDoPreco situacao = ClassificacaoDePreco.situacao(resumo.getExpiraEm(), resumo.getVerificadoEm(), agora);
         OfertaResponse melhorPreco = monitoramentoMapper.paraOferta(resumo,
-                ClassificacaoDePreco.gratuito(valor, resumo.getValorOriginalCentavos()), promocaoEncerrada);
-        boolean alvoAtingido = !promocaoEncerrada && valor <= resumo.getPrecoAlvoCentavos();
+                ClassificacaoDePreco.gratuito(valor, resumo.getValorOriginalCentavos()), situacao);
+        boolean alvoAtingido = situacao.valeParaAviso() && valor <= resumo.getPrecoAlvoCentavos();
 
         return monitoramentoMapper.paraResponse(resumo, melhorPreco, valor - resumo.getPrecoAlvoCentavos(),
                 alvoAtingido);

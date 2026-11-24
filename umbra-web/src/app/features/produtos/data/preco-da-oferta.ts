@@ -5,7 +5,7 @@ import { PrecoDoProduto } from './preco-do-produto';
 export function precoDaOferta(oferta: OfertaResponse): PrecoDoProduto {
   const emPromocao =
     !oferta.gratuito &&
-    !oferta.promocaoEncerrada &&
+    oferta.situacao !== 'promocao-vencida-sem-coleta' &&
     (oferta.descontoPct ?? 0) > 0 &&
     oferta.valorOriginalCentavos !== null &&
     oferta.valorOriginalCentavos > oferta.valorCentavos;

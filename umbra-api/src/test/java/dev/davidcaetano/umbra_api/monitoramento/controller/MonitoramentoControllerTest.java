@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -82,6 +83,10 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
                                    expira_em, coletado_em)
                 VALUES (?, ?, ?, TRUE, 'ITAD_API', ?, now())
                 """, ofertaId, valor, original, expiraEm == null ? null : Timestamp.from(expiraEm));
+        if (expiraEm != null && expiraEm.isBefore(Instant.now())) {
+            jdbc.update("UPDATE oferta SET verificado_em = ? WHERE id = ?",
+                    Timestamp.from(expiraEm.minus(2, ChronoUnit.HOURS)), ofertaId);
+        }
     }
 
     private ResultActions como(Long usuarioId, MockHttpServletRequestBuilder requisicao) throws Exception {
@@ -143,7 +148,7 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
 
         como(usuario, post("/monitoramentos").content(corpoDeCriacao(produto, 2500)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.melhorPreco.promocaoEncerrada").value(true))
+                .andExpect(jsonPath("$.melhorPreco").value(nullValue()))
                 .andExpect(jsonPath("$.alvoAtingido").value(false));
     }
 

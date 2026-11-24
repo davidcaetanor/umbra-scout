@@ -364,8 +364,9 @@
           "loja" : {
             "type" : "string"
           },
-          "promocaoEncerrada" : {
-            "type" : "boolean"
+          "situacao" : {
+            "enum" : [ "vigente", "promocao-no-prazo", "verificacao-atrasada", "promocao-vencida-sem-coleta" ],
+            "type" : "string"
           },
           "url" : {
             "type" : "string"
@@ -383,7 +384,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "coletadoEm", "descontoPct", "expiraEm", "gratuito", "loja", "promocaoEncerrada", "url", "valorCentavos", "valorOriginalCentavos", "verificadoEm" ],
+        "required" : [ "coletadoEm", "descontoPct", "expiraEm", "gratuito", "loja", "situacao", "url", "valorCentavos", "valorOriginalCentavos", "verificadoEm" ],
         "type" : "object"
       },
       "PontoHistoricoResponse" : {
