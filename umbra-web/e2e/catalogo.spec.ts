@@ -7,7 +7,7 @@ const OFERTA = {
   expiraEm: null,
   gratuito: false,
   loja: 'Steam',
-  promocaoEncerrada: false,
+  situacao: 'vigente',
   url: 'https://loja.exemplo/jogo',
   valorCentavos: 2399,
   valorOriginalCentavos: 4799,

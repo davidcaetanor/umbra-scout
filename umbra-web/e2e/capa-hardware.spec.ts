@@ -20,7 +20,7 @@ test('T4.4c, foto do hardware aparece inteira, na moldura clara e pela nossa ori
               expiraEm: null,
               gratuito: false,
               loja: 'KaBuM!',
-              promocaoEncerrada: false,
+              situacao: 'vigente',
               url: 'https://www.kabum.com.br/produto/85948',
               valorCentavos: 23999,
               valorOriginalCentavos: 26666,
