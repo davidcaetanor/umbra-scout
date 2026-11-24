@@ -360,6 +360,8 @@
 								<param>dev.davidcaetano.umbra_api.coleta.service.VereditoRodada</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.CondicaoDeDrift</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.SituacaoRodada</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.CoberturaDaRodada</param>
+								<param>dev.davidcaetano.umbra_api.catalogo.enums.SituacaoDoPreco</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodada</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.GrupoChave</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.GrupoDeOfertas</param>
@@ -396,6 +398,7 @@
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.properties.AlarmeColetaPropertiesTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.VereditoRodadaTest</param>
+								<param>dev.davidcaetano.umbra_api.coleta.service.CoberturaDaRodadaTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.PreparadorDeRodadaTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.service.RegraDeGravacaoDePrecoTest</param>
 								<param>dev.davidcaetano.umbra_api.coleta.CoberturaTest</param>

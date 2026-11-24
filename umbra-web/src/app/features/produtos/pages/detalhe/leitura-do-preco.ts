@@ -21,7 +21,7 @@ export function leituraDoPreco(oferta: OfertaDaLoja | null, historico: Historico
   }
   const pontos = historico.melhorPreco.filter((ponto) => ponto.valorCentavos !== null).length;
   const tom = pontos < PONTOS_PARA_AVALIAR ? 'pouco' : tomDoPreco(oferta.valorCentavos, minimo.valorCentavos, mediana(historico));
-  const partes = [explicacao(tom, oferta.valorCentavos <= minimo.valorCentavos), prazo(oferta, historico.consultadoEm)].filter(
+  const partes = [explicacao(tom, oferta.valorCentavos <= minimo.valorCentavos), situacaoDaOferta(oferta, historico.consultadoEm)].filter(
     (parte): parte is string => parte !== null,
   );
   return { titulo: TITULO[tom], detalhe: partes.length === 0 ? null : maiusculaInicial(partes.join(', ')), tom };
@@ -56,8 +56,11 @@ function mediana(historico: HistoricoDoProduto): number | null {
   return valores.length % 2 === 1 ? valores[meio] : (valores[meio - 1] + valores[meio]) / 2;
 }
 
-function prazo(oferta: OfertaDaLoja, agora: number): string | null {
-  if (oferta.expiraEm === null || oferta.expiraEm <= agora) {
+function situacaoDaOferta(oferta: OfertaDaLoja, agora: number): string | null {
+  if (oferta.situacao === 'verificacao-atrasada') {
+    return `preço verificado pela última vez em ${diaEMes(oferta.verificadoEm)}`;
+  }
+  if (oferta.situacao !== 'promocao-no-prazo' || oferta.expiraEm === null) {
     return null;
   }
   const dia = diaMesEAno(oferta.expiraEm);

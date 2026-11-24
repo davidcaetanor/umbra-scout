@@ -19,4 +19,6 @@ public interface OfertaComUltimoPrecoProjecao {
     boolean isDisponivel();
 
     Instant getColetadoEm();
+
+    Instant getVerificadoEm();
 }

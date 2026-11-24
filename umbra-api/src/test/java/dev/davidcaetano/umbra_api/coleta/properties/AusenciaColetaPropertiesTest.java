@@ -25,7 +25,7 @@ class AusenciaColetaPropertiesTest {
     @Test
     void deveCarregarOTetoPercentualDeclarado() {
         contextRunner
-                .withPropertyValues("umbra.coleta.ausencia.teto-percentual=20")
+                .withPropertyValues("umbra.coleta.ausencia.teto-percentual=20", "umbra.coleta.ausencia.confirmacao-horas=24")
                 .run(context -> assertThat(context.getBean(AusenciaColetaProperties.class).tetoPercentual())
                         .isEqualTo(20));
     }
@@ -34,12 +34,33 @@ class AusenciaColetaPropertiesTest {
     @ValueSource(ints = {0, 101})
     void deveFalharComTetoForaDaFaixa(int teto) {
         contextRunner
-                .withPropertyValues("umbra.coleta.ausencia.teto-percentual=" + teto)
+                .withPropertyValues("umbra.coleta.ausencia.teto-percentual=" + teto,
+                        "umbra.coleta.ausencia.confirmacao-horas=24")
                 .run(context -> {
                     assertThat(context).hasFailed();
                     assertThat(context.getStartupFailure())
                             .rootCause()
                             .hasMessageContaining("umbra.coleta.ausencia.teto-percentual");
+                });
+    }
+
+    @Test
+    void deveCarregarAConfirmacaoEmHorasDeclarada() {
+        contextRunner
+                .withPropertyValues("umbra.coleta.ausencia.teto-percentual=20", "umbra.coleta.ausencia.confirmacao-horas=24")
+                .run(context -> assertThat(context.getBean(AusenciaColetaProperties.class).confirmacaoHoras())
+                        .isEqualTo(24));
+    }
+
+    @Test
+    void deveFalharComConfirmacaoMenorQueUmaHora() {
+        contextRunner
+                .withPropertyValues("umbra.coleta.ausencia.teto-percentual=20", "umbra.coleta.ausencia.confirmacao-horas=0")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .rootCause()
+                            .hasMessageContaining("umbra.coleta.ausencia.confirmacao-horas");
                 });
     }
 

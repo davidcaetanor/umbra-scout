@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -48,13 +50,17 @@ class AusenciaPorCenso {
             return;
         }
 
-        if (!rodadaViuTudoQuantoPretendia(resultado, veredito)) {
+        CoberturaDaRodada coberturaDaRodada = CoberturaDaRodada.de(resultado, veredito);
+
+        if (coberturaDaRodada == CoberturaDaRodada.INSUFICIENTE) {
             Reconciliacao reconciliacao = resultado.reconciliacao();
             log.info("Censo sem conclusao de ausencia: fonte={} situacao={} semPreco={} declarado={} distintos={}",
                     resultado.fonte(), veredito.situacao(), resultado.totalSemPreco(), reconciliacao.declarado(),
                     reconciliacao.distintos());
             return;
         }
+
+        Instant instanteDaRodada = agora.toInstant();
 
         Cobertura cobertura = resultado.cobertura();
         List<OfertaComUltimoPrecoProjecao> conhecidas = precoRepository.findOfertasAtivasComUltimoPrecoPorCodigoLojaIn(
@@ -70,9 +76,10 @@ class AusenciaPorCenso {
         List<OfertaComUltimoPrecoProjecao> aMarcar = conhecidas.stream()
                 .filter(conhecida -> !vistas.contains(
                         new OfertaVista(CodigoLoja.valueOf(conhecida.getCodigoLoja()), conhecida.getIdentificadorLoja())))
+                .filter(ausente -> ausenciaConfirmada(ausente, coberturaDaRodada, instanteDaRodada))
                 .filter(ausente -> regraDeGravacaoDePreco.devePersistir(false,
                         new UltimoPreco(ausente.getValorCentavos(), ausente.isDisponivel(), ausente.getColetadoEm()),
-                        ausente.getValorCentavos(), false, agora.toInstant()))
+                        ausente.getValorCentavos(), false, instanteDaRodada))
                 .toList();
 
         int tetoPercentual = ausenciaColetaProperties.tetoPercentual();
@@ -97,14 +104,15 @@ class AusenciaPorCenso {
         return (long) aMarcar * 100 > (long) tetoPercentual * conhecidas;
     }
 
-    static boolean rodadaViuTudoQuantoPretendia(ResultadoColeta resultado, VereditoRodada veredito) {
-        Reconciliacao reconciliacao = resultado.reconciliacao();
-        Long declarado = reconciliacao.declarado();
+    private boolean ausenciaConfirmada(OfertaComUltimoPrecoProjecao ausente,
+                                       CoberturaDaRodada coberturaDaRodada,
+                                       Instant instanteDaRodada) {
+        if (coberturaDaRodada == CoberturaDaRodada.COMPLETA) {
+            return true;
+        }
 
-        return resultado.cobertura().ehCenso()
-                && veredito.situacao() == SituacaoRodada.SAUDAVEL
-                && resultado.totalSemPreco() == 0
-                && (declarado == null || reconciliacao.distintos() >= declarado);
+        Duration confirmacao = Duration.ofHours(ausenciaColetaProperties.confirmacaoHoras());
+        return ausente.getVerificadoEm().isBefore(instanteDaRodada.minus(confirmacao));
     }
 
     private record OfertaVista(CodigoLoja loja, String identificadorLoja) {

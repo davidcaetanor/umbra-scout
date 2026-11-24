@@ -610,7 +610,7 @@ class ColetaServiceTest extends IntegrationTestBase {
     }
 
     @Test
-    void ausencia_naoDeveSerConcluidaEmCensoSaudavelComDistintosAbaixoDoDeclarado() {
+    void ausencia_naoDeveSerConcluidaEmCensoSaudavelComDistintosAbaixoDoDeclaradoParaOfertaVerificadaHaMenosDe24Horas() {
         gravarCensoLimpoDaKabum(pecaKabum("111", 10000L, true), pecaKabum("222", 20000L, true));
 
         avancar(Duration.ofHours(6));
@@ -619,6 +619,25 @@ class ColetaServiceTest extends IntegrationTestBase {
 
         assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
         assertThat(precosDa("222")).hasSize(1);
+    }
+
+    @Test
+    void ausencia_deveSerConcluidaEmCensoSaudavelUmItemAbaixoDoDeclaradoParaOfertaSemVerificacaoHaMaisDe24Horas() {
+        VereditoRodada veredito = gravarCensoUmItemAbaixoDoDeclarado(Duration.ofHours(25));
+
+        assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
+        assertThat(precosDa("222")).hasSize(2);
+        assertThat(precosDa("222").getLast().isDisponivel()).isFalse();
+    }
+
+    private VereditoRodada gravarCensoUmItemAbaixoDoDeclarado(Duration intervalo) {
+        List<OfertaColetada> base = pecasKabum(60);
+        List<OfertaColetada> primeiraRodada = new ArrayList<>(base);
+        primeiraRodada.add(pecaKabum("222", 20000L, true));
+        gravarCenso(CodigoLoja.KABUM, new Reconciliacao(61L, 61, 61), 0, primeiraRodada);
+
+        avancar(intervalo);
+        return gravarCenso(CodigoLoja.KABUM, new Reconciliacao(61L, 60, 60), 0, base);
     }
 
     @Test
