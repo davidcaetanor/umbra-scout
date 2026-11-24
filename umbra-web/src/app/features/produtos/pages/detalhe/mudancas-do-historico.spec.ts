@@ -1,7 +1,6 @@
 import { HistoricoDoProduto, PontoDoHistorico } from '../../data/historico-do-produto';
 import { DIA_MS } from './historico-exibido';
 import {
-  MAXIMO_DE_MUDANCAS_NA_LISTA,
   fraseSemGrafico,
   lojasQueMudaram,
   mostraGrafico,
@@ -59,10 +58,23 @@ describe('mudanças do histórico', () => {
     ]);
   });
 
-  it('limita a lista', () => {
-    const muitos = Array.from({ length: 8 }, (_, posicao) => ponto(10 - posicao, 100 + posicao));
-    expect(mudancasPorLoja([{ loja: 'Steam', pontos: muitos }])).toHaveLength(MAXIMO_DE_MUDANCAS_NA_LISTA);
+  it('deixa de fora variações abaixo de 5% e marca a mudança do menor preço', () => {
+    const lista = mudancasPorLoja(
+      [
+        { loja: 'Steam', pontos: [ponto(10, 10000), ponto(8, 9700), ponto(6, 5000), ponto(4, 9000), ponto(2, 5000)] },
+        { loja: 'GOG', pontos: [ponto(10, 6000), ponto(3, 5000)] },
+      ],
+      { valorCentavos: 5000, loja: 'Steam', em: FIM - 2 * DIA_MS },
+    );
+
+    expect(lista.map(({ data, texto, menor }) => `${data} ${texto}${menor ? ' *' : ''}`)).toEqual([
+      '19/11 Steam caiu para R$ 50,00 (-44%) *',
+      '18/11 GOG caiu para R$ 50,00 (-17%)',
+      '17/11 Steam subiu para R$ 90,00 (+80%)',
+      '15/11 Steam caiu para R$ 50,00 (-48%)',
+    ]);
   });
+
 
   it('frase sem gráfico: sem mudança, uma mudança ou nenhuma frase', () => {
     expect(fraseSemGrafico(HISTORICO)).toBe('Sem mudança de preço desde 01/11/2026');

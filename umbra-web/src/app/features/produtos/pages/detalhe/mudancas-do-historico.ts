@@ -1,11 +1,11 @@
 import { diaEMes, diaMesEAno } from '../../../../shared/formatacao/data-curta';
 import { reais } from '../../../../shared/formatacao/reais';
 import { MudancaExibida } from '../../components/lista-de-mudancas/mudanca-exibida';
-import { HistoricoDoProduto, PontoDoHistorico, SerieDaLoja } from '../../data/historico-do-produto';
+import { HistoricoDoProduto, MinimoDoHistorico, PontoDoHistorico, SerieDaLoja } from '../../data/historico-do-produto';
 import { DIA_MS } from './historico-exibido';
 
 export const MUDANCAS_PARA_MOSTRAR_O_GRAFICO = 2;
-export const MAXIMO_DE_MUDANCAS_NA_LISTA = 5;
+export const VARIACAO_RELEVANTE = 0.05;
 export const DIAS_PARA_DADO_ANTIGO = 2;
 
 interface Mudanca {
@@ -33,12 +33,24 @@ export function lojasQueMudaram(series: readonly SerieDaLoja[]): string[] {
   return series.filter((serie) => mudancas(serie.pontos).length > 0).map((serie) => serie.loja);
 }
 
-export function mudancasPorLoja(series: readonly SerieDaLoja[]): MudancaExibida[] {
-  return series
+export function mudancasPorLoja(series: readonly SerieDaLoja[], minimo: MinimoDoHistorico | null = null): MudancaExibida[] {
+  const lista = series
     .flatMap((serie) => mudancas(serie.pontos).map((mudanca) => ({ ...mudanca, loja: serie.loja })))
-    .sort((a, b) => b.instante - a.instante || a.loja.localeCompare(b.loja))
-    .slice(0, MAXIMO_DE_MUDANCAS_NA_LISTA)
-    .map((mudanca) => ({ data: diaEMes(mudanca.instante), texto: `${mudanca.loja} ${descricao(mudanca)}` }));
+    .filter(relevante)
+    .sort((a, b) => b.instante - a.instante || a.loja.localeCompare(b.loja));
+  const daMinima = lista.find((mudanca) => minimo !== null && mudanca.para === minimo.valorCentavos && mudanca.loja === minimo.loja);
+  return lista.map((mudanca) => ({
+    data: diaEMes(mudanca.instante),
+    texto: `${mudanca.loja} ${descricao(mudanca)}`,
+    menor: mudanca === daMinima,
+  }));
+}
+
+function relevante({ de, para }: Mudanca): boolean {
+  if (de === null || para === null || de === 0) {
+    return true;
+  }
+  return Math.abs(para - de) / de >= VARIACAO_RELEVANTE;
 }
 
 export function fraseSemGrafico(historico: HistoricoDoProduto): string | null {
