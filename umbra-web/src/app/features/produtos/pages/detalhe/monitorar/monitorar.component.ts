@@ -21,7 +21,7 @@ import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProduto } from '../../../data/monitoramento-do-produto';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
 import { RodizioDePiadas, faixaDoAlvo } from './piadas-do-alvo';
-import { LeituraDoAlvo, lerAlvo, textoDoAlvo } from './preco-alvo';
+import { LeituraDoAlvo, lerAlvo, textoDoAlvo } from '../../../../../shared/formatacao/preco-alvo';
 import { RascunhoDoAlvo } from './rascunho-do-alvo';
 
 export type SituacaoDoMonitoramento =

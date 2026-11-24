@@ -1,4 +1,4 @@
-import { lerReais } from '../../../../../shared/formatacao/valor-em-reais';
+import { lerReais } from './valor-em-reais';
 
 export const ALVO_MAXIMO_CENTAVOS = 15_000_000;
 
