@@ -22,7 +22,7 @@ import { MonitoramentoDoProduto } from '../../../data/monitoramento-do-produto';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
 import { RodizioDePiadas, faixaDoAlvo } from './piadas-do-alvo';
 import { MENSAGEM_DO_ALVO, lerAlvo, textoDoAlvo } from '../../../../../shared/formatacao/preco-alvo';
-import { RascunhoDoAlvo } from './rascunho-do-alvo';
+import { RascunhoDoAlvo, rascunhoDoProduto } from '../../../data/rascunho-do-alvo';
 
 export type SituacaoDoMonitoramento =
   | { readonly tipo: 'deslogado' }
@@ -87,7 +87,7 @@ export class MonitorarComponent {
   }
 
   private retomarRascunho(): void {
-    const retomado = this.rascunho.retomar(this.produtoId());
+    const retomado = this.rascunho.retomar(rascunhoDoProduto(this.produtoId()));
     if (retomado !== null) {
       this.texto.set(textoDoAlvo(retomado));
       this.focarAoAparecer = true;
@@ -135,7 +135,7 @@ export class MonitorarComponent {
     }
     const alvo = leitura.centavos;
     if (this.sessao.vigente() === null) {
-      this.rascunho.guardar(this.produtoId(), alvo);
+      this.rascunho.guardar(rascunhoDoProduto(this.produtoId()), alvo);
       await this.router.navigate([ROTA_DE_ENTRADA], { queryParams: { returnUrl: this.router.url } });
       return;
     }
