@@ -11,6 +11,13 @@ export type LeituraDoAlvo =
 
 const CENTAVOS_POR_REAL = 100;
 
+export const MENSAGEM_DO_ALVO: Readonly<Record<Exclude<LeituraDoAlvo['tipo'], 'valido'>, string>> = {
+  vazio: 'Informe o preço alvo.',
+  invalido: 'Use só números, como 149,90 ou 149.90.',
+  zero: 'O alvo precisa ser maior que zero.',
+  'acima-do-maximo': 'O alvo vai até R$ 150.000,00.',
+};
+
 export function lerAlvo(texto: string): LeituraDoAlvo {
   const leitura = lerReais(texto);
   if (leitura.tipo !== 'valido') {
