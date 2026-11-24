@@ -87,12 +87,21 @@
             [ocupado]="estaOcupado(item.id)"
             (alternarAtivo)="alternarAtivo(item)"
             (remover)="pedirRemocao(item)"
+            (alterarAlvo)="pedirAlteracao(item)"
           />
         </li>
       }
     </ul>
   </umbra-estado-do-bloco>
 }
+
+<umbra-alterar-alvo
+  [pedido]="alteracaoPedida()"
+  [salvando]="salvandoAlvo()"
+  [erroDoServidor]="erroDoAlvo()"
+  (salvar)="salvarAlvo($event)"
+  (cancelar)="cancelarAlteracao()"
+/>
 
 <umbra-confirmar-remocao
   [pedido]="pedidoDeRemocao()"
@@ -112,10 +121,10 @@
     <umbra-balao-fala [ponta]="ponta" (fechado)="fecharNovidade()">
       @if (novidade.outras === 0) {
         Achei! <span class="font-semibold text-destaque">{{ novidade.nome }}</span> caiu para
-        <span class="font-semibold text-destaque">{{ novidade.preco }}</span> na {{ novidade.loja }}, abaixo do seu alvo.
+        <span class="font-semibold whitespace-nowrap text-destaque">{{ novidade.preco }}</span> na {{ novidade.loja }}, abaixo do seu alvo.
       } @else {
         Achei {{ novidade.outras + 1 }}! <span class="font-semibold text-destaque">{{ novidade.nome }}</span> a
-        <span class="font-semibold text-destaque">{{ novidade.preco }}</span> na {{ novidade.loja }} e mais
+        <span class="font-semibold whitespace-nowrap text-destaque">{{ novidade.preco }}</span> na {{ novidade.loja }} e mais
         {{ novidade.outras }} abaixo do alvo.
       }
     </umbra-balao-fala>

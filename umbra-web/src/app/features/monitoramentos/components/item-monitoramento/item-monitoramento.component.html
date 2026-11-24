@@ -68,14 +68,17 @@
     </div>
   </div>
 
-  <div class="flex flex-wrap items-center gap-2 largo:flex-col largo:items-stretch">
-    <a
-      [routerLink]="['/catalogo', item().produtoId]"
-      class="inline-flex min-h-11 items-center px-1 text-apoio underline underline-offset-4 largo:justify-center"
+  <div class="grid grid-cols-2 gap-2 tablet:flex tablet:flex-wrap tablet:items-center largo:flex-col largo:items-stretch">
+    <button
+      #botaoAlterar
+      type="button"
+      class="col-span-2 min-h-11 botao-secundario px-4"
       [attr.aria-label]="'Alterar alvo de ' + item().nome"
+      [attr.aria-disabled]="ocupado() || null"
+      (click)="pedirAlteracao()"
     >
       Alterar alvo
-    </a>
+    </button>
     <button
       type="button"
       class="min-h-11 botao-secundario px-4"

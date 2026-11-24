@@ -24,6 +24,7 @@ import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { AvisoService } from '../../../../shared/ui/aviso/aviso.service';
 import { EstadoDoBloco } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
+import { AlteracaoPedida, AlterarAlvoComponent } from '../../components/alterar-alvo/alterar-alvo.component';
 import { ConfirmarRemocaoComponent } from '../../components/confirmar-remocao/confirmar-remocao.component';
 import { ItemMonitoramentoComponent } from '../../components/item-monitoramento/item-monitoramento.component';
 import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, todosPausados } from '../../components/leitura-da-lista';
@@ -44,6 +45,7 @@ export interface NovidadeExibida {
 @Component({
   selector: 'umbra-meus-monitoramentos-page',
   imports: [
+    AlterarAlvoComponent,
     BalaoFalaComponent,
     ConfirmarRemocaoComponent,
     EstadoDoBlocoComponent,
@@ -127,6 +129,15 @@ export class MeusMonitoramentosPage {
   protected readonly ocupados = signal<ReadonlySet<number>>(new Set());
   protected readonly pedidoDeRemocao = signal<MonitoramentoListado | null>(null);
   protected readonly removendo = signal(false);
+  protected readonly pedidoDeAlteracao = signal<MonitoramentoListado | null>(null);
+  protected readonly alteracaoPedida = computed<AlteracaoPedida | null>(() => {
+    const item = this.pedidoDeAlteracao();
+    return item === null
+      ? null
+      : { nome: item.nome, precoAlvoCentavos: item.precoAlvoCentavos, melhorPrecoCentavos: item.melhorPreco?.valorCentavos ?? null };
+  });
+  protected readonly salvandoAlvo = signal(false);
+  protected readonly erroDoAlvo = signal<string | null>(null);
 
   protected tentarDeNovo(): void {
     this.recurso.reload();
@@ -150,6 +161,43 @@ export class MeusMonitoramentosPage {
       this.avisarFalha(erro);
     } finally {
       this.marcarOcupado(item.id, false);
+    }
+  }
+
+  protected pedirAlteracao(item: MonitoramentoListado): void {
+    this.erroDoAlvo.set(null);
+    this.pedidoDeAlteracao.set(item);
+  }
+
+  protected cancelarAlteracao(): void {
+    const item = this.pedidoDeAlteracao();
+    this.pedidoDeAlteracao.set(null);
+    if (item !== null) {
+      this.focarDepois(() => this.itemNaTela(item.id)?.focarAlteracao());
+    }
+  }
+
+  protected async salvarAlvo(precoAlvoCentavos: number): Promise<void> {
+    const item = this.pedidoDeAlteracao();
+    if (item === null) {
+      return;
+    }
+    this.salvandoAlvo.set(true);
+    this.erroDoAlvo.set(null);
+    try {
+      const atualizado = await this.servico.alterarAlvo(item.id, precoAlvoCentavos);
+      this.itens.update((itens) => itens?.map((atual) => (atual.id === item.id ? atualizado : atual)) ?? null);
+      this.pedidoDeAlteracao.set(null);
+      this.anuncio.set(`Alvo de ${item.nome} alterado para ${reais(atualizado.precoAlvoCentavos)}`);
+      this.focarDepois(() => this.itemNaTela(item.id)?.focarAlteracao());
+    } catch (erro) {
+      const mensagem = mensagemDoErro(erro);
+      if (mensagem === null) {
+        this.pedidoDeAlteracao.set(null);
+      }
+      this.erroDoAlvo.set(mensagem);
+    } finally {
+      this.salvandoAlvo.set(false);
     }
   }
 

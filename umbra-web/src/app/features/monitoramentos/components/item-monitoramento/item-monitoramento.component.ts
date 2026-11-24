@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { CapaProdutoComponent } from '../../../../shared/capa/capa-produto.component';
 import { reais } from '../../../../shared/formatacao/reais';
 import { avisoDoPreco, distancia, preenchimento } from '../leitura-da-lista';
@@ -7,7 +6,7 @@ import { MonitoramentoExibido } from '../monitoramento-exibido';
 
 @Component({
   selector: 'umbra-item-monitoramento',
-  imports: [CapaProdutoComponent, RouterLink],
+  imports: [CapaProdutoComponent],
   templateUrl: './item-monitoramento.component.html',
   styleUrl: './item-monitoramento.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,9 +17,11 @@ export class ItemMonitoramentoComponent {
 
   readonly alternarAtivo = output<void>();
   readonly remover = output<void>();
+  readonly alterarAlvo = output<void>();
 
   private readonly titulo = viewChild.required<ElementRef<HTMLElement>>('titulo');
   private readonly botaoRemover = viewChild.required<ElementRef<HTMLButtonElement>>('botaoRemover');
+  private readonly botaoAlterar = viewChild.required<ElementRef<HTMLButtonElement>>('botaoAlterar');
 
   protected readonly idDoTitulo = computed(() => `monitoramento-${this.item().id}`);
   protected readonly preco = computed(() => {
@@ -42,6 +43,16 @@ export class ItemMonitoramentoComponent {
 
   focarRemocao(): void {
     this.botaoRemover().nativeElement.focus();
+  }
+
+  focarAlteracao(): void {
+    this.botaoAlterar().nativeElement.focus();
+  }
+
+  protected pedirAlteracao(): void {
+    if (!this.ocupado()) {
+      this.alterarAlvo.emit();
+    }
   }
 
   protected pedirAlternancia(): void {

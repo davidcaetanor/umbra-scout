@@ -32,6 +32,10 @@ export class MeusMonitoramentosService {
     return paraListado(await this.api.invoke(alterarMonitoramento, { id, body: { ativo } }));
   }
 
+  async alterarAlvo(id: number, precoAlvoCentavos: number): Promise<MonitoramentoListado> {
+    return paraListado(await this.api.invoke(alterarMonitoramento, { id, body: { precoAlvoCentavos } }));
+  }
+
   async remover(id: number): Promise<void> {
     try {
       await this.api.invoke(apagarMonitoramento, { id });

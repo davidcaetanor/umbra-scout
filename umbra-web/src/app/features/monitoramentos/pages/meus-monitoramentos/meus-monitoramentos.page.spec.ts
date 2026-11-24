@@ -55,6 +55,18 @@ class ServicoFalso {
     return Promise.resolve({ ...atual, ativo, alvoAtingido: ativo && atual.alvoAtingido });
   }
 
+  alterarAlvo(id: number, precoAlvoCentavos: number): Promise<MonitoramentoListado> {
+    this.alvosEnviados.push(precoAlvoCentavos);
+    if (this.falhaAoAlterar !== null) {
+      return Promise.reject(this.falhaAoAlterar);
+    }
+    const atual = this.itens.find((existente) => existente.id === id)!;
+    return Promise.resolve({ ...atual, precoAlvoCentavos });
+  }
+
+  alvosEnviados: number[] = [];
+  falhaAoAlterar: unknown = null;
+
   remover(id: number): Promise<void> {
     if (this.falhaAoRemover !== null) {
       return Promise.reject(this.falhaAoRemover);
@@ -112,7 +124,7 @@ describe('MeusMonitoramentosPage', () => {
   }
 
   function dialogo(): HTMLDialogElement {
-    return tela.querySelector('dialog')!;
+    return tela.querySelector('umbra-confirmar-remocao dialog')!;
   }
 
   function botaoDoDialogo(texto: string): HTMLButtonElement {
@@ -212,6 +224,81 @@ describe('MeusMonitoramentosPage', () => {
 
     const nomes = [...tela.querySelectorAll('umbra-item-monitoramento h2')].map((titulo) => titulo.textContent?.trim());
     expect(nomes).toEqual(['Hollow Knight: Silksong', 'Celeste', 'Black Myth: Wukong', 'Elden Ring']);
+  });
+
+  describe('alterar o alvo na propria tela', () => {
+    function dialogoDoAlvo(): HTMLDialogElement {
+      return tela.querySelector('umbra-alterar-alvo dialog')!;
+    }
+
+    function campo(): HTMLInputElement {
+      return dialogoDoAlvo().querySelector('input')!;
+    }
+
+    async function digitarESalvar(texto: string): Promise<void> {
+      campo().value = texto;
+      campo().dispatchEvent(new Event('input'));
+      dialogoDoAlvo().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+      await estabilizar();
+    }
+
+    async function abrirAlteracao(): Promise<void> {
+      await abrir([item(2, 'Black Myth: Wukong')]);
+      botao('Alterar alvo de Black Myth: Wukong').click();
+      await estabilizar();
+    }
+
+    it('abre com o alvo atual no campo e o foco nele', async () => {
+      await abrirAlteracao();
+
+      expect(dialogoDoAlvo().open).toBe(true);
+      expect(campo().value).toBe('150,00');
+      expect(document.activeElement).toBe(campo());
+      expect(dialogoDoAlvo().textContent).toContain('melhor preço R$ 172,49');
+    });
+
+    it('valor invalido mostra o erro e nao envia', async () => {
+      await abrirAlteracao();
+
+      await digitarESalvar('0');
+
+      expect(servico.alvosEnviados).toEqual([]);
+      expect(dialogoDoAlvo().querySelector('[role="alert"]')?.textContent).toContain('maior que zero');
+      expect(campo().getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('salvar atualiza o item, anuncia e devolve o foco ao botao', async () => {
+      await abrirAlteracao();
+
+      await digitarESalvar('120,50');
+
+      expect(servico.alvosEnviados).toEqual([12050]);
+      expect(dialogoDoAlvo().open).toBe(false);
+      expect(tela.querySelector('umbra-item-monitoramento')?.textContent).toContain('R$ 120,50');
+      expect(tela.querySelector('p[role="status"]')?.textContent).toContain('Alvo de Black Myth: Wukong alterado para R$ 120,50');
+      expect(document.activeElement).toBe(botao('Alterar alvo de Black Myth: Wukong'));
+    });
+
+    it('recusa da API fica no dialogo para corrigir', async () => {
+      await abrirAlteracao();
+      servico.falhaAoAlterar = new ErroDaApi({ tipo: 'regra', detalhe: 'Produto gratuito não aceita alvo.' });
+
+      await digitarESalvar('10');
+
+      expect(dialogoDoAlvo().open).toBe(true);
+      expect(dialogoDoAlvo().textContent).toContain('Produto gratuito não aceita alvo.');
+    });
+
+    it('Esc fecha sem salvar e devolve o foco', async () => {
+      await abrirAlteracao();
+
+      dialogoDoAlvo().dispatchEvent(new Event('cancel', { cancelable: true }));
+      await estabilizar();
+
+      expect(dialogoDoAlvo().open).toBe(false);
+      expect(servico.alvosEnviados).toEqual([]);
+      expect(document.activeElement).toBe(botao('Alterar alvo de Black Myth: Wukong'));
+    });
   });
 
   it('remover pede confirmacao com foco em cancelar e cancelar devolve o foco', async () => {

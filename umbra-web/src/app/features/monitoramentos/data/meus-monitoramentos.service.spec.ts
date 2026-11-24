@@ -113,6 +113,16 @@ describe('MeusMonitoramentosService', () => {
     expect((await resposta).ativo).toBe(false);
   });
 
+  it('altera o alvo pelo PATCH so com o preco', async () => {
+    const resposta = servico.alterarAlvo(1, 6000);
+    const requisicao = http.expectOne(`${API}/monitoramentos/1`);
+    expect(requisicao.request.method).toBe('PATCH');
+    expect(requisicao.request.body).toEqual({ precoAlvoCentavos: 6000 });
+    requisicao.flush(monitoramento({ precoAlvoCentavos: 6000, alvoAtingido: false }));
+
+    expect((await resposta).precoAlvoCentavos).toBe(6000);
+  });
+
   it('remover algo que ja nao existe conta como removido', async () => {
     const resposta = servico.remover(1);
     http
