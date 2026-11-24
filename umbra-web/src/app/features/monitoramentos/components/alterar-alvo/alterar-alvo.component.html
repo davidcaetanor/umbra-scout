@@ -1,0 +1,53 @@
+<dialog
+  #dialogo
+  aria-labelledby="titulo-do-alvo"
+  class="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-bloco border-2 border-filete bg-superficie-elevada p-5 text-texto backdrop:bg-fundo/70"
+  (cancel)="aoCancelarPeloTeclado($event)"
+>
+  <form novalidate (submit)="enviar($event)">
+    @if (pedido(); as pedido) {
+      <h2 id="titulo-do-alvo" class="line-clamp-2 font-titulo text-subtitulo break-words">{{ pedido.nome }}</h2>
+      <p class="mt-1 text-apoio text-texto-secundario">
+        Alvo atual <span class="whitespace-nowrap">{{ alvoAtual() }}</span>
+        @if (precoAtual(); as preco) {
+          · melhor preço <span class="whitespace-nowrap">{{ preco }}</span>
+        }
+      </p>
+    }
+    <label for="novo-alvo" class="mt-4 block font-medium">Novo alvo</label>
+    <div
+      class="mt-1.5 flex min-h-12 items-center rounded-controle border bg-fundo focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-foco"
+      [class.border-borda-campo]="!erro()"
+      [class.border-erro]="erro()"
+      [class.border-2]="erro()"
+    >
+      <span class="ps-3 font-mono text-texto-secundario" aria-hidden="true">R$</span>
+      <input
+        #campo
+        id="novo-alvo"
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        maxlength="14"
+        [attr.aria-invalid]="erro() ? 'true' : null"
+        [attr.aria-errormessage]="erro() ? 'erro-novo-alvo' : null"
+        class="min-h-11 w-full min-w-0 flex-1 bg-transparent px-2 font-mono text-valor tabular-nums outline-none"
+        (input)="digitar($event)"
+      />
+    </div>
+    @if (erro(); as erro) {
+      <p id="erro-novo-alvo" role="alert" class="mt-1.5 text-apoio text-erro">{{ erro }}</p>
+    }
+    <div class="mt-5 flex flex-wrap justify-end gap-2">
+      <button type="button" class="min-h-11 botao-secundario px-4" (click)="pedirCancelamento()">Cancelar</button>
+      <button
+        type="submit"
+        class="min-h-11 botao-principal px-5"
+        [attr.aria-busy]="salvando() || null"
+        [attr.aria-disabled]="salvando() || null"
+      >
+        Salvar
+      </button>
+    </div>
+  </form>
+</dialog>

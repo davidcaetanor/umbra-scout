@@ -1,4 +1,4 @@
-import { CapaExibida } from './capa-exibida';
+import { CapaExibida } from '../../../shared/capa/capa-exibida';
 import { PrecoExibido } from './preco-exibido';
 
 export interface ProdutoExternoExibido {

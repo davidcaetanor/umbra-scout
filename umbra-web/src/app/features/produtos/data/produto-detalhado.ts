@@ -1,5 +1,5 @@
 import { OfertaResponse } from '../../../api/models/oferta-response';
-import { CapaDoProduto } from './capa-do-produto';
+import { CapaDoProduto } from '../../../shared/capa/capa-do-produto';
 import { TipoDeProduto } from './filtro-da-busca';
 import { PrecoDoProduto } from './preco-do-produto';
 

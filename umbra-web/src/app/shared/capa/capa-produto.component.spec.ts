@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CapaExibida } from '../capa-exibida';
+import { CapaExibida } from './capa-exibida';
 import { CapaProdutoComponent } from './capa-produto.component';
 
 const FAIXA: CapaExibida = { endereco: '/imagens/itad/a/banner300.jpg', alternativas: '', reserva: null, enquadramento: 'faixa' };

@@ -21,7 +21,7 @@ import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProduto } from '../../../data/monitoramento-do-produto';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
 import { RodizioDePiadas, faixaDoAlvo } from './piadas-do-alvo';
-import { LeituraDoAlvo, lerAlvo, textoDoAlvo } from './preco-alvo';
+import { MENSAGEM_DO_ALVO, lerAlvo, textoDoAlvo } from '../../../../../shared/formatacao/preco-alvo';
 import { RascunhoDoAlvo } from './rascunho-do-alvo';
 
 export type SituacaoDoMonitoramento =
@@ -31,13 +31,6 @@ export type SituacaoDoMonitoramento =
   | { readonly tipo: 'monitorado'; readonly monitoramento: MonitoramentoDoProduto };
 
 const ROTA_DOS_MONITORAMENTOS = '/monitoramentos';
-
-const MENSAGEM_DO_ALVO: Readonly<Record<Exclude<LeituraDoAlvo['tipo'], 'valido'>, string>> = {
-  vazio: 'Informe o preço alvo.',
-  invalido: 'Use só números, como 149,90 ou 149.90.',
-  zero: 'O alvo precisa ser maior que zero.',
-  'acima-do-maximo': 'O alvo vai até R$ 150.000,00.',
-};
 
 @Component({
   selector: 'umbra-monitorar',

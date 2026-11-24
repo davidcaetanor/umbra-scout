@@ -26,3 +26,12 @@
   border-left-width: 2px;
   transform: rotate(45deg);
 }
+
+.ponta-cima::after {
+  top: -0.6rem;
+  bottom: auto;
+  left: var(--posicao-da-ponta, 1.5rem);
+  border-top-width: 2px;
+  border-left-width: 2px;
+  transform: rotate(45deg);
+}

@@ -1,5 +1,5 @@
-import { CapaExibida } from '../capa-exibida';
-import { TipoExibido } from '../tipo-exibido';
+import { CapaExibida } from '../../../../shared/capa/capa-exibida';
+import { TipoExibido } from '../../../../shared/capa/tipo-exibido';
 
 export type TomDaLeitura = 'bom' | 'costume' | 'mais-barato' | 'pouco';
 

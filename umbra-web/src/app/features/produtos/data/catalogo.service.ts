@@ -8,7 +8,7 @@ import { BuscaProdutosResponse } from '../../../api/models/busca-produtos-respon
 import { ProdutoExternoResponse } from '../../../api/models/produto-externo-response';
 import { ProdutoResumoResponse } from '../../../api/models/produto-resumo-response';
 import { CategoriaDeHardware, FiltroDaBusca } from './filtro-da-busca';
-import { capaPelaOrigem } from './imagem-pela-origem';
+import { capaPelaOrigem } from '../../../shared/capa/imagem-pela-origem';
 import { precoDaOferta } from './preco-da-oferta';
 import { ProdutoDoCatalogo } from './produto-do-catalogo';
 import { ProdutoExterno } from './produto-externo';
