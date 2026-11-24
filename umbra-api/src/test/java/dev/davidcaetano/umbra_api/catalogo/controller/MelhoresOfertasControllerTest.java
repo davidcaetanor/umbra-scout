@@ -211,6 +211,16 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
                 .containsExactly("T44B Zeta Saga: Ultimate Edition");
     }
 
+    @Test
+    void ordemPorNome_naoDiferenciaMaiusculaNemAcento() throws Exception {
+        long witch = jogoComPreco("t44b-f1 Witch Cats", "STEAM", 1000, 1000, 0);
+        long hidden = jogoComPreco("t44b-f1 hidden frogs", "STEAM", 1000, 1000, 0);
+        long ilha = jogoComPreco("t44b-f1 Ílha", "STEAM", 1000, 1000, 0);
+        long abismo = jogoComPreco("t44b-f1 abismo", "STEAM", 1000, 1000, 0);
+
+        assertThat(ids(buscar("t44b-f1", "nome"))).containsExactly(abismo, hidden, ilha, witch);
+    }
+
     private String buscar(String termo, String ordenacao) throws Exception {
         return conteudoDe(get("/produtos").param("nome", termo).param("tipo", "JOGO").param("ordenacao", ordenacao));
     }
