@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, signal } from '@angular/core';
-import { CapaExibida } from '../capa-exibida';
-import { TipoExibido } from '../tipo-exibido';
+import { CapaExibida } from './capa-exibida';
+import { TipoExibido } from './tipo-exibido';
 
 type FaseDaCapa = 'faixa' | 'reserva' | 'sem-imagem';
 

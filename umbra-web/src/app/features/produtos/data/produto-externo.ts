@@ -1,4 +1,4 @@
-import { CapaDoProduto } from './capa-do-produto';
+import { CapaDoProduto } from '../../../shared/capa/capa-do-produto';
 import { PrecoDoProduto } from './preco-do-produto';
 
 export interface ProdutoExterno {

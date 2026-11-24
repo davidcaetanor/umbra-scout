@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { CapaProdutoComponent } from '../capa-produto/capa-produto.component';
+import { CapaProdutoComponent } from '../../../../shared/capa/capa-produto.component';
 import { LeituraDoPrecoComponent } from './leitura-do-preco.component';
 import { TopoExibido } from './topo-exibido';
 

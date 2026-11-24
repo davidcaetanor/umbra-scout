@@ -1,6 +1,6 @@
-import { CapaExibida } from './capa-exibida';
+import { CapaExibida } from '../../../shared/capa/capa-exibida';
 import { PrecoExibido } from './preco-exibido';
-import { TipoExibido } from './tipo-exibido';
+import { TipoExibido } from '../../../shared/capa/tipo-exibido';
 
 export interface ProdutoExibido {
   readonly nome: string;

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProdutoExibido } from '../produto-exibido';
-import { CapaProdutoComponent } from '../capa-produto/capa-produto.component';
+import { CapaProdutoComponent } from '../../../../shared/capa/capa-produto.component';
 import { PrecoProdutoComponent } from '../preco-produto/preco-produto.component';
 
 @Component({

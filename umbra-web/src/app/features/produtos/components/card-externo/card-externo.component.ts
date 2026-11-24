@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { ProdutoExternoExibido } from '../produto-externo-exibido';
-import { CapaProdutoComponent } from '../capa-produto/capa-produto.component';
+import { CapaProdutoComponent } from '../../../../shared/capa/capa-produto.component';
 import { PrecoProdutoComponent } from '../preco-produto/preco-produto.component';
 
 @Component({

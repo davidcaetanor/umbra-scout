@@ -8,7 +8,7 @@ import { PontoHistoricoResponse } from '../../../api/models/ponto-historico-resp
 import { ProdutoResponse } from '../../../api/models/produto-response';
 import { CategoriaDeHardware } from './filtro-da-busca';
 import { HistoricoDoProduto, PeriodoDoHistorico, PontoDoHistorico } from './historico-do-produto';
-import { LARGURAS_DA_FAIXA_EM_DESTAQUE, capaPelaOrigem } from './imagem-pela-origem';
+import { LARGURAS_DA_FAIXA_EM_DESTAQUE, capaPelaOrigem } from '../../../shared/capa/imagem-pela-origem';
 import { precoDaOferta } from './preco-da-oferta';
 import { OfertaDaLoja, ProdutoDetalhado } from './produto-detalhado';
 import { ROTULO_DA_CATEGORIA } from './rotulos';
