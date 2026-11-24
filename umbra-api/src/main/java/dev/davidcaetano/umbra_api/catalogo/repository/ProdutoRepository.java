@@ -57,16 +57,29 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
     String ORDEM_DO_CATALOGO = """
              ORDER BY
                CASE WHEN CAST(:ordenacao AS TEXT) = 'melhoresOfertas' THEN
-                      CAST(:pesoEconomia AS DOUBLE PRECISION)
-                        * ln(1 + (m.valor_original_centavos - m.valor_centavos))
-                        / CAST(:logaritmoDaReferencia AS DOUBLE PRECISION)
-                    + (1 - CAST(:pesoEconomia AS DOUBLE PRECISION))
+                      row_number() OVER (PARTITION BY p.tipo ORDER BY
+                      CASE WHEN p.tipo = 'HARDWARE' THEN
+                             CAST(:#{#regua.pesoEconomiaHardware} AS DOUBLE PRECISION)
+                               * ln(1 + least(m.valor_original_centavos - m.valor_centavos,
+                                              CAST(:#{#regua.tetoEconomiaHardwareCentavos} AS BIGINT)))
+                               / CAST(:#{#regua.logaritmoDoTetoHardware()} AS DOUBLE PRECISION)
+                           + CAST(:#{#regua.pesoPercentualHardware} AS DOUBLE PRECISION)
+                               * COALESCE(m.desconto_pct, 0) / 100.0
+                           ELSE
+                             CAST(:#{#regua.pesoEconomia} AS DOUBLE PRECISION)
+                               * ln(1 + (m.valor_original_centavos - m.valor_centavos))
+                               / CAST(:#{#regua.logaritmoDaReferencia} AS DOUBLE PRECISION)
+                      END
+                    + CASE WHEN p.tipo = 'HARDWARE' THEN CAST(:#{#regua.pesoMinimoHardware()} AS DOUBLE PRECISION)
+                           ELSE CAST(:#{#regua.pesoMinimo()} AS DOUBLE PRECISION) END
                         * COALESCE((SELECT min(pr.valor_centavos)
                                       FROM preco pr
                                       JOIN oferta om ON om.id = pr.oferta_id
                                      WHERE om.produto_id = p.id AND om.ativa AND pr.disponivel)
                                    / NULLIF(CAST(m.valor_centavos AS DOUBLE PRECISION), 0), 1)
-               END DESC NULLS LAST,
+                        DESC NULLS LAST, p.id)
+               END,
+               CASE WHEN CAST(:ordenacao AS TEXT) = 'melhoresOfertas' THEN CASE WHEN p.tipo = 'JOGO' THEN 0 ELSE 1 END END,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'maiorDesconto' THEN m.desconto_pct END DESC NULLS LAST,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'menorPreco' THEN m.valor_centavos END ASC NULLS LAST,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'nome' THEN normalizar_busca(p.nome) END,
@@ -89,8 +102,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                                                @Param("precoMax") Long precoMax,
                                                @Param("descontoMin") Integer descontoMin,
                                                @Param("ordenacao") String ordenacao,
-                                               @Param("pesoEconomia") double pesoEconomia,
-                                               @Param("logaritmoDaReferencia") double logaritmoDaReferencia,
+                                               @Param("regua") ReguaDeOfertas regua,
                                                Pageable paginacao);
 
     @Query(value = COLUNAS_DO_RESUMO + OFERTA_DA_LOJA + FILTRO_DO_CATALOGO + ORDEM_DO_CATALOGO,
@@ -103,7 +115,6 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                                                      @Param("precoMax") Long precoMax,
                                                      @Param("descontoMin") Integer descontoMin,
                                                      @Param("ordenacao") String ordenacao,
-                                                     @Param("pesoEconomia") double pesoEconomia,
-                                                     @Param("logaritmoDaReferencia") double logaritmoDaReferencia,
+                                                     @Param("regua") ReguaDeOfertas regua,
                                                      Pageable paginacao);
 }

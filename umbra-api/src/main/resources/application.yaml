@@ -103,6 +103,10 @@ umbra:
     destaques: 8
     candidatos-dos-destaques: 100
     validade-dos-destaques: 10m
+    hardware:
+      peso-economia: 0.4
+      peso-percentual: 0.3
+      teto-economia-centavos: 50000
   monitoramento:
     dias-para-descontinuado: 180
     externo:

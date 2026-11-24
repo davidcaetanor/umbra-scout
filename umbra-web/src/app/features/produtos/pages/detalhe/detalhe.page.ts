@@ -140,7 +140,10 @@ export class DetalhePage {
     const historico = this.historico();
     return historico === null || this.graficoVisivel() ? null : fraseSemGrafico(historico);
   });
-  protected readonly mudancasDoHistorico = computed(() => mudancasPorLoja(this.historico()?.porLoja ?? []));
+  protected readonly mudancasDoHistorico = computed(() => {
+    const historico = this.historico();
+    return historico === null ? [] : mudancasPorLoja(historico.porLoja, historico.minimo);
+  });
   protected readonly maximoDeLojas = MAXIMO_DE_LOJAS_NO_GRAFICO;
 
   private readonly recursoDoMonitoramento = resource({
