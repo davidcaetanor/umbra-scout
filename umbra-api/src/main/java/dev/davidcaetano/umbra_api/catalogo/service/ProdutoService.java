@@ -69,8 +69,9 @@ public class ProdutoService {
         List<ProdutoResumoResponse> conteudo = locais.getContent().stream()
                 .map(produto -> produtoMapper.paraResumo(produto, melhorPrecoDo(produto, agora)))
                 .toList();
-        List<ProdutoExternoResponse> externos = incluirExterno && semOrdenacaoDoCliente.getPageNumber() == 0
-                ? buscarForaDoCatalogo(filtro.termo(), ipDeOrigem, agora)
+        boolean buscaExterna = incluirExterno && filtro.admiteJogo() && semOrdenacaoDoCliente.getPageNumber() == 0;
+        List<ProdutoExternoResponse> externos = buscaExterna
+                ? buscarForaDoCatalogo(filtro, ipDeOrigem, agora)
                 : List.of();
 
         return new BuscaProdutosResponse(conteudo, locais.getNumber(), locais.getSize(),
@@ -147,8 +148,8 @@ public class ProdutoService {
         }
     }
 
-    private List<ProdutoExternoResponse> buscarForaDoCatalogo(String termo, String ipDeOrigem, Instant agora) {
-        List<JogoExterno> jogos = buscaExternaService.buscar(termo, ipDeOrigem);
+    private List<ProdutoExternoResponse> buscarForaDoCatalogo(FiltroDoCatalogo filtro, String ipDeOrigem, Instant agora) {
+        List<JogoExterno> jogos = buscaExternaService.buscar(filtro.termo(), ipDeOrigem);
         if (jogos.isEmpty()) {
             return List.of();
         }
@@ -159,6 +160,7 @@ public class ProdutoService {
                 .collect(Collectors.toSet());
         List<JogoExterno> foraDoCatalogo = jogos.stream()
                 .filter(jogo -> !gidsNoCatalogo.contains(jogo.gid()))
+                .flatMap(jogo -> FiltroDeJogoExterno.aplicar(jogo, filtro).stream())
                 .limit(buscaProperties.externa().maximoResultados())
                 .toList();
 
