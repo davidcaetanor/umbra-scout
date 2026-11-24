@@ -38,7 +38,7 @@
     <div class="rounded-controle bg-superficie-elevada px-3 py-2">
       <p class="rotulo">Melhor preço</p>
       @if (preco(); as preco) {
-        <p class="font-mono text-valor tabular-nums" [class.text-destaque]="item().alvoAtingido">{{ preco.valor }}</p>
+        <p class="font-mono text-interface whitespace-nowrap tabular-nums tablet:text-valor" [class.text-destaque]="item().alvoAtingido">{{ preco.valor }}</p>
         <p class="text-dado text-texto-secundario">{{ preco.loja }}</p>
       } @else {
         <p class="text-apoio">Sem oferta disponível</p>
@@ -49,7 +49,7 @@
     </div>
     <div class="rounded-controle bg-superficie-elevada px-3 py-2">
       <p class="rotulo">Alvo</p>
-      <p class="font-mono text-valor tabular-nums">{{ alvo() }}</p>
+      <p class="font-mono text-interface whitespace-nowrap tabular-nums tablet:text-valor">{{ alvo() }}</p>
       <div
         class="my-1.5 h-1.5 overflow-hidden rounded-full bg-filete"
         role="meter"
