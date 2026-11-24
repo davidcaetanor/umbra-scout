@@ -338,7 +338,9 @@ class ProdutoControllerTest extends IntegrationTestBase {
         long promocao100 = produto("t212a-c10 B promocao 100", "JOGO", null, true);
         preco(oferta(promocao100, "STEAM", true), 0, 5000L, true, null);
         long encerrada = produto("t212a-c10 C encerrada", "JOGO", null, true);
-        preco(oferta(encerrada, "STEAM", true), 2000, 4000L, true, Instant.now().minus(Duration.ofDays(1)));
+        long ofertaEncerrada = oferta(encerrada, "STEAM", true);
+        preco(ofertaEncerrada, 2000, 4000L, true, Instant.now().minus(Duration.ofDays(1)));
+        verificadaEm(ofertaEncerrada, Instant.now().minus(Duration.ofDays(2)));
         long vigente = produto("t212a-c10 D vigente", "JOGO", null, true);
         preco(oferta(vigente, "STEAM", true), 2000, 4000L, true, Instant.now().plus(Duration.ofDays(1)));
 
@@ -347,9 +349,9 @@ class ProdutoControllerTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.conteudo[0].melhorPreco.gratuito").value(true))
                 .andExpect(jsonPath("$.conteudo[1].melhorPreco.gratuito").value(false))
                 .andExpect(jsonPath("$.conteudo[1].melhorPreco.valorCentavos").value(0))
-                .andExpect(jsonPath("$.conteudo[2].melhorPreco.promocaoEncerrada").value(true))
+                .andExpect(jsonPath("$.conteudo[2].melhorPreco.situacao").value("promocao-vencida-sem-coleta"))
                 .andExpect(jsonPath("$.conteudo[2].melhorPreco.expiraEm").isNotEmpty())
-                .andExpect(jsonPath("$.conteudo[3].melhorPreco.promocaoEncerrada").value(false));
+                .andExpect(jsonPath("$.conteudo[3].melhorPreco.situacao").value("promocao-no-prazo"));
     }
 
     @Test
@@ -522,6 +524,10 @@ class ProdutoControllerTest extends IntegrationTestBase {
                 VALUES (?, (SELECT id FROM loja WHERE codigo = ?), ?, ?, ?)
                 RETURNING id
                 """, Long.class, produtoId, codigoLoja, identificador, "https://loja.test/" + identificador, ativa);
+    }
+
+    private void verificadaEm(long ofertaId, Instant verificadoEm) {
+        jdbc.update("UPDATE oferta SET verificado_em = ? WHERE id = ?", Timestamp.from(verificadoEm), ofertaId);
     }
 
     private void preco(long ofertaId, long valorCentavos, Long valorOriginalCentavos, boolean disponivel,

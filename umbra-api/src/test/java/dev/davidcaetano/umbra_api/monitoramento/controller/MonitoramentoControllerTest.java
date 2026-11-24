@@ -82,6 +82,10 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
                                    expira_em, coletado_em)
                 VALUES (?, ?, ?, TRUE, 'ITAD_API', ?, now())
                 """, ofertaId, valor, original, expiraEm == null ? null : Timestamp.from(expiraEm));
+        if (expiraEm != null && expiraEm.isBefore(Instant.now())) {
+            jdbc.update("UPDATE oferta SET verificado_em = ? WHERE id = ?",
+                    Timestamp.from(expiraEm.minus(2, ChronoUnit.HOURS)), ofertaId);
+        }
     }
 
     private ResultActions como(Long usuarioId, MockHttpServletRequestBuilder requisicao) throws Exception {
@@ -143,7 +147,7 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
 
         como(usuario, post("/monitoramentos").content(corpoDeCriacao(produto, 2500)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.melhorPreco.promocaoEncerrada").value(true))
+                .andExpect(jsonPath("$.melhorPreco.situacao").value("promocao-vencida-sem-coleta"))
                 .andExpect(jsonPath("$.alvoAtingido").value(false));
     }
 

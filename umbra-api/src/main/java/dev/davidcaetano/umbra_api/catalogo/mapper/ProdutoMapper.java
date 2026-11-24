@@ -9,6 +9,7 @@ import dev.davidcaetano.umbra_api.catalogo.dto.response.ProdutoResumoResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.SerieLojaResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.VariacaoResponse;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
+import dev.davidcaetano.umbra_api.catalogo.enums.SituacaoDoPreco;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaAtualProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.PontoDePrecoProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.ProdutoResumoProjecao;
@@ -27,14 +28,14 @@ public interface ProdutoMapper {
 
     ProdutoResumoResponse paraResumo(ProdutoResumoProjecao produto, OfertaResponse melhorPreco);
 
-    OfertaResponse paraOferta(ProdutoResumoProjecao melhorOferta, boolean gratuito, boolean promocaoEncerrada);
+    OfertaResponse paraOferta(ProdutoResumoProjecao melhorOferta, boolean gratuito, SituacaoDoPreco situacao);
 
-    OfertaResponse paraOferta(OfertaAtualProjecao oferta, boolean gratuito, boolean promocaoEncerrada);
+    OfertaResponse paraOferta(OfertaAtualProjecao oferta, boolean gratuito, SituacaoDoPreco situacao);
 
     @Mapping(target = "coletadoEm", source = "coletadoEm")
     @Mapping(target = "verificadoEm", source = "coletadoEm")
     OfertaResponse paraOferta(OfertaExterna oferta, String loja, Instant coletadoEm, boolean gratuito,
-                              boolean promocaoEncerrada);
+                              SituacaoDoPreco situacao);
 
     ProdutoExternoResponse paraExterno(JogoExterno jogo, OfertaResponse melhorPreco);
 

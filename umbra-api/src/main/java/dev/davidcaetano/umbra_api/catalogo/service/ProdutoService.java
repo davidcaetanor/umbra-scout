@@ -12,6 +12,7 @@ import dev.davidcaetano.umbra_api.catalogo.dto.response.SerieLojaResponse;
 import dev.davidcaetano.umbra_api.catalogo.entity.LojaEntity;
 import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
+import dev.davidcaetano.umbra_api.catalogo.enums.SituacaoDoPreco;
 import dev.davidcaetano.umbra_api.catalogo.mapper.ProdutoMapper;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
 import dev.davidcaetano.umbra_api.catalogo.properties.OfertasProperties;
@@ -180,7 +181,7 @@ public class ProdutoService {
 
         return produtoMapper.paraOferta(melhor, nomePorLoja.get(melhor.codigoLoja()), agora,
                 ClassificacaoDePreco.gratuito(melhor.valorCentavos(), melhor.valorOriginalCentavos()),
-                ClassificacaoDePreco.promocaoEncerrada(melhor.expiraEm(), agora));
+                ClassificacaoDePreco.situacao(melhor.expiraEm(), agora, agora));
     }
 
     private ProdutoEntity buscarAtivo(Long id) {
@@ -212,12 +213,12 @@ public class ProdutoService {
 
         return produtoMapper.paraOferta(produto,
                 ClassificacaoDePreco.gratuito(produto.getValorCentavos(), produto.getValorOriginalCentavos()),
-                ClassificacaoDePreco.promocaoEncerrada(produto.getExpiraEm(), agora));
+                ClassificacaoDePreco.situacao(produto.getExpiraEm(), produto.getVerificadoEm(), agora));
     }
 
     private OfertaResponse paraOferta(OfertaAtualProjecao oferta, Instant agora) {
         return produtoMapper.paraOferta(oferta,
                 ClassificacaoDePreco.gratuito(oferta.getValorCentavos(), oferta.getValorOriginalCentavos()),
-                ClassificacaoDePreco.promocaoEncerrada(oferta.getExpiraEm(), agora));
+                ClassificacaoDePreco.situacao(oferta.getExpiraEm(), oferta.getVerificadoEm(), agora));
     }
 }
