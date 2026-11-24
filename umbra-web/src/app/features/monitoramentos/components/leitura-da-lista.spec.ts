@@ -1,5 +1,5 @@
-import { MonitoramentoExibido } from './monitoramento-exibido';
-import { FRASES_DA_RONDA, MAXIMO_DO_NOME_NA_FALA, atingidosPrimeiro, avisoDoPreco, contagem, distancia, fraseDaRonda, nomeCurto, preenchimento, todosPausados } from './leitura-da-lista';
+import { MonitoramentoExibido, SituacaoExibida } from './monitoramento-exibido';
+import { FRASES_DA_RONDA, MAXIMO_DO_NOME_NA_FALA, alvoAConfirmar, atingidosPrimeiro, avisoDoPreco, contagem, distancia, fraseDaRonda, nomeCurto, preenchimento, todosPausados } from './leitura-da-lista';
 
 function item(parcial: Partial<MonitoramentoExibido> = {}): MonitoramentoExibido {
   return {
@@ -60,6 +60,20 @@ describe('leitura da lista de monitoramentos', () => {
     expect(avisoDoPreco(item({ melhorPreco: { ...preco, situacao: 'promocao-vencida-sem-coleta', expiraEm } }))).toBe(
       'Promoção terminou em 01/12',
     );
+  });
+
+  it('preco abaixo do alvo com verificacao atrasada fica a confirmar, nunca atingido', () => {
+    const preco = { ...item().melhorPreco!, valorCentavos: 14000 };
+    const abaixo = (situacao: SituacaoExibida, parcial: Partial<MonitoramentoExibido> = {}) =>
+      alvoAConfirmar(item({ melhorPreco: { ...preco, situacao }, distanciaDoAlvoCentavos: -1000, ...parcial }));
+
+    expect(abaixo('verificacao-atrasada')).toBe(true);
+    expect(abaixo('promocao-vencida-sem-coleta')).toBe(true);
+    expect(abaixo('vigente')).toBe(false);
+    expect(abaixo('verificacao-atrasada', { alvoAtingido: true })).toBe(false);
+    expect(abaixo('verificacao-atrasada', { ativo: false })).toBe(false);
+    expect(alvoAConfirmar(item({ melhorPreco: { ...item().melhorPreco!, situacao: 'verificacao-atrasada' } }))).toBe(false);
+    expect(alvoAConfirmar(item({ melhorPreco: null }))).toBe(false);
   });
 
   it('nome curto respeita o teto, corta no espaco e fecha com reticencias', () => {

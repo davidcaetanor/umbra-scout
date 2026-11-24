@@ -74,6 +74,19 @@ export function avisoDoPreco(item: MonitoramentoExibido): string | null {
   }
 }
 
+const SITUACOES_A_CONFIRMAR: readonly string[] = ['verificacao-atrasada', 'promocao-vencida-sem-coleta'];
+
+export function alvoAConfirmar(item: MonitoramentoExibido): boolean {
+  const preco = item.melhorPreco;
+  return (
+    item.ativo &&
+    !item.alvoAtingido &&
+    preco !== null &&
+    preco.valorCentavos <= item.precoAlvoCentavos &&
+    SITUACOES_A_CONFIRMAR.includes(preco.situacao)
+  );
+}
+
 export const MAXIMO_DO_NOME_NA_FALA = 60;
 const PONTUACAO_NO_FIM = /[\s,;:\-–]+$/u;
 

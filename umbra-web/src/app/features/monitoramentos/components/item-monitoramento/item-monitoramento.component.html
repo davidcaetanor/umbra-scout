@@ -15,10 +15,13 @@
       >
         {{ item().nome }}
       </h2>
-      @if (item().alvoAtingido || !item().ativo || item().foraDeVenda) {
+      @if (item().alvoAtingido || aConfirmar() || !item().ativo || item().foraDeVenda) {
         <p class="mt-1 flex flex-wrap gap-2">
           @if (item().alvoAtingido) {
             <span class="carimbo">Alvo atingido</span>
+          }
+          @if (aConfirmar()) {
+            <span class="selo">A confirmar</span>
           }
           @if (!item().ativo) {
             <span class="selo">Pausado</span>
@@ -57,7 +60,8 @@
       >
         <div
           class="h-full rounded-full"
-          [class.bg-historico-3]="!item().alvoAtingido"
+          [class.bg-historico-3]="!item().alvoAtingido && !aConfirmar()"
+          [class.bg-borda-campo]="aConfirmar()"
           [class.bg-destaque]="item().alvoAtingido"
           [style.width.%]="preenchimento()"
         ></div>

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
 import { CapaProdutoComponent } from '../../../../shared/capa/capa-produto.component';
 import { reais } from '../../../../shared/formatacao/reais';
-import { avisoDoPreco, distancia, preenchimento } from '../leitura-da-lista';
+import { alvoAConfirmar, avisoDoPreco, distancia, preenchimento } from '../leitura-da-lista';
 import { MonitoramentoExibido } from '../monitoramento-exibido';
 
 @Component({
@@ -33,6 +33,7 @@ export class ItemMonitoramentoComponent {
   });
   protected readonly alvo = computed(() => reais(this.item().precoAlvoCentavos));
   protected readonly preenchimento = computed(() => preenchimento(this.item()));
+  protected readonly aConfirmar = computed(() => alvoAConfirmar(this.item()));
   protected readonly distancia = computed(() => distancia(this.item()));
   protected readonly aviso = computed(() => avisoDoPreco(this.item()));
   protected readonly acaoDoAtivo = computed(() => (this.item().ativo ? 'Pausar' : 'Reativar'));

@@ -226,6 +226,21 @@ describe('MeusMonitoramentosPage', () => {
     expect(nomes).toEqual(['Hollow Knight: Silksong', 'Celeste', 'Black Myth: Wukong', 'Elden Ring']);
   });
 
+  it('preco velho abaixo do alvo fica a confirmar, sem subir nem virar novidade', async () => {
+    const velho = item(7, 'Placa de vídeo RTX 5070', {
+      precoAlvoCentavos: 1009999,
+      melhorPreco: { valorCentavos: 899999, loja: 'KaBuM!', gratuito: false, situacao: 'verificacao-atrasada', expiraEm: null, verificadoEm: AGORA },
+      distanciaDoAlvoCentavos: -110000,
+    });
+    await abrir([item(2, 'Black Myth: Wukong'), velho]);
+
+    const itens = [...tela.querySelectorAll('umbra-item-monitoramento')];
+    expect(itens[1].textContent).toContain('A confirmar');
+    expect(itens[1].textContent).not.toContain('Alvo atingido');
+    expect(itens[0].textContent).not.toContain('A confirmar');
+    expect(tela.textContent).not.toContain('Achei');
+  });
+
   describe('alterar o alvo na propria tela', () => {
     function dialogoDoAlvo(): HTMLDialogElement {
       return tela.querySelector('umbra-alterar-alvo dialog')!;
