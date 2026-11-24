@@ -129,6 +129,7 @@ export class CatalogoPage {
     const externa = this.buscaExterna();
     return (
       this.filtro().termo === null ||
+      !admiteJogo(this.filtro()) ||
       externa.tipo === 'falhou' ||
       (externa.tipo === 'concluida' && externa.produtos.length === 0)
     );

@@ -328,6 +328,7 @@ describe('CatalogoPage', () => {
     await harness.navigateByUrl('/catalogo?nome=xyzw&categoria=GPU');
     await responder(resultado([]));
     expect(catalogo.externas).toHaveLength(0);
+    expect(tela.textContent).toContain('Nada com "xyzw"');
 
     await harness.navigateByUrl('/catalogo?nome=xyzw&tipo=HARDWARE&fora=1');
     await responder(resultado([]));
