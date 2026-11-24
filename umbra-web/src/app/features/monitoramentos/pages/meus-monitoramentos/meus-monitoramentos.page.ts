@@ -2,6 +2,7 @@ import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Injector,
   afterNextRender,
   computed,
@@ -9,6 +10,8 @@ import {
   linkedSignal,
   resource,
   signal,
+  viewChild,
+  viewChildren,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { carregarEstado, mensagemDoErro } from '../../../../core/erro';
@@ -60,6 +63,8 @@ export class MeusMonitoramentosPage {
   private readonly documento = inject(DOCUMENT);
   private readonly injector = inject(Injector);
   private readonly agora = inject(RELOGIO);
+  private readonly itensNaTela = viewChildren(ItemMonitoramentoComponent);
+  private readonly tituloDaPagina = viewChild<ElementRef<HTMLElement>>('tituloDaPagina');
 
   private readonly recurso = resource({ loader: () => carregarEstado(() => this.servico.listarTodos()) });
 
@@ -155,7 +160,7 @@ export class MeusMonitoramentosPage {
     const item = this.pedidoDeRemocao();
     this.pedidoDeRemocao.set(null);
     if (item !== null) {
-      this.focarDepois(`[data-remover="${item.id}"]`);
+      this.focarDepois(() => this.itemNaTela(item.id)?.focarRemocao());
     }
   }
 
@@ -174,11 +179,13 @@ export class MeusMonitoramentosPage {
       this.pedidoDeRemocao.set(null);
       this.anuncio.set(`${item.nome} removido`);
       const proximo = restantes[Math.min(posicao, restantes.length - 1)];
-      this.focarDepois(proximo === undefined ? '#titulo-da-pagina' : `#monitoramento-${proximo.id}`);
+      this.focarDepois(() =>
+        proximo === undefined ? this.tituloDaPagina()?.nativeElement.focus() : this.itemNaTela(proximo.id)?.focarTitulo(),
+      );
     } catch (erro) {
       this.pedidoDeRemocao.set(null);
       this.avisarFalha(erro);
-      this.focarDepois(`[data-remover="${item.id}"]`);
+      this.focarDepois(() => this.itemNaTela(item.id)?.focarRemocao());
     } finally {
       this.removendo.set(false);
     }
@@ -228,7 +235,11 @@ export class MeusMonitoramentosPage {
     }
   }
 
-  private focarDepois(seletor: string): void {
-    afterNextRender(() => this.documento.querySelector<HTMLElement>(seletor)?.focus(), { injector: this.injector });
+  private itemNaTela(id: number): ItemMonitoramentoComponent | undefined {
+    return this.itensNaTela().find((componente) => componente.item().id === id);
+  }
+
+  private focarDepois(foco: () => void): void {
+    afterNextRender(foco, { injector: this.injector });
   }
 }

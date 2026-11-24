@@ -7,6 +7,7 @@
     <umbra-capa-produto [capa]="item().capa" [tipo]="item().tipo" tamanhos="64px" class="size-16 shrink-0 rounded-controle" />
     <div class="min-w-0">
       <h2
+        #titulo
         [id]="idDoTitulo()"
         tabindex="-1"
         class="line-clamp-2 font-titulo text-subtitulo break-words outline-none"
@@ -88,7 +89,7 @@
     <button
       type="button"
       class="min-h-11 botao-secundario px-4"
-      [attr.data-remover]="item().id"
+      #botaoRemover
       [attr.aria-label]="'Remover ' + item().nome"
       [attr.aria-disabled]="ocupado() || null"
       (click)="pedirRemocao()"

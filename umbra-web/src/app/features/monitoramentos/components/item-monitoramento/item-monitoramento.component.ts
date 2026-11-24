@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CapaProdutoComponent } from '../../../../shared/capa/capa-produto.component';
 import { reais } from '../../../../shared/formatacao/reais';
@@ -19,6 +19,9 @@ export class ItemMonitoramentoComponent {
   readonly alternarAtivo = output<void>();
   readonly remover = output<void>();
 
+  private readonly titulo = viewChild.required<ElementRef<HTMLElement>>('titulo');
+  private readonly botaoRemover = viewChild.required<ElementRef<HTMLButtonElement>>('botaoRemover');
+
   protected readonly idDoTitulo = computed(() => `monitoramento-${this.item().id}`);
   protected readonly preco = computed(() => {
     const melhor = this.item().melhorPreco;
@@ -32,6 +35,14 @@ export class ItemMonitoramentoComponent {
   protected readonly distancia = computed(() => distancia(this.item()));
   protected readonly aviso = computed(() => avisoDoPreco(this.item()));
   protected readonly acaoDoAtivo = computed(() => (this.item().ativo ? 'Pausar' : 'Reativar'));
+
+  focarTitulo(): void {
+    this.titulo().nativeElement.focus();
+  }
+
+  focarRemocao(): void {
+    this.botaoRemover().nativeElement.focus();
+  }
 
   protected pedirAlternancia(): void {
     if (!this.ocupado()) {

@@ -1,7 +1,7 @@
 <p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
 
 @if (vazio()) {
-  <h1 id="titulo-da-pagina" tabindex="-1" class="font-titulo text-secao outline-none">Meus monitoramentos</h1>
+  <h1 #tituloDaPagina id="titulo-da-pagina" tabindex="-1" class="font-titulo text-secao outline-none">Meus monitoramentos</h1>
   <section
     class="flex flex-col items-center gap-3 py-8 tablet:flex-row tablet:justify-center tablet:gap-4 tablet:py-12"
     aria-label="Seus monitoramentos"
@@ -43,7 +43,7 @@
           </div>
         }
         <div class="min-w-0">
-          <h1 id="titulo-da-pagina" tabindex="-1" class="font-titulo text-secao outline-none">Meus monitoramentos</h1>
+          <h1 #tituloDaPagina id="titulo-da-pagina" tabindex="-1" class="font-titulo text-secao outline-none">Meus monitoramentos</h1>
           @if (itens() !== null) {
             <p class="mt-1 text-dado font-bold tracking-[0.08em] text-texto-secundario uppercase">{{ contagem() }}</p>
           }
