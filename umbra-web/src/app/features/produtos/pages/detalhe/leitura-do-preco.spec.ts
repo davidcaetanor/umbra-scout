@@ -62,21 +62,29 @@ describe('selo do preço', () => {
     expect(leituraDoPreco(comPreco(1000), doisPontos)).toEqual({ titulo: 'Pouco histórico ainda', detalhe: null, tom: 'pouco' });
     expect(leituraDoPreco(comPreco(1000), { ...HISTORICO, melhorPreco: [] })?.tom).toBe('pouco');
 
-    const comPrazo = leituraDoPreco(comPreco(1000, { expiraEm: Date.parse('2026-11-24T23:00:00-03:00') }), doisPontos);
+    const comPrazo = leituraDoPreco(comPreco(1000, { situacao: 'promocao-no-prazo', expiraEm: Date.parse('2026-11-24T23:00:00-03:00') }), doisPontos);
     expect(comPrazo?.detalhe).toBe('Promoção da GOG termina em 24/11');
   });
 
   it('acrescenta o prazo da promoção pela data de São Paulo', () => {
-    const emData = leituraDoPreco(comPreco(1000, { expiraEm: Date.parse('2026-11-24T23:00:00-03:00') }), HISTORICO);
+    const emData = leituraDoPreco(comPreco(1000, { situacao: 'promocao-no-prazo', expiraEm: Date.parse('2026-11-24T23:00:00-03:00') }), HISTORICO);
     expect(emData?.detalhe).toBe('No menor preço já registrado, promoção da GOG termina em 24/11');
 
-    const amanha = leituraDoPreco(comPreco(1000, { expiraEm: Date.parse('2026-11-22T23:59:00-03:00') }), HISTORICO);
+    const amanha = leituraDoPreco(comPreco(1000, { situacao: 'promocao-no-prazo', expiraEm: Date.parse('2026-11-22T23:59:00-03:00') }), HISTORICO);
     expect(amanha?.detalhe).toContain('termina amanhã');
 
-    const hoje = leituraDoPreco(comPreco(3001, { expiraEm: Date.parse('2026-11-21T22:00:00-03:00') }), HISTORICO);
+    const hoje = leituraDoPreco(comPreco(3001, { situacao: 'promocao-no-prazo', expiraEm: Date.parse('2026-11-21T22:00:00-03:00') }), HISTORICO);
     expect(hoje?.detalhe).toBe('Vale monitorar, promoção da GOG termina hoje');
 
     expect(leituraDoPreco(comPreco(1000, { expiraEm: AGORA - 1 }), HISTORICO)?.detalhe).toBe('No menor preço já registrado');
+  });
+
+  it('usa a situação da oferta vinda da API, sem decidir o prazo no navegador', () => {
+    const vencidaPelaApi = comPreco(1000, { situacao: 'vigente', expiraEm: AGORA + DIA_MS });
+    expect(leituraDoPreco(vencidaPelaApi, HISTORICO)?.detalhe).toBe('No menor preço já registrado');
+
+    const atrasada = comPreco(1000, { situacao: 'verificacao-atrasada', verificadoEm: Date.parse('2026-11-18T12:00:00Z') });
+    expect(leituraDoPreco(atrasada, HISTORICO)?.detalhe).toBe('No menor preço já registrado, preço verificado pela última vez em 18/11');
   });
 
   it('mínimo grátis só é bom momento se hoje também for grátis', () => {
