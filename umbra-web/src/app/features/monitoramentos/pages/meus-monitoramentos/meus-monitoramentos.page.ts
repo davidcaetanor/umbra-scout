@@ -29,6 +29,8 @@ import { MonitoramentoListado } from '../../data/monitoramento-listado';
 
 export const CHAVE_DA_RONDA = 'umbra.monitoramentos.ronda';
 
+type FiguraDoTopo = 'pausado' | 'novidade' | 'tranquilo';
+
 export interface NovidadeExibida {
   readonly nome: string;
   readonly preco: string;
@@ -90,6 +92,16 @@ export class MeusMonitoramentosPage {
   });
 
   protected readonly fraseDaRonda = signal(this.rondaDoDia());
+
+  protected readonly figura = computed<FiguraDoTopo>(() => {
+    if (this.todosPausados()) {
+      return 'pausado';
+    }
+    return this.novidade() === null ? 'tranquilo' : 'novidade';
+  });
+  protected readonly temFala = computed(
+    () => this.novidade() !== null || this.todosPausados() || this.fraseDaRonda() !== null,
+  );
   protected readonly anuncio = signal('');
   protected readonly ocupados = signal<ReadonlySet<number>>(new Set());
   protected readonly pedidoDeRemocao = signal<MonitoramentoListado | null>(null);

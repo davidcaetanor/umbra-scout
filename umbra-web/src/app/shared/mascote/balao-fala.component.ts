@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-export type LadoDaPonta = 'esquerda' | 'direita';
+export type LadoDaPonta = 'esquerda' | 'direita' | 'cima';
 
 @Component({
   selector: 'umbra-balao-fala',
