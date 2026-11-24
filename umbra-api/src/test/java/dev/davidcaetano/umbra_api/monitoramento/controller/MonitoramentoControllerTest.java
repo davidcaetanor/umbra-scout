@@ -21,6 +21,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -147,7 +148,7 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
 
         como(usuario, post("/monitoramentos").content(corpoDeCriacao(produto, 2500)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.melhorPreco.situacao").value("promocao-vencida-sem-coleta"))
+                .andExpect(jsonPath("$.melhorPreco").value(nullValue()))
                 .andExpect(jsonPath("$.alvoAtingido").value(false));
     }
 

@@ -37,6 +37,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                       JOIN vw_preco_atual v ON v.oferta_id = o.id
                       JOIN loja lj ON lj.id = o.loja_id
                      WHERE o.ativa AND v.disponivel AND lj.codigo = :loja
+                       AND NOT (v.expira_em IS NOT NULL AND v.expira_em <= now() AND o.verificado_em < v.expira_em)
                      ORDER BY o.produto_id, v.valor_centavos, o.id) m ON m.produto_id = p.id
               JOIN loja l ON l.id = m.loja_id
             """;

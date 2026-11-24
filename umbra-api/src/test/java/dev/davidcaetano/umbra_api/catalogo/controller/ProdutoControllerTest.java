@@ -349,9 +349,35 @@ class ProdutoControllerTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.conteudo[0].melhorPreco.gratuito").value(true))
                 .andExpect(jsonPath("$.conteudo[1].melhorPreco.gratuito").value(false))
                 .andExpect(jsonPath("$.conteudo[1].melhorPreco.valorCentavos").value(0))
-                .andExpect(jsonPath("$.conteudo[2].melhorPreco.situacao").value("promocao-vencida-sem-coleta"))
-                .andExpect(jsonPath("$.conteudo[2].melhorPreco.expiraEm").isNotEmpty())
+                .andExpect(jsonPath("$.conteudo[2].melhorPreco").value(nullValue()))
                 .andExpect(jsonPath("$.conteudo[3].melhorPreco.situacao").value("promocao-no-prazo"));
+    }
+
+    @Test
+    void promocaoVencidaSemColeta_naoEMelhorPrecoNemAparecePeloFiltroDeLoja() throws Exception {
+        long produto = produto("t45b-c1 Vencida", "JOGO", null, true);
+        long ofertaVencida = oferta(produto, "STEAM", true);
+        preco(ofertaVencida, 2000, 4000L, true, Instant.now().minus(Duration.ofDays(1)));
+        verificadaEm(ofertaVencida, Instant.now().minus(Duration.ofDays(2)));
+
+        mockMvc.perform(get("/produtos").param("nome", "t45b-c1"))
+                .andExpect(jsonPath("$.conteudo[0].melhorPreco").value(nullValue()));
+        mockMvc.perform(get("/produtos").param("nome", "t45b-c1").param("loja", "STEAM"))
+                .andExpect(jsonPath("$.conteudo").isEmpty());
+    }
+
+    @Test
+    void promocaoVencidaVerificadaDepoisDoPrazo_continuaComoMelhorPreco() throws Exception {
+        long produto = produto("t45b-c2 Mantida", "JOGO", null, true);
+        long ofertaMantida = oferta(produto, "STEAM", true);
+        preco(ofertaMantida, 2000, 4000L, true, Instant.now().minus(Duration.ofDays(1)));
+        verificadaEm(ofertaMantida, Instant.now().minus(Duration.ofHours(1)));
+
+        mockMvc.perform(get("/produtos").param("nome", "t45b-c2"))
+                .andExpect(jsonPath("$.conteudo[0].melhorPreco.valorCentavos").value(2000))
+                .andExpect(jsonPath("$.conteudo[0].melhorPreco.situacao").value("vigente"));
+        mockMvc.perform(get("/produtos").param("nome", "t45b-c2").param("loja", "STEAM"))
+                .andExpect(jsonPath("$.conteudo[0].melhorPreco.valorCentavos").value(2000));
     }
 
     @Test
