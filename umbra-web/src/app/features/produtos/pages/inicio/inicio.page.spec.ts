@@ -84,7 +84,7 @@ describe('InicioPage', () => {
     await abrir();
 
     const link = [...tela.querySelectorAll('a')].find((a) => a.textContent?.includes('Ver todos'));
-    expect(link?.getAttribute('href')).toBe('/catalogo?tipo=JOGO&ordenacao=melhoresOfertas');
+    expect(link?.getAttribute('href')).toBe('/catalogo?tipo=JOGO');
   });
 
   it('sem destaques convida a ver o catalogo', async () => {

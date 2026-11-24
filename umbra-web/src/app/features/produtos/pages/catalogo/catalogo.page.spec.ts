@@ -96,7 +96,7 @@ describe('CatalogoPage', () => {
     await abrir('/catalogo?tipo=HARDWARE');
     const opcoes = () => [...tela.querySelectorAll('#ordenacao option')].map((opcao) => opcao.getAttribute('value'));
 
-    expect(opcoes()).toEqual(['nome', 'menorPreco']);
+    expect(opcoes()).toEqual(['nome', 'menorPreco', 'melhoresOfertas']);
     expect(tela.querySelector('#desconto')).toBeNull();
     expect([...tela.querySelectorAll('#loja option')].map((o) => o.getAttribute('value'))).toEqual(['', 'KABUM']);
 
@@ -216,10 +216,18 @@ describe('CatalogoPage', () => {
     expect(umbra()[0]).toContain('observando');
   });
 
+  it('abre o catalogo em melhores ofertas, com tudo, e a busca passa para nome', async () => {
+    await abrir('/catalogo');
+
+    expect(catalogo.buscas[0]).toEqual(FILTRO_INICIAL);
+    expect(catalogo.buscas[0].ordenacao).toBe('melhoresOfertas');
+    expect(tela.querySelector<HTMLSelectElement>('#ordenacao')?.value).toBe('melhoresOfertas');
+  });
+
   it('le os filtros da URL e ignora os invalidos', async () => {
     await abrir('/catalogo?nome=hollow&tipo=FILME&pagina=2');
 
-    expect(catalogo.buscas[0]).toEqual({ ...FILTRO_INICIAL, termo: 'hollow', pagina: 1 });
+    expect(catalogo.buscas[0]).toEqual({ ...FILTRO_INICIAL, termo: 'hollow', ordenacao: 'nome', pagina: 1 });
   });
 
   it('busca uma vez so depois da pausa na digitacao e troca a URL sem empilhar historico', async () => {

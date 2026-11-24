@@ -19,7 +19,7 @@ export const FILTRO_INICIAL: FiltroDaBusca = {
   termo: null,
   tipo: null,
   categoria: null,
-  ordenacao: 'nome',
+  ordenacao: 'melhoresOfertas',
   precoMin: null,
   precoMax: null,
   descontoMin: null,
@@ -59,7 +59,7 @@ export function filtroDaUrl(parametros: ParamMap): FiltroDaBusca {
     termo: situacaoDoTermo(termo) === 'valido' ? termo : null,
     tipo,
     categoria,
-    ordenacao: umDe(parametros.get('ordenacao'), ROTULO_DA_ORDENACAO) ?? FILTRO_INICIAL.ordenacao,
+    ordenacao: umDe(parametros.get('ordenacao'), ROTULO_DA_ORDENACAO) ?? ordenacaoPadrao(situacaoDoTermo(termo) === 'valido' ? termo : null),
     precoMin: centavosDaUrl(parametros.get('precoMin')),
     precoMax: centavosDaUrl(parametros.get('precoMax')),
     descontoMin: desconto !== null && DESCONTOS_MINIMOS.includes(desconto) ? desconto : null,
@@ -75,11 +75,19 @@ export function normalizarFiltro(filtro: FiltroDaBusca): FiltroDaBusca {
   return {
     ...filtro,
     categoria: filtro.tipo === 'JOGO' ? null : filtro.categoria,
-    ordenacao: !soJogo && ORDENACOES_SO_DE_JOGO.includes(filtro.ordenacao) ? FILTRO_INICIAL.ordenacao : filtro.ordenacao,
+    ordenacao: !soJogo && ORDENACOES_SO_DE_JOGO.includes(filtro.ordenacao) ? ordenacaoPadrao(filtro.termo) : filtro.ordenacao,
     precoMax: precoMaxCoerente,
     descontoMin: soJogo ? filtro.descontoMin : null,
     loja: filtro.loja !== null && lojaAceitaPara(filtro.tipo, filtro.loja) ? filtro.loja : null,
   };
+}
+
+export function ordenacaoPadrao(termo: string | null): OrdenacaoDaBusca {
+  return termo === null ? 'melhoresOfertas' : 'nome';
+}
+
+export function ordenacaoAoBuscar(filtro: FiltroDaBusca, termo: string | null): OrdenacaoDaBusca {
+  return filtro.ordenacao === ordenacaoPadrao(filtro.termo) ? ordenacaoPadrao(termo) : filtro.ordenacao;
 }
 
 export function lojasPara(tipo: TipoDeProduto | null): readonly CodigoDaLoja[] {
@@ -113,7 +121,7 @@ export function parametrosDoFiltro(filtro: FiltroDaBusca): Params {
     nome: filtro.termo,
     tipo: filtro.tipo,
     categoria: filtro.categoria,
-    ordenacao: filtro.ordenacao === FILTRO_INICIAL.ordenacao ? null : filtro.ordenacao,
+    ordenacao: filtro.ordenacao === ordenacaoPadrao(filtro.termo) ? null : filtro.ordenacao,
     precoMin: reaisDaUrl(filtro.precoMin),
     precoMax: reaisDaUrl(filtro.precoMax),
     descontoMin: filtro.descontoMin,

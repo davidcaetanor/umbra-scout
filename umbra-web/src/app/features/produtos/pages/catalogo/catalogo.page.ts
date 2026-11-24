@@ -34,6 +34,7 @@ import {
   mesmosParametros,
   normalizarFiltro,
   normalizarTermo,
+  ordenacaoAoBuscar,
   parametrosDoFiltro,
   situacaoDoTermo,
 } from './filtro-da-url';
@@ -155,7 +156,10 @@ export class CatalogoPage {
         distinctUntilChanged(),
         takeUntilDestroyed(inject(DestroyRef)),
       )
-      .subscribe((termo) => this.aplicar({ termo: termo === '' ? null : termo, pagina: 0 }, true));
+      .subscribe((texto) => {
+        const termo = texto === '' ? null : texto;
+        this.aplicar({ termo, ordenacao: ordenacaoAoBuscar(this.filtro(), termo), pagina: 0 }, true);
+      });
 
     effect(() => {
       const termo = this.filtro().termo ?? '';

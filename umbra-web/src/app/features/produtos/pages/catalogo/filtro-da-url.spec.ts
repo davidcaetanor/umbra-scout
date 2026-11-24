@@ -6,6 +6,7 @@ import {
   mesmoFiltro,
   mesmosParametros,
   normalizarTermo,
+  ordenacaoAoBuscar,
   parametrosDoFiltro,
   situacaoDoTermo,
 } from './filtro-da-url';
@@ -102,7 +103,7 @@ describe('filtroDaUrl', () => {
   });
 
   it('volta para a URL sem os valores padrao', () => {
-    expect(parametrosDoFiltro({ ...FILTRO_INICIAL, termo: 'hollow', pagina: 1 })).toEqual({
+    expect(parametrosDoFiltro({ ...FILTRO_INICIAL, termo: 'hollow', ordenacao: 'nome', pagina: 1 })).toEqual({
       nome: 'hollow',
       tipo: null,
       categoria: null,
@@ -113,6 +114,26 @@ describe('filtroDaUrl', () => {
       loja: null,
       pagina: 2,
     });
+  });
+
+  it('abre em melhores ofertas e uma busca passa para a ordem por nome', () => {
+    expect(FILTRO_INICIAL.ordenacao).toBe('melhoresOfertas');
+    expect(filtroDaUrl(convertToParamMap({})).ordenacao).toBe('melhoresOfertas');
+    expect(filtroDaUrl(convertToParamMap({ nome: 'hollow' })).ordenacao).toBe('nome');
+    expect(filtroDaUrl(convertToParamMap({ nome: 'hollow', ordenacao: 'melhoresOfertas' })).ordenacao).toBe('melhoresOfertas');
+    expect(parametrosDoFiltro(FILTRO_INICIAL)['ordenacao']).toBeNull();
+    expect(parametrosDoFiltro({ ...FILTRO_INICIAL, ordenacao: 'nome' })['ordenacao']).toBe('nome');
+  });
+
+  it('ao buscar, troca so a ordem padrao e respeita a escolhida', () => {
+    expect(ordenacaoAoBuscar(FILTRO_INICIAL, 'hollow')).toBe('nome');
+    expect(ordenacaoAoBuscar({ ...FILTRO_INICIAL, termo: 'hollow', ordenacao: 'nome' }, null)).toBe('melhoresOfertas');
+    expect(ordenacaoAoBuscar({ ...FILTRO_INICIAL, ordenacao: 'menorPreco' }, 'hollow')).toBe('menorPreco');
+  });
+
+  it('melhores ofertas vale para hardware; maior desconto continua so de jogo', () => {
+    expect(filtroDaUrl(convertToParamMap({ tipo: 'HARDWARE', ordenacao: 'melhoresOfertas' })).ordenacao).toBe('melhoresOfertas');
+    expect(filtroDaUrl(convertToParamMap({ tipo: 'HARDWARE', ordenacao: 'maiorDesconto' })).ordenacao).toBe('melhoresOfertas');
   });
 
   it('compara filtros pelo valor', () => {
