@@ -197,13 +197,12 @@ public class ProdutoService {
         if (filtro.loja() == null) {
             return produtoRepository.buscarCatalogo(filtro.termo(), codigoTipo, codigoCategoria,
                     filtro.precoMinCentavos(), filtro.precoMaxCentavos(), filtro.descontoMin(), codigoOrdenacao,
-                    ofertasProperties.pesoEconomia(), ofertasProperties.logaritmoDaReferencia(), paginacao);
+                    ofertasProperties.regua(), paginacao);
         }
 
         return produtoRepository.buscarCatalogoDaLoja(filtro.loja().name(), filtro.termo(), codigoTipo,
                 codigoCategoria, filtro.precoMinCentavos(), filtro.precoMaxCentavos(), filtro.descontoMin(),
-                codigoOrdenacao, ofertasProperties.pesoEconomia(), ofertasProperties.logaritmoDaReferencia(),
-                paginacao);
+                codigoOrdenacao, ofertasProperties.regua(), paginacao);
     }
 
     private OfertaResponse melhorPrecoDo(ProdutoResumoProjecao produto, Instant agora) {

@@ -62,6 +62,7 @@ class DestaquesServiceTest {
     }
 
     private static OfertasProperties propriedades(Duration validade, int destaques) {
-        return new OfertasProperties(0.7, 11342, destaques, 100, validade);
+        return new OfertasProperties(0.7, 11342, destaques, 100, validade,
+                new OfertasProperties.Hardware(0.4, 0.3, 50000));
     }
 }

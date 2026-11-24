@@ -117,16 +117,27 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     }
 
     @Test
-    void melhoresOfertas_valeParaHardwareETodos() throws Exception {
-        long placa = produto("t44b-g1 Placa em campanha", "HARDWARE");
-        preco(oferta(placa, "KABUM"), 300000, 400000, 25, AGORA.minus(Duration.ofHours(1)));
-        long jogo = jogoComPreco("t44b-g1 Jogo em promocao", "STEAM", 1000, 5000, 80);
+    void melhoresOfertasEmTodos_intercalaJogoEHardwarePelaReguaDeCada() throws Exception {
+        long placa = hardwareComPreco("t44b-g1 Placa em campanha", 300000, 400000, 25);
+        long ssd = hardwareComPreco("t44b-g1 SSD em campanha", 18000, 30000, 40);
+        long jogoGrande = jogoComPreco("t44b-g1 Jogo grande", "STEAM", 5000, 30000, 83);
+        long jogoPequeno = jogoComPreco("t44b-g1 Jogo pequeno", "STEAM", 1000, 5000, 80);
         jogoComPreco("t44b-g1 Jogo sem desconto", "STEAM", 1000, 1000, 0);
 
         assertThat(ids(conteudoDe(get("/produtos").param("nome", "t44b-g1").param("ordenacao", "melhoresOfertas"))))
-                .containsExactly(placa, jogo);
+                .containsExactly(jogoGrande, placa, jogoPequeno, ssd);
         assertThat(ids(conteudoDe(get("/produtos").param("nome", "t44b-g1").param("tipo", "HARDWARE")
-                .param("ordenacao", "melhoresOfertas")))).containsExactly(placa);
+                .param("ordenacao", "melhoresOfertas")))).containsExactly(placa, ssd);
+    }
+
+    @Test
+    void melhoresOfertasDeHardware_percentualPesaEEconomiaTemTeto() throws Exception {
+        long servidor = hardwareComPreco("t44b-h1 Servidor", 10_200_000, 12_000_000, 15);
+        long placa = hardwareComPreco("t44b-h1 Placa", 225_000, 300_000, 25);
+        long ssd = hardwareComPreco("t44b-h1 SSD", 18_000, 30_000, 40);
+
+        assertThat(ids(conteudoDe(get("/produtos").param("nome", "t44b-h1").param("tipo", "HARDWARE")
+                .param("ordenacao", "melhoresOfertas")))).containsExactly(placa, ssd, servidor);
     }
 
     @Test
@@ -250,6 +261,12 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     private long jogoComPreco(String nome, String loja, long valor, long original, int desconto) {
         long id = produto(nome, "JOGO");
         preco(oferta(id, loja), valor, original, desconto, AGORA.minus(Duration.ofHours(1)));
+        return id;
+    }
+
+    private long hardwareComPreco(String nome, long valor, long original, int desconto) {
+        long id = produto(nome, "HARDWARE");
+        preco(oferta(id, "KABUM"), valor, original, desconto, AGORA.minus(Duration.ofHours(1)));
         return id;
     }
 

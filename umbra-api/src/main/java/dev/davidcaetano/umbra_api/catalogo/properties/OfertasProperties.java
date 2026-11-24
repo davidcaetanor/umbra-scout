@@ -1,5 +1,8 @@
 package dev.davidcaetano.umbra_api.catalogo.properties;
 
+import dev.davidcaetano.umbra_api.catalogo.repository.ReguaDeOfertas;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -26,10 +29,33 @@ public record OfertasProperties(
         int candidatosDosDestaques,
 
         @NotNull(message = "umbra.ofertas.validade-dos-destaques é obrigatório")
-        Duration validadeDosDestaques) {
+        Duration validadeDosDestaques,
 
-    public double pesoMinimo() {
-        return 1.0 - pesoEconomia;
+        @NotNull(message = "umbra.ofertas.hardware é obrigatório")
+        @Valid
+        Hardware hardware) {
+
+    public record Hardware(
+            @DecimalMin(value = "0.0", message = "umbra.ofertas.hardware.peso-economia deve estar entre 0 e 1")
+            @DecimalMax(value = "1.0", message = "umbra.ofertas.hardware.peso-economia deve estar entre 0 e 1")
+            double pesoEconomia,
+
+            @DecimalMin(value = "0.0", message = "umbra.ofertas.hardware.peso-percentual deve estar entre 0 e 1")
+            @DecimalMax(value = "1.0", message = "umbra.ofertas.hardware.peso-percentual deve estar entre 0 e 1")
+            double pesoPercentual,
+
+            @Min(value = 1, message = "umbra.ofertas.hardware.teto-economia-centavos deve ser maior ou igual a 1")
+            long tetoEconomiaCentavos) {
+
+        @AssertTrue(message = "umbra.ofertas.hardware: peso-economia e peso-percentual somam no máximo 1")
+        public boolean isPesosDentroDoLimite() {
+            return pesoEconomia + pesoPercentual <= 1.0;
+        }
+    }
+
+    public ReguaDeOfertas regua() {
+        return new ReguaDeOfertas(pesoEconomia, logaritmoDaReferencia(), hardware.pesoEconomia(),
+                hardware.pesoPercentual(), hardware.tetoEconomiaCentavos());
     }
 
     public double logaritmoDaReferencia() {
