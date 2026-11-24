@@ -1,15 +1,115 @@
-<div class="-mb-0.5 flex items-end justify-between gap-4">
-  <div class="min-w-0 flex-1 pb-5">
-    <h1 class="font-titulo text-secao">Meus monitoramentos</h1>
-    <p class="text-apoio text-texto-secundario">Diga quanto quer pagar. O Umbra avisa.</p>
+<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
+@if (vazio()) {
+  <h1 id="titulo-da-pagina" tabindex="-1" class="font-titulo text-secao outline-none">Meus monitoramentos</h1>
+  <section
+    class="flex flex-col items-center gap-4 py-8 tablet:flex-row tablet:justify-center tablet:gap-6 tablet:py-12"
+    aria-label="Seus monitoramentos"
+  >
+    <umbra-mascote estado="ocioso" class="tablet:hidden" />
+    <umbra-mascote estado="ocioso" tamanho="grande" class="hidden tablet:block" />
+    <div class="flex flex-col items-center gap-4 tablet:items-start">
+      <umbra-balao-fala ponta="esquerda" [fechavel]="false">
+        Nada para vigiar por aqui. Escolha um produto no catálogo, diga quanto quer pagar e eu fico de olho.
+      </umbra-balao-fala>
+      <a routerLink="/catalogo" class="inline-flex min-h-11 items-center botao-principal px-5">Ir ao catálogo</a>
+    </div>
+  </section>
+} @else {
+  <div class="mb-5 flex items-end justify-between gap-4">
+    <div class="flex min-w-0 flex-1 items-end gap-3">
+      @if (itens() !== null) {
+        @if (todosPausados()) {
+          <umbra-mascote estado="pausado" class="-mb-1 shrink-0" />
+        } @else if (novidade()) {
+          <umbra-mascote estado="comemorando" class="-mb-1 shrink-0 tablet:hidden" />
+        } @else {
+          <img
+            src="/mascote/retratos/tranquilo.png"
+            alt=""
+            width="64"
+            height="64"
+            class="size-16 shrink-0 [image-rendering:pixelated] tablet:size-32"
+          />
+        }
+      }
+      <div class="min-w-0">
+        <h1 id="titulo-da-pagina" tabindex="-1" class="font-titulo text-secao outline-none">Meus monitoramentos</h1>
+        @if (itens() !== null) {
+          <p class="mt-1 text-dado font-bold tracking-[0.08em] text-texto-secundario uppercase">{{ contagem() }}</p>
+        }
+      </div>
+      @if (itens() !== null && !novidade()) {
+        @if (todosPausados()) {
+          <umbra-balao-fala ponta="esquerda" class="hidden tablet:block" [fechavel]="false">
+            Tudo pausado. Reative um item quando quiser que eu volte a vigiar.
+          </umbra-balao-fala>
+        } @else if (fraseDaRonda(); as frase) {
+          <umbra-balao-fala ponta="esquerda" class="hidden tablet:block" (fechado)="fecharRonda()">{{ frase }}</umbra-balao-fala>
+        }
+      }
+    </div>
+    @if (novidade()) {
+      <div class="hidden shrink-0 items-end gap-3 tablet:flex">
+        <ng-container *ngTemplateOutlet="falaDaNovidade; context: { ponta: 'direita' }" />
+        <umbra-mascote-destaque lado="direita" />
+      </div>
+    }
   </div>
-  <div class="-me-4 shrink-0 tablet:hidden">
-    <umbra-mascote estado="ocioso" />
-  </div>
-  <div class="hidden shrink-0 tablet:block">
-    <umbra-mascote estado="ocioso" tamanho="grande" />
-  </div>
-</div>
-<section class="rounded-bloco border-2 border-filete bg-superficie p-4 tablet:p-6" aria-label="Seus monitoramentos">
-  <p class="text-interface text-texto-secundario">Nada monitorado ainda. O Umbra está esperando o primeiro produto para vigiar.</p>
-</section>
+
+  @if (novidade()) {
+    <div class="mb-5 tablet:hidden">
+      <ng-container *ngTemplateOutlet="falaDaNovidade; context: { ponta: 'esquerda' }" />
+    </div>
+  } @else if (itens() !== null) {
+    @if (todosPausados()) {
+      <div class="mb-5 tablet:hidden">
+        <umbra-balao-fala ponta="esquerda" [fechavel]="false">
+          Tudo pausado. Reative um item quando quiser que eu volte a vigiar.
+        </umbra-balao-fala>
+      </div>
+    } @else if (fraseDaRonda(); as frase) {
+      <div class="mb-5 tablet:hidden">
+        <umbra-balao-fala ponta="esquerda" (fechado)="fecharRonda()">{{ frase }}</umbra-balao-fala>
+      </div>
+    }
+  }
+
+  <umbra-estado-do-bloco [estado]="estado()" (tentarDeNovo)="tentarDeNovo()">
+    <p carregando>Carregando seus monitoramentos…</p>
+    <ul class="flex flex-col gap-3" aria-label="Seus monitoramentos">
+      @for (item of itens(); track item.id) {
+        <li>
+          <umbra-item-monitoramento
+            [item]="item"
+            [ocupado]="estaOcupado(item.id)"
+            (alternarAtivo)="alternarAtivo(item)"
+            (remover)="pedirRemocao(item)"
+          />
+        </li>
+      }
+    </ul>
+  </umbra-estado-do-bloco>
+}
+
+<umbra-confirmar-remocao
+  [pedido]="pedidoDeRemocao()"
+  [removendo]="removendo()"
+  (confirmar)="confirmarRemocao()"
+  (cancelar)="cancelarRemocao()"
+/>
+
+<ng-template #falaDaNovidade let-ponta="ponta">
+  @if (novidade(); as novidade) {
+    <umbra-balao-fala [ponta]="ponta" (fechado)="fecharNovidade()">
+      @if (novidade.outras === 0) {
+        Achei! <span class="font-semibold text-destaque">{{ novidade.nome }}</span> caiu para
+        <span class="font-semibold text-destaque">{{ novidade.preco }}</span> na {{ novidade.loja }}, abaixo do seu alvo.
+      } @else {
+        Achei {{ novidade.outras + 1 }}! <span class="font-semibold text-destaque">{{ novidade.nome }}</span> a
+        <span class="font-semibold text-destaque">{{ novidade.preco }}</span> na {{ novidade.loja }} e mais
+        {{ novidade.outras }} abaixo do alvo.
+      }
+    </umbra-balao-fala>
+  }
+</ng-template>
