@@ -8,7 +8,7 @@ import { TopoExibido } from './topo-exibido';
   imports: [CapaProdutoComponent, LeituraDoPrecoComponent],
   templateUrl: './topo-hardware.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'flex flex-col gap-4' },
+  host: { class: 'flex flex-col gap-3' },
 })
 export class TopoHardwareComponent {
   readonly topo = input.required<TopoExibido>();
