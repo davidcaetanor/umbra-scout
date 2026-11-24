@@ -622,6 +622,33 @@ class ColetaServiceTest extends IntegrationTestBase {
     }
 
     @Test
+    void ausencia_deveSerConcluidaEmCensoSaudavelUmItemAbaixoDoDeclaradoParaOfertaSemVerificacaoHaMaisDe24Horas() {
+        gravarCensoUmItemAbaixoDoDeclarado(Duration.ofHours(25));
+
+        assertThat(precosDa("222")).hasSize(2);
+        assertThat(precosDa("222").getLast().isDisponivel()).isFalse();
+    }
+
+    @Test
+    void ausencia_naoDeveSerConcluidaEmCensoUmItemAbaixoDoDeclaradoParaOfertaVerificadaHaMenosDe24Horas() {
+        gravarCensoUmItemAbaixoDoDeclarado(Duration.ofHours(23));
+
+        assertThat(precosDa("222")).hasSize(1);
+    }
+
+    private void gravarCensoUmItemAbaixoDoDeclarado(Duration intervalo) {
+        List<OfertaColetada> base = pecasKabum(60);
+        List<OfertaColetada> primeiraRodada = new ArrayList<>(base);
+        primeiraRodada.add(pecaKabum("222", 20000L, true));
+        gravarCenso(CodigoLoja.KABUM, new Reconciliacao(61L, 61, 61), 0, primeiraRodada);
+
+        avancar(intervalo);
+        VereditoRodada veredito = gravarCenso(CodigoLoja.KABUM, new Reconciliacao(61L, 60, 60), 0, base);
+
+        assertThat(veredito.situacao()).isEqualTo(SituacaoRodada.SAUDAVEL);
+    }
+
+    @Test
     void ausencia_naoDeveTocarOfertaDeLojaForaDoCenso() {
         gravar(oferta(CodigoLoja.STEAM, "730", TipoProduto.JOGO, "Counter-Strike 2",
                 "gid-cs2", 8990L, true, OrigemColeta.STEAM_API));

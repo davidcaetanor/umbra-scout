@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 class AusenciaPorCenso {
+
+    private static final Duration CONFIRMACAO_DA_AUSENCIA = Duration.ofHours(24);
 
     private final PrecoRepository precoRepository;
     private final OfertaRepository ofertaRepository;
@@ -48,7 +52,10 @@ class AusenciaPorCenso {
             return;
         }
 
-        if (!rodadaViuTudoQuantoPretendia(resultado, veredito)) {
+        boolean viuTudo = rodadaViuTudoQuantoPretendia(resultado, veredito);
+        boolean viuQuaseTudo = !viuTudo && rodadaViuQuaseTudo(resultado, veredito);
+
+        if (!viuTudo && !viuQuaseTudo) {
             Reconciliacao reconciliacao = resultado.reconciliacao();
             log.info("Censo sem conclusao de ausencia: fonte={} situacao={} semPreco={} declarado={} distintos={}",
                     resultado.fonte(), veredito.situacao(), resultado.totalSemPreco(), reconciliacao.declarado(),
@@ -63,6 +70,8 @@ class AusenciaPorCenso {
                 .filter(oferta -> cobertura.cobre(CodigoLoja.valueOf(oferta.getCodigoLoja()), oferta.getChaveItad()))
                 .toList();
 
+        Instant semVerificacaoDesde = agora.toInstant().minus(CONFIRMACAO_DA_AUSENCIA);
+
         Set<OfertaVista> vistas = resultado.ofertas().stream()
                 .map(oferta -> new OfertaVista(oferta.loja(), oferta.identificadorLoja()))
                 .collect(Collectors.toSet());
@@ -70,6 +79,7 @@ class AusenciaPorCenso {
         List<OfertaComUltimoPrecoProjecao> aMarcar = conhecidas.stream()
                 .filter(conhecida -> !vistas.contains(
                         new OfertaVista(CodigoLoja.valueOf(conhecida.getCodigoLoja()), conhecida.getIdentificadorLoja())))
+                .filter(ausente -> viuTudo || ausente.getVerificadoEm().isBefore(semVerificacaoDesde))
                 .filter(ausente -> regraDeGravacaoDePreco.devePersistir(false,
                         new UltimoPreco(ausente.getValorCentavos(), ausente.isDisponivel(), ausente.getColetadoEm()),
                         ausente.getValorCentavos(), false, agora.toInstant()))
@@ -95,6 +105,13 @@ class AusenciaPorCenso {
     // Estritamente maior: uma rodada que marca exatamente o teto ainda grava.
     private static boolean passaDoTeto(int aMarcar, int conhecidas, int tetoPercentual) {
         return (long) aMarcar * 100 > (long) tetoPercentual * conhecidas;
+    }
+
+    static boolean rodadaViuQuaseTudo(ResultadoColeta resultado, VereditoRodada veredito) {
+        return resultado.cobertura().ehCenso()
+                && veredito.situacao() == SituacaoRodada.SAUDAVEL
+                && resultado.totalSemPreco() == 0
+                && resultado.reconciliacao().declarado() != null;
     }
 
     static boolean rodadaViuTudoQuantoPretendia(ResultadoColeta resultado, VereditoRodada veredito) {

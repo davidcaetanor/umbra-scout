@@ -36,7 +36,8 @@ public interface PrecoRepository extends JpaRepository<PrecoEntity, Long> {
     @Query(value = """
             SELECT o.id AS ofertaId, l.codigo AS codigoLoja, o.identificador_loja AS identificadorLoja,
                    p.chave_itad AS chaveItad, p.nome AS nomeProduto,
-                   v.valor_centavos AS valorCentavos, v.disponivel, v.coletado_em AS coletadoEm
+                   v.valor_centavos AS valorCentavos, v.disponivel, v.coletado_em AS coletadoEm,
+                   o.verificado_em AS verificadoEm
               FROM oferta o
               JOIN loja l ON l.id = o.loja_id
               JOIN produto p ON p.id = o.produto_id
