@@ -206,6 +206,14 @@ describe('MeusMonitoramentosPage', () => {
     expect(tela.textContent).toContain('1 pausado');
   });
 
+  it('alvos atingidos ficam juntos no topo da lista', async () => {
+    const outro = item(5, 'Celeste', { alvoAtingido: true, distanciaDoAlvoCentavos: -100 });
+    await abrir([item(2, 'Black Myth: Wukong'), ATINGIDO, item(3, 'Elden Ring'), outro]);
+
+    const nomes = [...tela.querySelectorAll('umbra-item-monitoramento h2')].map((titulo) => titulo.textContent?.trim());
+    expect(nomes).toEqual(['Hollow Knight: Silksong', 'Celeste', 'Black Myth: Wukong', 'Elden Ring']);
+  });
+
   it('remover pede confirmacao com foco em cancelar e cancelar devolve o foco', async () => {
     await abrir([item(2, 'Black Myth: Wukong')]);
 

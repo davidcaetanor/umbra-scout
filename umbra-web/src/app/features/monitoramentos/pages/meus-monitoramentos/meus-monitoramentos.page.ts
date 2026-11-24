@@ -26,7 +26,7 @@ import { EstadoDoBloco } from '../../../../shared/ui/estado-do-bloco/estado-do-b
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
 import { ConfirmarRemocaoComponent } from '../../components/confirmar-remocao/confirmar-remocao.component';
 import { ItemMonitoramentoComponent } from '../../components/item-monitoramento/item-monitoramento.component';
-import { chaveDaNovidade, contagem, diaLocal, fraseDaRonda, todosPausados } from '../../components/leitura-da-lista';
+import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, todosPausados } from '../../components/leitura-da-lista';
 import { MeusMonitoramentosService } from '../../data/meus-monitoramentos.service';
 import { MonitoramentoListado } from '../../data/monitoramento-listado';
 
@@ -82,6 +82,7 @@ export class MeusMonitoramentosPage {
     return carregado?.tipo === 'erro' ? carregado : { tipo: 'carregando' };
   });
 
+  protected readonly itensEmOrdem = computed(() => atingidosPrimeiro(this.itens() ?? []));
   protected readonly vazio = computed(() => this.itens()?.length === 0);
   protected readonly contagem = computed(() => contagem(this.itens() ?? []));
   protected readonly todosPausados = computed(() => todosPausados(this.itens() ?? []));
@@ -172,7 +173,7 @@ export class MeusMonitoramentosPage {
     this.removendo.set(true);
     try {
       await this.servico.remover(item.id);
-      const itens = this.itens() ?? [];
+      const itens = this.itensEmOrdem();
       const posicao = itens.findIndex((atual) => atual.id === item.id);
       const restantes = itens.filter((atual) => atual.id !== item.id);
       this.itens.set(restantes);

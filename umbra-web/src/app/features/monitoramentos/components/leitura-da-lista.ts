@@ -74,6 +74,10 @@ export function avisoDoPreco(item: MonitoramentoExibido): string | null {
   }
 }
 
+export function atingidosPrimeiro<T extends MonitoramentoExibido>(itens: readonly T[]): T[] {
+  return [...itens.filter((item) => item.alvoAtingido), ...itens.filter((item) => !item.alvoAtingido)];
+}
+
 export function diaLocal(instante: number): string {
   return DATA_LOCAL.format(instante);
 }

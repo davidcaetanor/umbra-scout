@@ -1,5 +1,5 @@
 import { MonitoramentoExibido } from './monitoramento-exibido';
-import { FRASES_DA_RONDA, avisoDoPreco, contagem, distancia, fraseDaRonda, preenchimento, todosPausados } from './leitura-da-lista';
+import { FRASES_DA_RONDA, atingidosPrimeiro, avisoDoPreco, contagem, distancia, fraseDaRonda, preenchimento, todosPausados } from './leitura-da-lista';
 
 function item(parcial: Partial<MonitoramentoExibido> = {}): MonitoramentoExibido {
   return {
@@ -60,6 +60,12 @@ describe('leitura da lista de monitoramentos', () => {
     expect(avisoDoPreco(item({ melhorPreco: { ...preco, situacao: 'promocao-vencida-sem-coleta', expiraEm } }))).toBe(
       'Promoção terminou em 01/12',
     );
+  });
+
+  it('alvos atingidos sobem para o topo e o resto mantem a ordem', () => {
+    const lista = [item({ id: 1 }), item({ id: 2, alvoAtingido: true }), item({ id: 3 }), item({ id: 4, alvoAtingido: true })];
+
+    expect(atingidosPrimeiro(lista).map((atual) => atual.id)).toEqual([2, 4, 1, 3]);
   });
 
   it('frase da ronda muda de um dia para o outro e se repete no mesmo dia', () => {

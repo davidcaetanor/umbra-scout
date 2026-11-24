@@ -80,7 +80,7 @@
   <umbra-estado-do-bloco [estado]="estado()" (tentarDeNovo)="tentarDeNovo()">
     <p carregando>Carregando seus monitoramentos…</p>
     <ul class="flex flex-col gap-3" aria-label="Seus monitoramentos">
-      @for (item of itens(); track item.id) {
+      @for (item of itensEmOrdem(); track item.id) {
         <li>
           <umbra-item-monitoramento
             [item]="item"
