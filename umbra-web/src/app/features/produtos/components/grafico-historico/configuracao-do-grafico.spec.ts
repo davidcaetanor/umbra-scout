@@ -4,7 +4,7 @@ import { GraficoExibido } from './grafico-exibido';
 
 const CORES: CoresDoTema = {
   linha1: 'rgb(1, 1, 1)',
-  linha3: 'rgb(3, 3, 3)',
+  linha2: 'rgb(3, 3, 3)',
   hoje: 'rgb(4, 4, 4)',
   minimo: 'rgb(5, 5, 5)',
   apoio: 'rgb(6, 6, 6)',
@@ -18,8 +18,8 @@ const GRAFICO: GraficoExibido = {
   inicio: Date.parse('2026-11-01T00:00:00Z'),
   fim: Date.parse('2026-11-21T00:00:00Z'),
   linhas: [
-    { rotulo: 'Steam', cor: 'historico-1', pontos: [{ x: 1, y: 100 }] },
-    { rotulo: 'GOG', cor: 'historico-3', pontos: [{ x: 1, y: 200 }] },
+    { rotulo: 'Steam', cor: 'principal', pontos: [{ x: 1, y: 100 }] },
+    { rotulo: 'GOG', cor: 'secundaria', pontos: [{ x: 1, y: 200 }] },
   ],
   minimo: { valor: 100, trechos: [{ x: 1, y: 100 }], losango: { x: 2, y: 100 } },
   hoje: { x: 3, y: 150 },
@@ -32,7 +32,7 @@ describe('configuração do gráfico', () => {
     const [primeira, segunda] = configuracaoDoGrafico(GRAFICO, CORES).data.datasets;
 
     expect(primeira).toMatchObject({ label: 'Steam', stepped: true, borderColor: CORES.linha1, borderDash: [], pointHoverBackgroundColor: CORES.linha1 });
-    expect(segunda).toMatchObject({ label: 'GOG', borderColor: CORES.linha3, borderDash: [6, 4] });
+    expect(segunda).toMatchObject({ label: 'GOG', borderColor: CORES.linha2, borderDash: [6, 4] });
   });
 
   it('acrescenta apoio, mínimo, losango, alvo e hoje, com raio próprio nos pontos', () => {
@@ -98,8 +98,8 @@ describe('configuração do gráfico', () => {
 
   it('a dica usa a cor da linha', () => {
     const dica = configuracaoDoGrafico(GRAFICO, CORES).options!.plugins!.tooltip!.callbacks!;
-    const cor = (dica.labelColor as (item: unknown) => { backgroundColor: string }).call(null, { dataset: { borderColor: CORES.linha3 } });
+    const cor = (dica.labelColor as (item: unknown) => { backgroundColor: string }).call(null, { dataset: { borderColor: CORES.linha2 } });
 
-    expect(cor.backgroundColor).toBe(CORES.linha3);
+    expect(cor.backgroundColor).toBe(CORES.linha2);
   });
 });

@@ -13,13 +13,13 @@ const RAIO_DE_HOJE = 6;
 const MAXIMO_DE_MARCAS_NO_EIXO = 6;
 
 export function configuracaoDoGrafico(grafico: GraficoExibido, cores: CoresDoTema): ChartConfiguration<'line', PontoExibido[]> {
-  const corDaLinha = { 'historico-1': cores.linha1, 'historico-3': cores.linha3 } as const;
+  const corDaLinha = { principal: cores.linha1, secundaria: cores.linha2 } as const;
   const linhas: Conjunto[] = grafico.linhas.map((linha) => ({
     label: linha.rotulo,
     data: [...linha.pontos],
     borderColor: corDaLinha[linha.cor],
     borderWidth: ESPESSURA_DA_LINHA,
-    borderDash: linha.cor === 'historico-3' ? [6, 4] : [],
+    borderDash: linha.cor === 'secundaria' ? [6, 4] : [],
     stepped: true,
     spanGaps: false,
     pointRadius: 0,

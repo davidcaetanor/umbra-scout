@@ -13,6 +13,7 @@ const OFERTA: OfertaDaLoja = {
   endereco: 'https://loja.exemplo',
   coletadoEm: '2026-11-21T10:00:00Z',
   expiraEm: null,
+  verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
 };
 
 const HISTORICO: HistoricoDoProduto = {
@@ -55,8 +56,13 @@ describe('selo do preço', () => {
     expect(leituraDoPreco(comPreco(3001), HISTORICO)).toEqual({ titulo: 'Já esteve mais barato', detalhe: 'Vale monitorar', tom: 'mais-barato' });
   });
 
-  it('sem pontos no período não há costume', () => {
-    expect(leituraDoPreco(comPreco(1500), { ...HISTORICO, melhorPreco: [] })?.tom).toBe('mais-barato');
+  it('com menos de três pontos diz que há pouco histórico, mantendo o prazo', () => {
+    const doisPontos = { ...HISTORICO, melhorPreco: HISTORICO.melhorPreco.slice(0, 2) };
+    expect(leituraDoPreco(comPreco(1000), doisPontos)).toEqual({ titulo: 'Pouco histórico ainda', detalhe: null, tom: 'pouco' });
+    expect(leituraDoPreco(comPreco(1000), { ...HISTORICO, melhorPreco: [] })?.tom).toBe('pouco');
+
+    const comPrazo = leituraDoPreco(comPreco(1000, { expiraEm: Date.parse('2026-11-24T23:00:00-03:00') }), doisPontos);
+    expect(comPrazo?.detalhe).toBe('Promoção da GOG termina em 24/11');
   });
 
   it('acrescenta o prazo da promoção pela data de São Paulo', () => {

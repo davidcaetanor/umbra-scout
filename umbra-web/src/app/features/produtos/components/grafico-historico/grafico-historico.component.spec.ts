@@ -6,7 +6,7 @@ import { GraficoHistoricoComponent } from './grafico-historico.component';
 const GRAFICO: GraficoExibido = {
   inicio: 0,
   fim: 10,
-  linhas: [{ rotulo: 'Melhor preço do dia', cor: 'historico-1', pontos: [{ x: 0, y: 100 }] }],
+  linhas: [{ rotulo: 'Melhor preço do dia', cor: 'principal', pontos: [{ x: 0, y: 100 }] }],
   minimo: null,
   hoje: null,
   alvo: null,

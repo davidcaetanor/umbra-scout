@@ -10,6 +10,7 @@ export interface OfertaDaLoja {
   readonly endereco: string;
   readonly coletadoEm: string;
   readonly expiraEm: number | null;
+  readonly verificadoEm: number;
 }
 
 export interface ProdutoDetalhado {

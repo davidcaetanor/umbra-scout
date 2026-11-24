@@ -6,8 +6,8 @@ import {
   degraus,
   diasObservados,
   graficoExibido,
+  haQuanto,
   legendaExibida,
-  lojasIniciais,
   minimoExibido,
   opcoesDePeriodo,
   periodoEfetivo,
@@ -44,6 +44,7 @@ const OFERTA: OfertaDaLoja = {
   endereco: 'https://loja.exemplo',
   coletadoEm: '2026-11-21T10:00:00Z',
   expiraEm: null,
+  verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
 };
 
 function contexto(parcial: Partial<ContextoDoGrafico> = {}): ContextoDoGrafico {
@@ -151,15 +152,12 @@ describe('gráfico exibido', () => {
     const grafico = graficoExibido(contexto({ lojas: ['GOG', 'Nuuvem'] }));
 
     expect(grafico.linhas.map((linha) => [linha.rotulo, linha.cor])).toEqual([
-      ['GOG', 'historico-1'],
-      ['Nuuvem', 'historico-3'],
+      ['GOG', 'principal'],
+      ['Nuuvem', 'secundaria'],
     ]);
     expect(grafico.minimo).toBeNull();
   });
 
-  it('começa por loja com as duas primeiras lojas', () => {
-    expect(lojasIniciais(HISTORICO)).toEqual(['Steam', 'GOG']);
-  });
 });
 
 describe('legenda', () => {
@@ -169,7 +167,7 @@ describe('legenda', () => {
     expect(celulas.map((celula) => celula.marca)).toEqual(['hoje', 'linha-1', 'minimo', 'alvo']);
     expect(celulas[0]).toMatchObject({ titulo: 'Hoje, 21/11', valor: 'R$ 45,00', detalhe: 'GOG' });
     expect(celulas[1]).toMatchObject({ titulo: 'Melhor preço do dia', detalhe: 'entre as lojas' });
-    expect(celulas[2]).toMatchObject({ valor: 'R$ 30,00', detalhe: 'Steam, 01/11/2026' });
+    expect(celulas[2]).toMatchObject({ valor: 'R$ 30,00', detalhe: 'Steam, há 20 dias' });
     expect(celulas[3]).toMatchObject({ titulo: 'Alvo de busca', valor: 'R$ 35,00', detalhe: null });
   });
 
@@ -182,14 +180,14 @@ describe('legenda', () => {
     expect(celulas[2].valor).toBe('Grátis');
   });
 
-  it('por loja troca a linha pelas lojas e tira o menor registrado', () => {
+  it('por loja troca a linha pelas lojas e tira hoje e o menor registrado', () => {
     const celulas = legendaExibida(contexto({ lojas: ['Steam', 'GOG'] }));
 
     expect(celulas.map((celula) => [celula.marca, celula.titulo])).toEqual([
-      ['hoje', 'Hoje, 21/11'],
       ['linha-1', 'Steam'],
-      ['linha-3', 'GOG'],
+      ['linha-2', 'GOG'],
     ]);
+    expect(graficoExibido(contexto({ lojas: ['Steam', 'GOG'] })).hoje).toBeNull();
   });
 
   describe('preço de hoje por loja', () => {
@@ -234,5 +232,18 @@ describe('legenda', () => {
     expect(graficoExibido(contexto({ lojas: ['Steam'], alvoCentavos: 10_000 })).alvo).toBe(10_000);
     expect(graficoExibido(contexto({ lojas: ['Steam'], alvoCentavos: 10_001 })).alvo).toBeNull();
     expect(graficoExibido(contexto({ lojas: ['Nuuvem'], alvoCentavos: 14_000 })).alvo).toBe(14_000);
+  });
+
+  it('sem gráfico o resumo tira hoje e a linha, e o alvo sem aviso de escala', () => {
+    const celulas = legendaExibida(contexto({ alvoCentavos: 10_000_000 }), false);
+
+    expect(celulas.map((celula) => celula.marca)).toEqual(['minimo', 'alvo']);
+    expect(celulas[1].detalhe).toBeNull();
+  });
+
+  it('diz há quanto tempo pela data de São Paulo', () => {
+    expect(haQuanto(FIM - 3_600_000, FIM)).toBe('hoje');
+    expect(haQuanto(FIM - DIA_MS, FIM)).toBe('há 1 dia');
+    expect(haQuanto(FIM - 12 * DIA_MS, FIM)).toBe('há 12 dias');
   });
 });

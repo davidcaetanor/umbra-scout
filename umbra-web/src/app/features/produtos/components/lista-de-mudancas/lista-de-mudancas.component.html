@@ -1,0 +1,8 @@
+<ul class="flex flex-col gap-1.5" aria-label="Mudanças de preço">
+  @for (mudanca of mudancas(); track $index) {
+    <li class="flex gap-3">
+      <span class="w-12 shrink-0 font-mono text-dado leading-6 tabular-nums text-texto-secundario">{{ mudanca.data }}<span class="sr-only">{{ separador }}</span></span>
+      <span>{{ mudanca.texto }}</span>
+    </li>
+  }
+</ul>
