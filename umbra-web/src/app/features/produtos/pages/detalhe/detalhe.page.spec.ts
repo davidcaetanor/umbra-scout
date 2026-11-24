@@ -132,7 +132,7 @@ describe('DetalhePage', () => {
     expect(tela.querySelector('h1')?.textContent).toContain('Hades II');
     expect(texto(tela)).toContain('Ver na GOG');
     expect(texto(tela)).toContain('Mais barato');
-    expect(texto(tela)).toContain('Verificado em 21/11');
+    expect(texto(tela)).not.toContain('Verificado');
     expect(TestBed.inject(Title).getTitle()).toBe('Hades II · Umbra');
     expect(historico).toHaveBeenCalledWith(42, '90d');
   });

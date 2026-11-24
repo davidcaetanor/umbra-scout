@@ -201,7 +201,7 @@ export class DetalhePage {
       preco: oferta.preco,
       endereco: oferta.endereco,
       maisBarata: produto.ofertas.length > 1 && oferta.loja === produto.melhorOferta?.loja,
-      situacao: situacaoExibida(oferta, this.agora()),
+      situacao: situacaoExibida(oferta),
     }));
   });
   protected readonly topo = computed<TopoExibido | null>(() => {
