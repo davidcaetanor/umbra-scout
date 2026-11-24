@@ -9,10 +9,11 @@ export function precoDaOferta(oferta: OfertaResponse): PrecoDoProduto {
     (oferta.descontoPct ?? 0) > 0 &&
     oferta.valorOriginalCentavos !== null &&
     oferta.valorOriginalCentavos > oferta.valorCentavos;
+  const gratis = oferta.gratuito || oferta.valorCentavos === 0;
   return {
-    atual: oferta.gratuito ? 'Grátis' : reais(oferta.valorCentavos),
+    atual: gratis ? 'Grátis' : reais(oferta.valorCentavos),
     original: emPromocao && oferta.valorOriginalCentavos !== null ? reais(oferta.valorOriginalCentavos) : null,
-    descontoPct: emPromocao ? oferta.descontoPct : null,
+    descontoPct: emPromocao && !gratis ? oferta.descontoPct : null,
     loja: oferta.loja,
   };
 }
