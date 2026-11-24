@@ -156,6 +156,16 @@ describe('MeusMonitoramentosPage', () => {
     expect(tela.textContent).not.toContain('Achei');
   });
 
+  it('pausar o item da novidade cala o Umbra sobre ele', async () => {
+    await abrir([ATINGIDO, item(2, 'Black Myth: Wukong')]);
+    expect(tela.textContent).toContain('Achei!');
+
+    botao('Pausar Hollow Knight: Silksong').click();
+    await estabilizar();
+
+    expect(tela.textContent).not.toContain('Achei!');
+  });
+
   it('varios alvos atingidos viram uma fala so com a contagem', async () => {
     await abrir([ATINGIDO, item(2, 'Celeste', { alvoAtingido: true, distanciaDoAlvoCentavos: -100 })]);
 

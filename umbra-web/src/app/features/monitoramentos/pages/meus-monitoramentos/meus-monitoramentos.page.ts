@@ -81,14 +81,29 @@ export class MeusMonitoramentosPage {
   protected readonly contagem = computed(() => contagem(this.itens() ?? []));
   protected readonly todosPausados = computed(() => todosPausados(this.itens() ?? []));
 
-  protected readonly novidade = linkedSignal<MonitoramentoListado[] | null, NovidadeExibida | null>({
+  private readonly idsDaNovidade = linkedSignal<MonitoramentoListado[] | null, readonly number[]>({
     source: () => (this.recurso.value()?.tipo === 'sucesso' ? this.itens() : null),
     computation: (itens, anterior) => {
       if (anterior !== undefined && anterior.source !== null) {
         return anterior.value;
       }
-      return itens === null ? null : this.novidadeDe(itens);
+      return itens === null ? [] : this.registrarNovidades(itens);
     },
+  });
+
+  protected readonly novidade = computed<NovidadeExibida | null>(() => {
+    const ids = this.idsDaNovidade();
+    const atingidos = (this.itens() ?? []).filter((item) => item.alvoAtingido && ids.includes(item.id));
+    const [primeiro] = atingidos;
+    if (primeiro?.melhorPreco == null) {
+      return null;
+    }
+    return {
+      nome: primeiro.nome,
+      preco: reais(primeiro.melhorPreco.valorCentavos),
+      loja: primeiro.melhorPreco.loja,
+      outras: atingidos.length - 1,
+    };
   });
 
   protected readonly fraseDaRonda = signal(this.rondaDoDia());
@@ -112,7 +127,7 @@ export class MeusMonitoramentosPage {
   }
 
   protected fecharNovidade(): void {
-    this.novidade.set(null);
+    this.idsDaNovidade.set([]);
   }
 
   protected fecharRonda(): void {
@@ -173,19 +188,10 @@ export class MeusMonitoramentosPage {
     return this.ocupados().has(id);
   }
 
-  private novidadeDe(itens: readonly MonitoramentoListado[]): NovidadeExibida | null {
+  private registrarNovidades(itens: readonly MonitoramentoListado[]): readonly number[] {
     const atingidos = itens.filter((item) => item.alvoAtingido && !this.entradas.jaViu(chaveDaNovidade(item)));
     atingidos.forEach((item) => this.entradas.registrar(chaveDaNovidade(item)));
-    const [primeiro] = atingidos;
-    if (primeiro?.melhorPreco == null) {
-      return null;
-    }
-    return {
-      nome: primeiro.nome,
-      preco: reais(primeiro.melhorPreco.valorCentavos),
-      loja: primeiro.melhorPreco.loja,
-      outras: atingidos.length - 1,
-    };
+    return atingidos.map((item) => item.id);
   }
 
   private rondaDoDia(): string | null {
