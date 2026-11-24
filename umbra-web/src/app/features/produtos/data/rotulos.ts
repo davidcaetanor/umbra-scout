@@ -38,5 +38,5 @@ export const ROTULO_DA_LOJA: Readonly<Record<CodigoDaLoja, string>> = {
 
 export const LOJAS_POR_TIPO: Readonly<Record<TipoDeProduto, readonly CodigoDaLoja[]>> = {
   JOGO: ['STEAM', 'NUUVEM', 'EPIC', 'GOG', 'GREEN_MAN_GAMING'],
-  HARDWARE: ['KABUM', 'TERABYTE'],
+  HARDWARE: ['KABUM'],
 };

@@ -27,7 +27,10 @@ export const FILTRO_INICIAL: FiltroDaBusca = {
   pagina: 0,
 };
 
-const PRECO_MAXIMO_ACEITO_EM_REAIS = 100_000;
+export const PRECO_MAXIMO_EM_CENTAVOS = 10_000_000;
+const CENTAVOS_POR_REAL = 100;
+const VALOR_DA_URL = /^\d{1,6}(?:\.\d{1,2})?$/;
+const INTEIRO_DA_URL = /^\d{1,3}$/;
 
 const APOSTROFOS_TIPOGRAFICOS = /[‘’ʼ]/gu;
 
@@ -51,14 +54,14 @@ export function filtroDaUrl(parametros: ParamMap): FiltroDaBusca {
   const tipo = umDe(parametros.get('tipo'), ROTULO_DO_TIPO);
   const categoria = umDe(parametros.get('categoria'), ROTULO_DA_CATEGORIA);
   const pagina = Number(parametros.get('pagina'));
-  const desconto = reaisInteiros(parametros.get('descontoMin'));
+  const desconto = inteiroDaUrl(parametros.get('descontoMin'));
   return normalizarFiltro({
     termo: situacaoDoTermo(termo) === 'valido' ? termo : null,
     tipo,
     categoria,
     ordenacao: umDe(parametros.get('ordenacao'), ROTULO_DA_ORDENACAO) ?? FILTRO_INICIAL.ordenacao,
-    precoMin: reaisInteiros(parametros.get('precoMin')),
-    precoMax: reaisInteiros(parametros.get('precoMax')),
+    precoMin: centavosDaUrl(parametros.get('precoMin')),
+    precoMax: centavosDaUrl(parametros.get('precoMax')),
     descontoMin: desconto !== null && DESCONTOS_MINIMOS.includes(desconto) ? desconto : null,
     loja: umDe(parametros.get('loja'), ROTULO_DA_LOJA),
     pagina: Number.isInteger(pagina) && pagina > 1 ? pagina - 1 : 0,
@@ -83,12 +86,22 @@ export function lojasPara(tipo: TipoDeProduto | null): readonly CodigoDaLoja[] {
   return tipo === null ? [...LOJAS_POR_TIPO.JOGO, ...LOJAS_POR_TIPO.HARDWARE] : LOJAS_POR_TIPO[tipo];
 }
 
-export function reaisInteiros(valor: string | null): number | null {
-  if (valor === null || !/^\d{1,6}$/.test(valor.trim())) {
+export function centavosDaUrl(valor: string | null): number | null {
+  if (valor === null || !VALOR_DA_URL.test(valor.trim())) {
     return null;
   }
-  const numero = Number(valor.trim());
-  return numero <= PRECO_MAXIMO_ACEITO_EM_REAIS ? numero : null;
+  const centavos = Math.round(Number(valor.trim()) * CENTAVOS_POR_REAL);
+  return centavos <= PRECO_MAXIMO_EM_CENTAVOS ? centavos : null;
+}
+
+export function faixaInvertidaNaUrl(parametros: ParamMap): boolean {
+  const minimo = centavosDaUrl(parametros.get('precoMin'));
+  const maximo = centavosDaUrl(parametros.get('precoMax'));
+  return minimo !== null && maximo !== null && maximo < minimo;
+}
+
+function inteiroDaUrl(valor: string | null): number | null {
+  return valor !== null && INTEIRO_DA_URL.test(valor.trim()) ? Number(valor.trim()) : null;
 }
 
 function lojaAceitaPara(tipo: TipoDeProduto | null, loja: CodigoDaLoja): boolean {
@@ -101,8 +114,8 @@ export function parametrosDoFiltro(filtro: FiltroDaBusca): Params {
     tipo: filtro.tipo,
     categoria: filtro.categoria,
     ordenacao: filtro.ordenacao === FILTRO_INICIAL.ordenacao ? null : filtro.ordenacao,
-    precoMin: filtro.precoMin,
-    precoMax: filtro.precoMax,
+    precoMin: reaisDaUrl(filtro.precoMin),
+    precoMax: reaisDaUrl(filtro.precoMax),
     descontoMin: filtro.descontoMin,
     loja: filtro.loja,
     pagina: filtro.pagina > 0 ? filtro.pagina + 1 : null,
@@ -128,4 +141,16 @@ function umDe<T extends TipoDeProduto | CategoriaDeHardware | OrdenacaoDaBusca |
   aceitos: Readonly<Record<T, string>>,
 ): T | null {
   return valor !== null && Object.hasOwn(aceitos, valor) ? (valor as T) : null;
+}
+
+export function mesmosParametros(atuais: ParamMap, esperados: Params): boolean {
+  const definidos = Object.entries(esperados).filter(([, valor]) => valor !== null && valor !== undefined);
+  return (
+    atuais.keys.length === definidos.length &&
+    definidos.every(([chave, valor]) => atuais.get(chave) === String(valor))
+  );
+}
+
+function reaisDaUrl(centavos: number | null): string | null {
+  return centavos === null ? null : String(centavos / CENTAVOS_POR_REAL);
 }

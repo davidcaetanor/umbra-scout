@@ -117,33 +117,31 @@
           <input
             id="preco-min"
             type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            maxlength="6"
+            inputmode="decimal"
+            maxlength="10"
             placeholder="De"
             class="min-h-11 w-full min-w-0 rounded-controle border border-borda-campo bg-fundo px-3"
-            [value]="filtro().precoMin ?? ''"
-            [attr.aria-describedby]="faixaInvertida() ? 'preco-dica' : null"
-            [attr.aria-invalid]="faixaInvertida()"
+            [value]="campoDe()"
+            [attr.aria-describedby]="avisoDoPreco() ? 'preco-dica' : null"
+            [attr.aria-invalid]="avisoDoPreco() !== null"
             (change)="escolherPreco('precoMin', $any($event.target).value)"
           />
           <label for="preco-max" class="sr-only">Preço máximo em reais</label>
           <input
             id="preco-max"
             type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            maxlength="6"
+            inputmode="decimal"
+            maxlength="10"
             placeholder="Até"
             class="min-h-11 w-full min-w-0 rounded-controle border border-borda-campo bg-fundo px-3"
-            [value]="filtro().precoMax ?? ''"
-            [attr.aria-describedby]="faixaInvertida() ? 'preco-dica' : null"
-            [attr.aria-invalid]="faixaInvertida()"
+            [value]="campoAte()"
+            [attr.aria-describedby]="avisoDoPreco() ? 'preco-dica' : null"
+            [attr.aria-invalid]="avisoDoPreco() !== null"
             (change)="escolherPreco('precoMax', $any($event.target).value)"
           />
         </div>
-        @if (faixaInvertida()) {
-          <p id="preco-dica" class="text-dado text-texto-erro">O valor de "até" precisa ser maior que o de "de".</p>
+        @if (avisoDoPreco(); as aviso) {
+          <p id="preco-dica" role="alert" class="text-dado text-erro">{{ aviso }}</p>
         }
       </fieldset>
       @if (filtro().tipo === 'JOGO') {

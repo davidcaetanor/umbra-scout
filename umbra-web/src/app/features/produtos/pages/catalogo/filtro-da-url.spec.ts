@@ -1,5 +1,14 @@
 import { convertToParamMap } from '@angular/router';
-import { FILTRO_INICIAL, filtroDaUrl, mesmoFiltro, normalizarTermo, parametrosDoFiltro, situacaoDoTermo } from './filtro-da-url';
+import {
+  FILTRO_INICIAL,
+  faixaInvertidaNaUrl,
+  filtroDaUrl,
+  mesmoFiltro,
+  mesmosParametros,
+  normalizarTermo,
+  parametrosDoFiltro,
+  situacaoDoTermo,
+} from './filtro-da-url';
 
 describe('filtroDaUrl', () => {
   it('le os filtros validos, com a pagina da URL a partir de 1', () => {
@@ -35,11 +44,33 @@ describe('filtroDaUrl', () => {
       ...FILTRO_INICIAL,
       tipo: 'JOGO',
       ordenacao: 'melhoresOfertas',
-      precoMin: 10,
-      precoMax: 200,
+      precoMin: 1000,
+      precoMax: 20000,
       descontoMin: 50,
       loja: 'STEAM',
     });
+  });
+
+  it('le centavos com ponto na URL e devolve a URL em reais', () => {
+    const filtro = filtroDaUrl(convertToParamMap({ precoMin: '12.5', precoMax: '99.99' }));
+
+    expect(filtro).toMatchObject({ precoMin: 1250, precoMax: 9999 });
+    expect(parametrosDoFiltro(filtro)).toMatchObject({ precoMin: '12.5', precoMax: '99.99' });
+    expect(filtroDaUrl(convertToParamMap({ precoMin: '12,5' })).precoMin).toBeNull();
+    expect(filtroDaUrl(convertToParamMap({ precoMin: '100000' })).precoMin).toBe(10_000_000);
+    expect(filtroDaUrl(convertToParamMap({ precoMin: '100000.01' })).precoMin).toBeNull();
+  });
+
+  it('reconhece faixa invertida na URL e compara parametros sem os vazios', () => {
+    expect(faixaInvertidaNaUrl(convertToParamMap({ precoMin: '300', precoMax: '100' }))).toBe(true);
+    expect(faixaInvertidaNaUrl(convertToParamMap({ precoMin: '100', precoMax: '100' }))).toBe(false);
+    expect(mesmosParametros(convertToParamMap({ tipo: 'JOGO' }), { tipo: 'JOGO', loja: null })).toBe(true);
+    expect(mesmosParametros(convertToParamMap({ tipo: 'JOGO', pagina: 'abc' }), { tipo: 'JOGO' })).toBe(false);
+    expect(mesmosParametros(convertToParamMap({ precoMin: '050' }), { precoMin: '50' })).toBe(false);
+  });
+
+  it('a Terabyte nao e aceita enquanto nao for coletada', () => {
+    expect(filtroDaUrl(convertToParamMap({ tipo: 'HARDWARE', loja: 'TERABYTE' })).loja).toBeNull();
   });
 
   it('criterio de oferta e desconto fora de jogo voltam ao padrao, como a API exigiria', () => {
@@ -50,7 +81,7 @@ describe('filtroDaUrl', () => {
 
   it('descarta preco invalido, desconto fora da lista e faixa invertida', () => {
     const parametros = convertToParamMap({ tipo: 'JOGO', precoMin: '300', precoMax: '100', descontoMin: '33' });
-    expect(filtroDaUrl(parametros)).toEqual({ ...FILTRO_INICIAL, tipo: 'JOGO', precoMin: 300 });
+    expect(filtroDaUrl(parametros)).toEqual({ ...FILTRO_INICIAL, tipo: 'JOGO', precoMin: 30000 });
 
     expect(filtroDaUrl(convertToParamMap({ precoMin: '-5', precoMax: '1e3' }))).toEqual(FILTRO_INICIAL);
     expect(filtroDaUrl(convertToParamMap({ precoMax: '9999999' }))).toEqual(FILTRO_INICIAL);

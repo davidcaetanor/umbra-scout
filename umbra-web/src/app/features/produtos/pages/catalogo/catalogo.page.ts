@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Subject, catchError, concat, debounceTime, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
 import { estadoDoFluxo, mensagemDoErro } from '../../../../core/erro';
+import { lerReais, reaisParaCampo } from '../../../../shared/formatacao/valor-em-reais';
 import { EstadoMascote } from '../../../../shared/mascote/estado-mascote';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { EstadoDoBloco, dadosDe } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
@@ -25,18 +26,27 @@ import { ROTULO_DA_CATEGORIA, ROTULO_DA_LOJA, ROTULO_DA_ORDENACAO, ROTULO_DO_TIP
 import { EstadoDaBuscaExterna } from './estado-da-busca-externa';
 import {
   FILTRO_INICIAL,
+  PRECO_MAXIMO_EM_CENTAVOS,
+  faixaInvertidaNaUrl,
   filtroDaUrl,
   lojasPara,
   mesmoFiltro,
+  mesmosParametros,
   normalizarFiltro,
   normalizarTermo,
   parametrosDoFiltro,
-  reaisInteiros,
   situacaoDoTermo,
 } from './filtro-da-url';
 
 const ESPERA_DA_DIGITACAO_EM_MS = 300;
 const SEM_BUSCA_EXTERNA: EstadoDaBuscaExterna = { tipo: 'inativa' };
+const AVISO_DE_VALOR_INVALIDO = 'Use só números, como 49,90.';
+const AVISO_DE_TETO = 'O preço vai até R$ 100.000,00.';
+const AVISO_DE_FAIXA_INVERTIDA = 'O valor de "até" não pode ser menor que o de "de".';
+
+function campoDoPreco(centavos: number | null): string {
+  return centavos === null ? '' : reaisParaCampo(centavos);
+}
 
 @Component({
   selector: 'umbra-catalogo-page',
@@ -72,7 +82,9 @@ export class CatalogoPage {
     const filtro = this.filtro();
     return [filtro.precoMin, filtro.precoMax, filtro.descontoMin, filtro.loja].filter((valor) => valor !== null).length;
   });
-  protected readonly faixaInvertida = signal(false);
+  protected readonly avisoDoPreco = signal<string | null>(null);
+  protected readonly campoDe = computed(() => campoDoPreco(this.filtro().precoMin));
+  protected readonly campoAte = computed(() => campoDoPreco(this.filtro().precoMax));
   protected readonly filtrosVisiveis = signal(false);
 
   protected readonly textoDigitado = signal(this.filtro().termo ?? '');
@@ -154,11 +166,24 @@ export class CatalogoPage {
       });
     });
 
+    this.rota.queryParamMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((parametros) => this.limparUrl(parametros));
+
     effect(() => {
       const filtro = this.filtro();
       const resultado = this.resultado();
       untracked(() => this.reagirAoResultado(filtro, resultado));
     });
+  }
+
+  private limparUrl(parametros: ParamMap): void {
+    const esperados = parametrosDoFiltro(filtroDaUrl(parametros));
+    if (mesmosParametros(parametros, esperados)) {
+      return;
+    }
+    if (faixaInvertidaNaUrl(parametros)) {
+      this.avisoDoPreco.set(AVISO_DE_FAIXA_INVERTIDA);
+    }
+    void this.router.navigate([], { relativeTo: this.rota, queryParams: esperados, replaceUrl: true });
   }
 
   protected digitar(texto: string): void {
@@ -178,14 +203,24 @@ export class CatalogoPage {
     this.aplicar({ ordenacao: valor as OrdenacaoDaBusca, pagina: 0 });
   }
 
-  protected escolherPreco(campo: 'precoMin' | 'precoMax', valor: string): void {
-    const reais = reaisInteiros(valor);
-    const proximo = { ...this.filtro(), [campo]: reais };
-    const invertida = proximo.precoMin !== null && proximo.precoMax !== null && proximo.precoMax < proximo.precoMin;
-    this.faixaInvertida.set(invertida);
-    if (!invertida) {
-      this.aplicar({ [campo]: reais, pagina: 0 });
+  protected escolherPreco(campo: 'precoMin' | 'precoMax', texto: string): void {
+    const leitura = lerReais(texto);
+    if (leitura.tipo === 'invalido') {
+      this.avisoDoPreco.set(AVISO_DE_VALOR_INVALIDO);
+      return;
     }
+    const centavos = leitura.tipo === 'valido' ? leitura.centavos : null;
+    if (centavos !== null && centavos > PRECO_MAXIMO_EM_CENTAVOS) {
+      this.avisoDoPreco.set(AVISO_DE_TETO);
+      return;
+    }
+    const proximo = { ...this.filtro(), [campo]: centavos };
+    if (proximo.precoMin !== null && proximo.precoMax !== null && proximo.precoMax < proximo.precoMin) {
+      this.avisoDoPreco.set(AVISO_DE_FAIXA_INVERTIDA);
+      return;
+    }
+    this.avisoDoPreco.set(null);
+    this.aplicar({ [campo]: centavos, pagina: 0 });
   }
 
   protected escolherDesconto(valor: string): void {
@@ -206,7 +241,7 @@ export class CatalogoPage {
 
   protected limparFiltros(): void {
     this.textoDigitado.set('');
-    this.faixaInvertida.set(false);
+    this.avisoDoPreco.set(null);
     this.aplicar(FILTRO_INICIAL);
   }
 

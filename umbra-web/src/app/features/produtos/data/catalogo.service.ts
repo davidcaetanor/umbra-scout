@@ -41,16 +41,14 @@ export class CatalogoService {
   }
 }
 
-const CENTAVOS_POR_REAL = 100;
-
 function paraParametros(filtro: FiltroDaBusca): BuscarProdutos$Params {
   return {
     ...(filtro.termo === null ? {} : { nome: filtro.termo }),
     ...(filtro.tipo === null ? {} : { tipo: filtro.tipo }),
     ...(filtro.categoria === null ? {} : { categoria: filtro.categoria }),
     ordenacao: filtro.ordenacao,
-    ...(filtro.precoMin === null ? {} : { precoMin: filtro.precoMin * CENTAVOS_POR_REAL }),
-    ...(filtro.precoMax === null ? {} : { precoMax: filtro.precoMax * CENTAVOS_POR_REAL }),
+    ...(filtro.precoMin === null ? {} : { precoMin: filtro.precoMin }),
+    ...(filtro.precoMax === null ? {} : { precoMax: filtro.precoMax }),
     ...(filtro.descontoMin === null ? {} : { descontoMin: filtro.descontoMin }),
     ...(filtro.loja === null ? {} : { loja: filtro.loja }),
     page: filtro.pagina,
