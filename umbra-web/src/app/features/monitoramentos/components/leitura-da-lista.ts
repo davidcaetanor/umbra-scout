@@ -74,6 +74,20 @@ export function avisoDoPreco(item: MonitoramentoExibido): string | null {
   }
 }
 
+export const MAXIMO_DO_NOME_NA_FALA = 60;
+const PONTUACAO_NO_FIM = /[\s,;:\-–]+$/u;
+
+export function nomeCurto(nome: string, maximo = MAXIMO_DO_NOME_NA_FALA): string {
+  const limpo = nome.trim();
+  if (limpo.length <= maximo) {
+    return limpo;
+  }
+  const corte = limpo.slice(0, maximo);
+  const ultimoEspaco = corte.lastIndexOf(' ');
+  const inteiro = ultimoEspaco > 0 ? corte.slice(0, ultimoEspaco) : corte;
+  return `${inteiro.replace(PONTUACAO_NO_FIM, '')}…`;
+}
+
 export function atingidosPrimeiro<T extends MonitoramentoExibido>(itens: readonly T[]): T[] {
   return [...itens.filter((item) => item.alvoAtingido), ...itens.filter((item) => !item.alvoAtingido)];
 }

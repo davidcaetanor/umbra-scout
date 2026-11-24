@@ -27,7 +27,7 @@ import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/es
 import { AlteracaoPedida, AlterarAlvoComponent } from '../../components/alterar-alvo/alterar-alvo.component';
 import { ConfirmarRemocaoComponent } from '../../components/confirmar-remocao/confirmar-remocao.component';
 import { ItemMonitoramentoComponent } from '../../components/item-monitoramento/item-monitoramento.component';
-import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, todosPausados } from '../../components/leitura-da-lista';
+import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, nomeCurto, todosPausados } from '../../components/leitura-da-lista';
 import { MeusMonitoramentosService } from '../../data/meus-monitoramentos.service';
 import { MonitoramentoListado } from '../../data/monitoramento-listado';
 
@@ -107,7 +107,7 @@ export class MeusMonitoramentosPage {
       return null;
     }
     return {
-      nome: primeiro.nome,
+      nome: nomeCurto(primeiro.nome),
       preco: reais(primeiro.melhorPreco.valorCentavos),
       loja: primeiro.melhorPreco.loja,
       outras: atingidos.length - 1,

@@ -1,5 +1,5 @@
 import { MonitoramentoExibido } from './monitoramento-exibido';
-import { FRASES_DA_RONDA, atingidosPrimeiro, avisoDoPreco, contagem, distancia, fraseDaRonda, preenchimento, todosPausados } from './leitura-da-lista';
+import { FRASES_DA_RONDA, MAXIMO_DO_NOME_NA_FALA, atingidosPrimeiro, avisoDoPreco, contagem, distancia, fraseDaRonda, nomeCurto, preenchimento, todosPausados } from './leitura-da-lista';
 
 function item(parcial: Partial<MonitoramentoExibido> = {}): MonitoramentoExibido {
   return {
@@ -60,6 +60,17 @@ describe('leitura da lista de monitoramentos', () => {
     expect(avisoDoPreco(item({ melhorPreco: { ...preco, situacao: 'promocao-vencida-sem-coleta', expiraEm } }))).toBe(
       'Promoção terminou em 01/12',
     );
+  });
+
+  it('nome curto respeita o teto, corta no espaco e fecha com reticencias', () => {
+    const placa = 'Placa de Vídeo ASUS PRIME RTX 5070 OC 12G WHITE NVIDIA Geforce, 12GB, GDDR7, OpenGL 4.6';
+    const curto = nomeCurto(placa);
+
+    expect(curto).toBe('Placa de Vídeo ASUS PRIME RTX 5070 OC 12G WHITE NVIDIA…');
+    expect(curto.length).toBeLessThanOrEqual(MAXIMO_DO_NOME_NA_FALA + 1);
+    expect(nomeCurto('Hollow Knight: Silksong')).toBe('Hollow Knight: Silksong');
+    expect(nomeCurto('HD Interno Seagate Exos 7E10, NAS, 8TB', 30)).toBe('HD Interno Seagate Exos 7E10…');
+    expect(nomeCurto('Supercalifragilisticexpialidocious', 10)).toBe('Supercalif…');
   });
 
   it('alvos atingidos sobem para o topo e o resto mantem a ordem', () => {
