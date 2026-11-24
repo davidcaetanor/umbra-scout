@@ -96,9 +96,9 @@ describe('CatalogoPage', () => {
     await abrir('/catalogo?tipo=HARDWARE');
     const opcoes = () => [...tela.querySelectorAll('#ordenacao option')].map((opcao) => opcao.getAttribute('value'));
 
-    expect(opcoes()).toEqual(['nome', 'menorPreco']);
+    expect(opcoes()).toEqual(['nome', 'menorPreco', 'melhoresOfertas']);
     expect(tela.querySelector('#desconto')).toBeNull();
-    expect([...tela.querySelectorAll('#loja option')].map((o) => o.getAttribute('value'))).toEqual(['', 'KABUM', 'TERABYTE']);
+    expect([...tela.querySelectorAll('#loja option')].map((o) => o.getAttribute('value'))).toEqual(['', 'KABUM']);
 
     await harness.navigateByUrl('/catalogo?tipo=JOGO');
     expect(opcoes()).toEqual(['nome', 'menorPreco', 'melhoresOfertas', 'maiorDesconto']);
@@ -110,15 +110,16 @@ describe('CatalogoPage', () => {
 
     escolher('#preco-min', '10');
     await harness.fixture.whenStable();
-    escolher('#preco-max', '200');
+    escolher('#preco-max', '200,50');
     await harness.fixture.whenStable();
     escolher('#desconto', '50');
     await harness.fixture.whenStable();
     escolher('#loja', 'STEAM');
     await harness.fixture.whenStable();
 
-    expect(url()).toBe('/catalogo?tipo=JOGO&precoMin=10&precoMax=200&descontoMin=50&loja=STEAM');
-    expect(catalogo.buscas.at(-1)).toMatchObject({ precoMin: 10, precoMax: 200, descontoMin: 50, loja: 'STEAM', pagina: 0 });
+    expect(url()).toBe('/catalogo?tipo=JOGO&precoMin=10&precoMax=200.5&descontoMin=50&loja=STEAM');
+    expect(catalogo.buscas.at(-1)).toMatchObject({ precoMin: 1000, precoMax: 20050, descontoMin: 50, loja: 'STEAM', pagina: 0 });
+    expect(tela.querySelector<HTMLInputElement>('#preco-max')?.value).toBe('200,50');
   });
 
   it('faixa invertida avisa no campo e nao busca', async () => {
@@ -128,10 +129,56 @@ describe('CatalogoPage', () => {
     escolher('#preco-max', '100');
     await harness.fixture.whenStable();
 
-    expect(tela.querySelector('#preco-dica')?.textContent).toContain('maior que o de');
+    expect(tela.querySelector('#preco-dica')?.textContent).toBe('O valor de "até" não pode ser menor que o de "de".');
+    expect(tela.querySelector('#preco-dica')?.classList).toContain('text-erro');
     expect(tela.querySelector('#preco-max')?.getAttribute('aria-invalid')).toBe('true');
     expect(catalogo.buscas.length).toBe(buscasAntes);
     expect(url()).toBe('/catalogo?precoMin=300');
+  });
+
+  it.each([
+    ['abc', 'Use só números, como 49,90.'],
+    ['-5', 'Use só números, como 49,90.'],
+    ['12,5,0', 'Use só números, como 49,90.'],
+    ['100.000,01', 'O preço vai até R$ 100.000,00.'],
+  ])('valor %s no preco avisa, mantem o filtro e nao busca', async (valor, aviso) => {
+    await abrir('/catalogo?precoMin=30');
+    const buscasAntes = catalogo.buscas.length;
+
+    escolher('#preco-min', valor);
+    await harness.fixture.whenStable();
+
+    expect(tela.querySelector('#preco-dica')?.textContent).toBe(aviso);
+    expect(tela.querySelector('#preco-min')?.getAttribute('aria-invalid')).toBe('true');
+    expect(catalogo.buscas.length).toBe(buscasAntes);
+    expect(url()).toBe('/catalogo?precoMin=30');
+  });
+
+  it('corrigir o valor tira o aviso e aplica', async () => {
+    await abrir('/catalogo');
+    escolher('#preco-min', 'abc');
+    await harness.fixture.whenStable();
+
+    escolher('#preco-min', '1.500,00');
+    await harness.fixture.whenStable();
+
+    expect(tela.querySelector('#preco-dica')).toBeNull();
+    expect(url()).toBe('/catalogo?precoMin=1500');
+  });
+
+  it('URL com faixa invertida avisa e fica so com o De', async () => {
+    await abrir('/catalogo?precoMin=300&precoMax=100');
+    await harness.fixture.whenStable();
+
+    expect(url()).toBe('/catalogo?precoMin=300');
+    expect(tela.querySelector('#preco-dica')?.textContent).toBe('O valor de "até" não pode ser menor que o de "de".');
+  });
+
+  it('URL com parametros ignorados volta limpa', async () => {
+    await abrir('/catalogo?tipo=JOGO&categoria=GPU&descontoMin=33&pagina=abc&loja=TERABYTE');
+    await harness.fixture.whenStable();
+
+    expect(url()).toBe('/catalogo?tipo=JOGO');
   });
 
   it('trocar de jogo para hardware tira o criterio de oferta, o desconto e a loja de jogo', async () => {
@@ -169,10 +216,18 @@ describe('CatalogoPage', () => {
     expect(umbra()[0]).toContain('observando');
   });
 
+  it('abre o catalogo em melhores ofertas, com tudo, e a busca passa para nome', async () => {
+    await abrir('/catalogo');
+
+    expect(catalogo.buscas[0]).toEqual(FILTRO_INICIAL);
+    expect(catalogo.buscas[0].ordenacao).toBe('melhoresOfertas');
+    expect(tela.querySelector<HTMLSelectElement>('#ordenacao')?.value).toBe('melhoresOfertas');
+  });
+
   it('le os filtros da URL e ignora os invalidos', async () => {
     await abrir('/catalogo?nome=hollow&tipo=FILME&pagina=2');
 
-    expect(catalogo.buscas[0]).toEqual({ ...FILTRO_INICIAL, termo: 'hollow', pagina: 1 });
+    expect(catalogo.buscas[0]).toEqual({ ...FILTRO_INICIAL, termo: 'hollow', ordenacao: 'nome', pagina: 1 });
   });
 
   it('busca uma vez so depois da pausa na digitacao e troca a URL sem empilhar historico', async () => {

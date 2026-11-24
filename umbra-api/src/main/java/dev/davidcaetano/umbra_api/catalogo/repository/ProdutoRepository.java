@@ -69,6 +69,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                END DESC NULLS LAST,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'maiorDesconto' THEN m.desconto_pct END DESC NULLS LAST,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'menorPreco' THEN m.valor_centavos END ASC NULLS LAST,
+               CASE WHEN CAST(:ordenacao AS TEXT) = 'nome' THEN normalizar_busca(p.nome) END,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'nome' THEN p.nome END,
                p.id
             """;

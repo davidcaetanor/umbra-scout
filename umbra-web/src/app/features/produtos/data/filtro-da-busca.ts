@@ -17,7 +17,7 @@ export type OrdenacaoDaBusca = 'nome' | 'menorPreco' | 'melhoresOfertas' | 'maio
 
 export type CodigoDaLoja = 'STEAM' | 'NUUVEM' | 'EPIC' | 'GOG' | 'GREEN_MAN_GAMING' | 'KABUM' | 'TERABYTE';
 
-export const ORDENACOES_SO_DE_JOGO: readonly OrdenacaoDaBusca[] = ['melhoresOfertas', 'maiorDesconto'];
+export const ORDENACOES_SO_DE_JOGO: readonly OrdenacaoDaBusca[] = ['maiorDesconto'];
 
 export const DESCONTOS_MINIMOS: readonly number[] = [20, 50, 75];
 

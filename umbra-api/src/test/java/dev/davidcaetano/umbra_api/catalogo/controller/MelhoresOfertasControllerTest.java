@@ -107,13 +107,26 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     }
 
     @ParameterizedTest
-    @CsvSource({"ordenacao,melhoresOfertas", "ordenacao,maiorDesconto", "descontoMin,10"})
+    @CsvSource({"ordenacao,maiorDesconto", "descontoMin,10"})
     void criterioDeOferta_semTipoJogo_deveDevolver400(String parametro, String valor) throws Exception {
         mockMvc.perform(get("/produtos").param(parametro, valor))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erros[*].campo").value(hasItem("criterioDeOfertaComTipoJogo")));
         mockMvc.perform(get("/produtos").param("tipo", "HARDWARE").param(parametro, valor))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void melhoresOfertas_valeParaHardwareETodos() throws Exception {
+        long placa = produto("t44b-g1 Placa em campanha", "HARDWARE");
+        preco(oferta(placa, "KABUM"), 300000, 400000, 25, AGORA.minus(Duration.ofHours(1)));
+        long jogo = jogoComPreco("t44b-g1 Jogo em promocao", "STEAM", 1000, 5000, 80);
+        jogoComPreco("t44b-g1 Jogo sem desconto", "STEAM", 1000, 1000, 0);
+
+        assertThat(ids(conteudoDe(get("/produtos").param("nome", "t44b-g1").param("ordenacao", "melhoresOfertas"))))
+                .containsExactly(placa, jogo);
+        assertThat(ids(conteudoDe(get("/produtos").param("nome", "t44b-g1").param("tipo", "HARDWARE")
+                .param("ordenacao", "melhoresOfertas")))).containsExactly(placa);
     }
 
     @Test
@@ -209,6 +222,16 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
         assertThat(JsonPath.<List<String>>read(json, "$.conteudo[*].nome"))
                 .filteredOn(nome -> nome.startsWith("T44B Zeta"))
                 .containsExactly("T44B Zeta Saga: Ultimate Edition");
+    }
+
+    @Test
+    void ordemPorNome_naoDiferenciaMaiusculaNemAcento() throws Exception {
+        long witch = jogoComPreco("t44b-f1 Witch Cats", "STEAM", 1000, 1000, 0);
+        long hidden = jogoComPreco("t44b-f1 hidden frogs", "STEAM", 1000, 1000, 0);
+        long ilha = jogoComPreco("t44b-f1 Ílha", "STEAM", 1000, 1000, 0);
+        long abismo = jogoComPreco("t44b-f1 abismo", "STEAM", 1000, 1000, 0);
+
+        assertThat(ids(buscar("t44b-f1", "nome"))).containsExactly(abismo, hidden, ilha, witch);
     }
 
     private String buscar(String termo, String ordenacao) throws Exception {

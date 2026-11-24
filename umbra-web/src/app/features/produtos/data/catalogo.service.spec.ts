@@ -71,16 +71,34 @@ describe('CatalogoService', () => {
     expect(params.has('incluirExterno')).toBe(false);
   });
 
-  it('converte a faixa de preco para centavos e envia desconto e loja', () => {
+  it('envia a faixa de preco em centavos, desconto e loja', () => {
     void firstValueFrom(
-      servico.buscar({ ...FILTRO, tipo: 'JOGO', ordenacao: 'melhoresOfertas', precoMin: 10, precoMax: 250, descontoMin: 50, loja: 'GOG' }),
+      servico.buscar({ ...FILTRO, tipo: 'JOGO', ordenacao: 'melhoresOfertas', precoMin: 1000, precoMax: 25050, descontoMin: 50, loja: 'GOG' }),
     );
 
     const params = pedido('ordenacao=melhoresOfertas').request.params;
     expect(params.get('precoMin')).toBe('1000');
-    expect(params.get('precoMax')).toBe('25000');
+    expect(params.get('precoMax')).toBe('25050');
     expect(params.get('descontoMin')).toBe('50');
     expect(params.get('loja')).toBe('GOG');
+  });
+
+  it('promocao de 100% aparece como gratis, com o preco cheio e sem selo de desconto', async () => {
+    const resultado = firstValueFrom(servico.buscar(FILTRO));
+    pedido('ordenacao=nome').flush(
+      resposta([
+        {
+          id: 1,
+          nome: 'Mark of the Deep',
+          tipo: 'JOGO',
+          categoria: null,
+          imagemUrl: null,
+          melhorPreco: oferta({ valorCentavos: 0, valorOriginalCentavos: 3999, descontoPct: 100 }),
+        },
+      ]),
+    );
+
+    expect((await resultado).produtos[0].preco).toEqual({ atual: 'Grátis', original: 'R$ 39,99', descontoPct: null, loja: 'Steam' });
   });
 
   it('busca os destaques e adapta como os produtos do catalogo', async () => {

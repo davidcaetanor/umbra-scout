@@ -34,7 +34,7 @@ test.describe('T4.4b, página inicial com Destaques Umbra', () => {
     await expect(page.getByText('Nuuvem').first()).toBeVisible();
 
     await page.getByRole('link', { name: 'Ver todos no catálogo' }).click();
-    await expect(page).toHaveURL(/\/catalogo\?tipo=JOGO&ordenacao=melhoresOfertas$/);
+    await expect(page).toHaveURL(/\/catalogo\?tipo=JOGO$/);
     await expect(page.getByRole('combobox', { name: 'Ordenar por' })).toHaveValue('melhoresOfertas');
   });
 

@@ -53,7 +53,7 @@ public record BuscaProdutoRequest(
     }
 
     @JsonIgnore
-    @AssertTrue(message = "melhoresOfertas, maiorDesconto e descontoMin exigem tipo=JOGO")
+    @AssertTrue(message = "maiorDesconto e descontoMin exigem tipo=JOGO")
     public boolean isCriterioDeOfertaComTipoJogo() {
         boolean pedeCriterioDeOferta = descontoMin != null || ordenacao != null && ordenacao.exclusivaDeJogo();
         return !pedeCriterioDeOferta || tipo == TipoProduto.JOGO;

@@ -27,7 +27,7 @@ export class InicioPage {
 
   protected readonly autenticado = inject(SessaoService).autenticado;
   protected readonly cardsNaPrimeiraFileira = CARDS_NA_PRIMEIRA_FILEIRA;
-  protected readonly parametrosDoCatalogo = { tipo: 'JOGO', ordenacao: 'melhoresOfertas' };
+  protected readonly parametrosDoCatalogo = { tipo: 'JOGO' };
 
   protected readonly destaques = toSignal(
     this.recarga.pipe(

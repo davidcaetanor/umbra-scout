@@ -27,8 +27,8 @@ public interface ProdutoApi {
                     + "Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD "
                     + "que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. "
                     + "`categoria` vale só para hardware: com `tipo=JOGO` responde 400. "
-                    + "`melhoresOfertas`, `maiorDesconto` e `descontoMin` valem só com `tipo=JOGO`; "
-                    + "`melhoresOfertas` traz só o que tem desconto, pela economia em reais e pela "
+                    + "`maiorDesconto` e `descontoMin` valem só com `tipo=JOGO`; "
+                    + "`melhoresOfertas` vale para jogos e hardware e traz só o que tem desconto, pela economia em reais e pela "
                     + "proximidade do mínimo histórico. Com `loja`, preço e ordem são os da oferta nessa loja.")
     @Parameter(name = "page", in = ParameterIn.QUERY, description = "Página, a partir de 0.",
             schema = @Schema(type = "integer", format = "int32", minimum = "0", defaultValue = "0"))
