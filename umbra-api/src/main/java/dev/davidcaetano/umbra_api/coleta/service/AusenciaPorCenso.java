@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 @Component
 class AusenciaPorCenso {
 
-    private static final Duration CONFIRMACAO_DA_AUSENCIA = Duration.ofHours(24);
-
     private final PrecoRepository precoRepository;
     private final OfertaRepository ofertaRepository;
     private final TransactionTemplate transactionTemplate;
@@ -52,16 +50,17 @@ class AusenciaPorCenso {
             return;
         }
 
-        boolean viuTudo = rodadaViuTudoQuantoPretendia(resultado, veredito);
-        boolean viuQuaseTudo = !viuTudo && rodadaViuQuaseTudo(resultado, veredito);
+        CoberturaDaRodada coberturaDaRodada = CoberturaDaRodada.de(resultado, veredito);
 
-        if (!viuTudo && !viuQuaseTudo) {
+        if (coberturaDaRodada == CoberturaDaRodada.INSUFICIENTE) {
             Reconciliacao reconciliacao = resultado.reconciliacao();
             log.info("Censo sem conclusao de ausencia: fonte={} situacao={} semPreco={} declarado={} distintos={}",
                     resultado.fonte(), veredito.situacao(), resultado.totalSemPreco(), reconciliacao.declarado(),
                     reconciliacao.distintos());
             return;
         }
+
+        Instant instanteDaRodada = agora.toInstant();
 
         Cobertura cobertura = resultado.cobertura();
         List<OfertaComUltimoPrecoProjecao> conhecidas = precoRepository.findOfertasAtivasComUltimoPrecoPorCodigoLojaIn(
@@ -70,8 +69,6 @@ class AusenciaPorCenso {
                 .filter(oferta -> cobertura.cobre(CodigoLoja.valueOf(oferta.getCodigoLoja()), oferta.getChaveItad()))
                 .toList();
 
-        Instant semVerificacaoDesde = agora.toInstant().minus(CONFIRMACAO_DA_AUSENCIA);
-
         Set<OfertaVista> vistas = resultado.ofertas().stream()
                 .map(oferta -> new OfertaVista(oferta.loja(), oferta.identificadorLoja()))
                 .collect(Collectors.toSet());
@@ -79,10 +76,10 @@ class AusenciaPorCenso {
         List<OfertaComUltimoPrecoProjecao> aMarcar = conhecidas.stream()
                 .filter(conhecida -> !vistas.contains(
                         new OfertaVista(CodigoLoja.valueOf(conhecida.getCodigoLoja()), conhecida.getIdentificadorLoja())))
-                .filter(ausente -> viuTudo || ausente.getVerificadoEm().isBefore(semVerificacaoDesde))
+                .filter(ausente -> ausenciaConfirmada(ausente, coberturaDaRodada, instanteDaRodada))
                 .filter(ausente -> regraDeGravacaoDePreco.devePersistir(false,
                         new UltimoPreco(ausente.getValorCentavos(), ausente.isDisponivel(), ausente.getColetadoEm()),
-                        ausente.getValorCentavos(), false, agora.toInstant()))
+                        ausente.getValorCentavos(), false, instanteDaRodada))
                 .toList();
 
         int tetoPercentual = ausenciaColetaProperties.tetoPercentual();
@@ -107,21 +104,15 @@ class AusenciaPorCenso {
         return (long) aMarcar * 100 > (long) tetoPercentual * conhecidas;
     }
 
-    static boolean rodadaViuQuaseTudo(ResultadoColeta resultado, VereditoRodada veredito) {
-        return resultado.cobertura().ehCenso()
-                && veredito.situacao() == SituacaoRodada.SAUDAVEL
-                && resultado.totalSemPreco() == 0
-                && resultado.reconciliacao().declarado() != null;
-    }
+    private boolean ausenciaConfirmada(OfertaComUltimoPrecoProjecao ausente,
+                                       CoberturaDaRodada coberturaDaRodada,
+                                       Instant instanteDaRodada) {
+        if (coberturaDaRodada == CoberturaDaRodada.COMPLETA) {
+            return true;
+        }
 
-    static boolean rodadaViuTudoQuantoPretendia(ResultadoColeta resultado, VereditoRodada veredito) {
-        Reconciliacao reconciliacao = resultado.reconciliacao();
-        Long declarado = reconciliacao.declarado();
-
-        return resultado.cobertura().ehCenso()
-                && veredito.situacao() == SituacaoRodada.SAUDAVEL
-                && resultado.totalSemPreco() == 0
-                && (declarado == null || reconciliacao.distintos() >= declarado);
+        Duration confirmacao = Duration.ofHours(ausenciaColetaProperties.confirmacaoHoras());
+        return ausente.getVerificadoEm().isBefore(instanteDaRodada.minus(confirmacao));
     }
 
     private record OfertaVista(CodigoLoja loja, String identificadorLoja) {

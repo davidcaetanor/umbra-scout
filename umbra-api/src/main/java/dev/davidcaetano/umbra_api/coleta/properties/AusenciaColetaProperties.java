@@ -10,6 +10,9 @@ import org.springframework.validation.annotation.Validated;
 public record AusenciaColetaProperties(
         @Min(value = 1, message = "umbra.coleta.ausencia.teto-percentual deve ser maior ou igual a 1")
         @Max(value = 100, message = "umbra.coleta.ausencia.teto-percentual deve ser menor ou igual a 100")
-        int tetoPercentual
+        int tetoPercentual,
+
+        @Min(value = 1, message = "umbra.coleta.ausencia.confirmacao-horas deve ser maior ou igual a 1")
+        int confirmacaoHoras
 ) {
 }

@@ -85,6 +85,7 @@ umbra:
       janela-vivacidade-dias: 90
     ausencia:
       teto-percentual: 20
+      confirmacao-horas: 24
     itad:
       paginas-por-rodada: 30
   busca:
