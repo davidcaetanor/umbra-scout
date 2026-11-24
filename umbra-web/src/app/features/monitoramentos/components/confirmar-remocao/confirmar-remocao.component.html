@@ -7,7 +7,7 @@
   (cancel)="aoCancelarPeloTeclado($event)"
 >
   @if (pedido(); as pedido) {
-    <h2 id="titulo-da-remocao" class="font-titulo text-destaque break-words">Remover {{ pedido.nome }}?</h2>
+    <h2 id="titulo-da-remocao" class="font-titulo text-subtitulo break-words">Remover {{ pedido.nome }}?</h2>
     <p id="alvo-da-remocao" class="mt-1 text-apoio text-texto-secundario">Alvo {{ alvo() }}</p>
   }
   <div class="mt-5 flex flex-wrap justify-end gap-2">
