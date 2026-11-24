@@ -1,17 +1,17 @@
-<dialog
-  #dialogo
-  role="alertdialog"
-  aria-labelledby="titulo-da-remocao"
-  aria-describedby="alvo-da-remocao"
-  class="m-auto w-[min(22rem,calc(100vw-2rem))] rounded-bloco border-2 border-filete bg-superficie-elevada p-5 text-texto backdrop:bg-fundo/70"
-  (cancel)="aoCancelarPeloTeclado($event)"
+<umbra-dialogo
+  papel="alertdialog"
+  rotuladoPor="titulo-da-remocao"
+  descritoPor="alvo-da-remocao"
+  [aberto]="aberto()"
+  [ocupado]="removendo()"
+  (fechar)="pedirCancelamento()"
 >
   @if (pedido(); as pedido) {
     <h2 id="titulo-da-remocao" class="font-titulo text-subtitulo break-words">Remover {{ pedido.nome }}?</h2>
     <p id="alvo-da-remocao" class="mt-1 text-apoio text-texto-secundario">Alvo {{ alvo() }}</p>
   }
   <div class="mt-5 flex flex-wrap justify-end gap-2">
-    <button #botaoCancelar type="button" class="min-h-11 botao-secundario px-4" (click)="pedirCancelamento()">Cancelar</button>
+    <button type="button" class="min-h-11 botao-secundario px-4" data-foco-inicial (click)="pedirCancelamento()">Cancelar</button>
     <button
       type="button"
       class="min-h-11 botao-secundario border-erro px-4 text-erro"
@@ -22,4 +22,4 @@
       Remover
     </button>
   </div>
-</dialog>
+</umbra-dialogo>
