@@ -8,6 +8,7 @@ const instante = (dias: number) => new Date(AGORA - dias * DIA).toISOString();
 function oferta(loja: string, valorCentavos: number) {
   return {
     coletadoEm: '2026-11-21T10:00:00Z',
+    verificadoEm: '2026-11-21T10:00:00Z',
     descontoPct: 20,
     expiraEm: null,
     gratuito: false,
@@ -41,8 +42,8 @@ const HISTORICO = {
     { instante: instante(5), valorCentavos: 7240 },
   ],
   porLoja: [
-    { loja: 'GOG', pontos: [{ instante: instante(80), valorCentavos: 9000 }] },
-    { loja: 'Steam', pontos: [{ instante: instante(80), valorCentavos: 9500 }] },
+    { loja: 'GOG', pontos: [{ instante: instante(80), valorCentavos: 9000 }, { instante: instante(40), valorCentavos: 6500 }] },
+    { loja: 'Steam', pontos: [{ instante: instante(80), valorCentavos: 9500 }, { instante: instante(5), valorCentavos: 8000 }] },
   ],
   minimo: { valorCentavos: 6500, gratuito: false, loja: 'GOG', em: instante(40) },
   variacao: { diferencaCentavos: 740, percentualAcimaDoMinimo: 11, precoAtualCentavos: 7240 },
@@ -202,7 +203,7 @@ test.describe('T4.5, detalhe do produto', () => {
       await simularProduto(page);
       await page.goto('/catalogo/42');
       await expect(page.getByRole('img', { name: /Histórico de preço/ })).toBeVisible();
-      await page.getByRole('button', { name: 'Por loja' }).click();
+      await page.getByRole('button', { name: 'Comparar lojas' }).click();
 
       const medida = await page.evaluate(() => ({
         visivel: document.documentElement.clientWidth,
@@ -213,7 +214,7 @@ test.describe('T4.5, detalhe do produto', () => {
     });
   }
 
-  test('o histórico é operável pelo teclado: período e por loja', async ({ page }) => {
+  test('o histórico é operável pelo teclado: período e comparar lojas', async ({ page }) => {
     await simularProduto(page);
     await page.goto('/catalogo/42');
     await expect(page.getByRole('img', { name: /Histórico de preço/ })).toBeVisible();
@@ -221,11 +222,22 @@ test.describe('T4.5, detalhe do produto', () => {
     await page.getByRole('button', { name: '30 dias' }).focus();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: '30 dias' })).toHaveAttribute('aria-pressed', 'true');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await expect(page.locator(':focus')).toHaveAccessibleName('Por loja');
-    await page.keyboard.press('Space');
-    await expect(page.getByRole('checkbox', { name: 'GOG' })).toBeChecked();
+
+    await page.getByRole('button', { name: 'Comparar lojas' }).focus();
+    await page.keyboard.press('Enter');
+    const resumo = page.getByRole('list', { name: 'Legenda do histórico' });
+    await expect(resumo).toContainText('GOG');
+    await expect(resumo).toContainText('Steam');
+    await expect(page.getByRole('button', { name: 'Ver o melhor preço' })).toBeFocused();
+  });
+
+  test('a lista de mudanças conta o que aconteceu, sem texto de período indisponível', async ({ page }) => {
+    await simularProduto(page);
+    await page.goto('/catalogo/42');
+
+    const lista = page.getByRole('list', { name: 'Mudanças de preço' });
+    await expect(lista.getByRole('listitem').first()).toContainText('Steam caiu para R$ 80,00 (-16%)');
+    await expect(page.getByText('disponível a partir de')).toHaveCount(0);
+    await expect(page.getByText(/Verificado em 21\/11\/2026/)).toBeVisible();
   });
 });
