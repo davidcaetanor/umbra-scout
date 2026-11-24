@@ -65,15 +65,12 @@ export function avisoDoPreco(item: MonitoramentoExibido): string | null {
   }
   switch (preco.situacao) {
     case 'vigente':
+    case 'verificacao-atrasada':
       return null;
     case 'promocao-no-prazo':
       return preco.expiraEm === null ? null : `Promoção até ${diaEMes(preco.expiraEm)}`;
-    case 'verificacao-atrasada':
-      return `Última verificação em ${diaEMes(preco.verificadoEm)}, pode estar desatualizado`;
     case 'promocao-vencida-sem-coleta':
-      return preco.expiraEm === null
-        ? 'Promoção terminou, aguardando nova verificação'
-        : `Promoção terminou em ${diaEMes(preco.expiraEm)}, aguardando nova verificação`;
+      return preco.expiraEm === null ? 'Promoção terminou' : `Promoção terminou em ${diaEMes(preco.expiraEm)}`;
   }
 }
 

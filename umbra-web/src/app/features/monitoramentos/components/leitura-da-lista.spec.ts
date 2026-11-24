@@ -51,10 +51,15 @@ describe('leitura da lista de monitoramentos', () => {
     expect(distancia(item({ distanciaDoAlvoCentavos: null }))).toBeNull();
   });
 
-  it('preco vigente nao leva aviso e verificacao atrasada avisa', () => {
+  it('so o prazo da promocao vira aviso; verificacao atrasada fica em silencio', () => {
+    const preco = item().melhorPreco!;
+    const expiraEm = Date.parse('2026-12-01T12:00:00Z');
     expect(avisoDoPreco(item())).toBeNull();
-    const atrasado = item({ melhorPreco: { ...item().melhorPreco!, situacao: 'verificacao-atrasada' } });
-    expect(avisoDoPreco(atrasado)).toBe('Última verificação em 24/11, pode estar desatualizado');
+    expect(avisoDoPreco(item({ melhorPreco: { ...preco, situacao: 'verificacao-atrasada' } }))).toBeNull();
+    expect(avisoDoPreco(item({ melhorPreco: { ...preco, situacao: 'promocao-no-prazo', expiraEm } }))).toBe('Promoção até 01/12');
+    expect(avisoDoPreco(item({ melhorPreco: { ...preco, situacao: 'promocao-vencida-sem-coleta', expiraEm } }))).toBe(
+      'Promoção terminou em 01/12',
+    );
   });
 
   it('frase da ronda muda de um dia para o outro e se repete no mesmo dia', () => {
