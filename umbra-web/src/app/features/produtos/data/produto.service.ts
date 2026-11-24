@@ -47,6 +47,7 @@ function paraOferta(oferta: OfertaResponse): OfertaDaLoja {
     endereco: oferta.url,
     coletadoEm: oferta.coletadoEm,
     expiraEm: oferta.expiraEm === null ? null : Date.parse(oferta.expiraEm),
+    verificadoEm: Date.parse(oferta.verificadoEm),
   };
 }
 

@@ -5,11 +5,13 @@ import { OfertaDaLoja } from '../../data/produto-detalhado';
 import { DIA_MS } from './historico-exibido';
 
 export const FOLGA_DO_BOM_MOMENTO = 0.1;
+export const PONTOS_PARA_AVALIAR = 3;
 
 const TITULO: Readonly<Record<TomDaLeitura, string>> = {
   bom: 'Bom momento',
   costume: 'Preço de costume',
   'mais-barato': 'Já esteve mais barato',
+  pouco: 'Pouco histórico ainda',
 };
 
 export function leituraDoPreco(oferta: OfertaDaLoja | null, historico: HistoricoDoProduto): LeituraExibida | null {
@@ -17,11 +19,12 @@ export function leituraDoPreco(oferta: OfertaDaLoja | null, historico: Historico
   if (oferta === null || minimo === null) {
     return null;
   }
-  const tom = tomDoPreco(oferta.valorCentavos, minimo.valorCentavos, mediana(historico));
+  const pontos = historico.melhorPreco.filter((ponto) => ponto.valorCentavos !== null).length;
+  const tom = pontos < PONTOS_PARA_AVALIAR ? 'pouco' : tomDoPreco(oferta.valorCentavos, minimo.valorCentavos, mediana(historico));
   const partes = [explicacao(tom, oferta.valorCentavos <= minimo.valorCentavos), prazo(oferta, historico.consultadoEm)].filter(
     (parte): parte is string => parte !== null,
   );
-  return { titulo: TITULO[tom], detalhe: maiusculaInicial(partes.join(', ')), tom };
+  return { titulo: TITULO[tom], detalhe: partes.length === 0 ? null : maiusculaInicial(partes.join(', ')), tom };
 }
 
 function tomDoPreco(hoje: number, minimo: number, medianaDoPeriodo: number | null): TomDaLeitura {
@@ -31,7 +34,10 @@ function tomDoPreco(hoje: number, minimo: number, medianaDoPeriodo: number | nul
   return medianaDoPeriodo !== null && hoje <= medianaDoPeriodo ? 'costume' : 'mais-barato';
 }
 
-function explicacao(tom: TomDaLeitura, noMinimo: boolean): string {
+function explicacao(tom: TomDaLeitura, noMinimo: boolean): string | null {
+  if (tom === 'pouco') {
+    return null;
+  }
   if (tom === 'bom') {
     return noMinimo ? 'no menor preço já registrado' : 'perto do menor preço já registrado';
   }

@@ -27,6 +27,7 @@ const PRODUTO: ProdutoDetalhado = {
     endereco: 'https://loja.exemplo/gog',
     coletadoEm: '2026-11-21T10:00:00Z',
     expiraEm: null,
+    verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
   },
   ofertas: [
     {
@@ -37,6 +38,7 @@ const PRODUTO: ProdutoDetalhado = {
       endereco: 'https://loja.exemplo/gog',
       coletadoEm: '2026-11-21T10:00:00Z',
       expiraEm: null,
+      verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
     },
     {
       loja: 'Steam',
@@ -46,6 +48,7 @@ const PRODUTO: ProdutoDetalhado = {
       endereco: 'https://loja.exemplo/steam',
       coletadoEm: '2026-11-20T10:00:00Z',
       expiraEm: null,
+      verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
     },
   ],
 };
@@ -61,6 +64,19 @@ const HISTORICO: HistoricoDoProduto = {
     { loja: 'Nuuvem', pontos: [{ instante: FIM - 40 * DIA_MS, valorCentavos: 9500 }] },
   ],
   minimo: { valorCentavos: 7240, loja: 'GOG', em: FIM - 40 * DIA_MS },
+};
+
+const ponto = (dias: number, valorCentavos: number | null) => ({ instante: FIM - dias * DIA_MS, valorCentavos });
+
+const MOVIMENTADO: HistoricoDoProduto = {
+  ...HISTORICO,
+  observadoDesde: FIM - 100 * DIA_MS,
+  melhorPreco: [ponto(80, 9000), ponto(40, 7240), ponto(20, 8000), ponto(5, 7240)],
+  porLoja: [
+    { loja: 'GOG', pontos: [ponto(80, 9000), ponto(40, 7240)] },
+    { loja: 'Steam', pontos: [ponto(80, 9000), ponto(20, 8000)] },
+    { loja: 'Nuuvem', pontos: [ponto(80, 9500), ponto(5, 9000)] },
+  ],
 };
 
 describe('DetalhePage', () => {
@@ -113,7 +129,7 @@ describe('DetalhePage', () => {
     expect(tela.querySelector('h1')?.textContent).toContain('Hades II');
     expect(texto(tela)).toContain('Ver na GOG');
     expect(texto(tela)).toContain('Mais barato');
-    expect(texto(tela)).toContain('Atualizado em 21/11/2026 às 07:00');
+    expect(texto(tela)).toContain('Verificado em 21/11/2026, pode estar desatualizado');
     expect(TestBed.inject(Title).getTitle()).toBe('Hades II · Umbra');
     expect(historico).toHaveBeenCalledWith(42, '90d');
   });
@@ -145,22 +161,66 @@ describe('DetalhePage', () => {
     expect(tela.querySelector('h1')?.textContent).toContain('Hades II');
   });
 
-  it('desliga o período sem histórico suficiente e explica', async () => {
+  it('sem mudanças mostra a frase, o resumo sem a linha do gráfico e nenhum período', async () => {
     const tela = await abrir();
 
-    expect(botao(tela, '1 ano').disabled).toBe(true);
-    expect(botao(tela, '90 dias').getAttribute('aria-pressed')).toBe('true');
-    expect(texto(tela)).toContain('1 ano disponível a partir de 91 dias observados');
+    expect(texto(tela)).toContain('Sem mudança de preço desde 12/10/2026');
+    expect(tela.querySelector('canvas')).toBeNull();
+    expect(texto(tela)).toMatch(/Menor registrado\s*R\$ 72,40\s*GOG, há 40 dias/);
+    expect(texto(tela)).not.toContain('Melhor preço do dia');
+    expect(tela.querySelector('[aria-label="Período"]')).toBeNull();
+    expect(texto(tela)).not.toContain('Observado desde');
+    expect(texto(tela)).not.toContain('Comparar lojas');
+    expect(texto(tela)).not.toContain('disponível a partir de');
+  });
+
+  it('com uma mudança só descreve a mudança sem repetir na lista', async () => {
+    historico.mockResolvedValue({
+      ...HISTORICO,
+      melhorPreco: [ponto(40, 9000), ponto(10, 7240)],
+      porLoja: [{ loja: 'GOG', pontos: [ponto(40, 9000), ponto(10, 7240)] }],
+    });
+
+    const tela = await abrir();
+
+    expect(texto(tela)).toContain('Mudou uma vez: caiu para R$ 72,40 (-20%) em 11/11');
+    expect(tela.querySelector('canvas')).toBeNull();
+    expect(tela.querySelector('[aria-label="Mudanças de preço"]')).toBeNull();
+  });
+
+  it('com duas mudanças mostra o gráfico, os períodos disponíveis e troca de período', async () => {
+    historico.mockResolvedValue(MOVIMENTADO);
+    const tela = await abrir();
+
+    expect(tela.querySelector('canvas')).not.toBeNull();
+    expect(texto(tela)).toContain('Observado desde');
+    const lista = tela.querySelector('[aria-label="Mudanças de preço"]');
+    expect(lista?.textContent?.replace(/\s+/g, ' ')).toContain('16/11: Nuuvem caiu para R$ 90,00 (-5%)');
+    expect([...tela.querySelectorAll('[aria-label="Período"] button')].map((item) => item.textContent?.trim())).toEqual([
+      '30 dias',
+      '90 dias',
+      '1 ano',
+    ]);
 
     botao(tela, '30 dias').click();
     await estabilizar();
     expect(historico).toHaveBeenLastCalledWith(42, '30d');
   });
 
-  it('por loja limita a escolha a duas lojas', async () => {
+  it('com só 30 dias disponíveis esconde os períodos', async () => {
+    historico.mockResolvedValue({ ...MOVIMENTADO, observadoDesde: FIM - 20 * DIA_MS });
+
     const tela = await abrir();
 
-    botao(tela, 'Por loja').click();
+    expect(tela.querySelector('canvas')).not.toBeNull();
+    expect(tela.querySelector('[aria-label="Período"]')).toBeNull();
+  });
+
+  it('comparar lojas mostra as que mudaram e limita a duas', async () => {
+    historico.mockResolvedValue(MOVIMENTADO);
+    const tela = await abrir();
+
+    botao(tela, 'Comparar lojas').click();
     await estabilizar();
     const caixas = [...tela.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
 
@@ -171,12 +231,25 @@ describe('DetalhePage', () => {
     ]);
     caixas[0].click();
     await estabilizar();
-    expect(caixas[2].disabled).toBe(false);
     expect(caixas.map((caixa) => [caixa.checked, caixa.disabled])).toEqual([
       [false, false],
       [true, true],
       [false, false],
     ]);
+    botao(tela, 'Ver o melhor preço').click();
+    await estabilizar();
+    expect(tela.querySelector('input[type="checkbox"]')).toBeNull();
+  });
+
+  it('com duas lojas que mudaram compara sem caixas de escolha', async () => {
+    historico.mockResolvedValue({ ...MOVIMENTADO, porLoja: MOVIMENTADO.porLoja.slice(0, 2) });
+    const tela = await abrir();
+
+    botao(tela, 'Comparar lojas').click();
+    await estabilizar();
+
+    expect(tela.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(texto(tela)).toContain('a mais barata das duas');
   });
 
   it('sem histórico mostra o Umbra observando há N dias', async () => {

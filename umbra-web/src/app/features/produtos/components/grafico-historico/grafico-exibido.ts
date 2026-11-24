@@ -3,7 +3,7 @@ export interface PontoExibido {
   readonly y: number | null;
 }
 
-export type CorDaLinha = 'historico-1' | 'historico-3';
+export type CorDaLinha = 'principal' | 'secundaria';
 
 export interface LinhaExibida {
   readonly rotulo: string;

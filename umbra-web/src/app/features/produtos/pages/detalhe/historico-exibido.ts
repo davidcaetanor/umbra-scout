@@ -12,7 +12,7 @@ export const ALVO_NA_ESCALA_ATE_VEZES_O_MAIOR_PRECO = 2;
 const DIAS_DO_PERIODO: Readonly<Record<PeriodoDoHistorico, number>> = { '30d': 30, '90d': 90, '1a': 365 };
 const ROTULO_DO_PERIODO: Readonly<Record<PeriodoDoHistorico, string>> = { '30d': '30 dias', '90d': '90 dias', '1a': '1 ano' };
 const PERIODOS: readonly PeriodoDoHistorico[] = ['30d', '90d', '1a'];
-const CORES_DAS_LOJAS: readonly CorDaLinha[] = ['historico-1', 'historico-3'];
+const CORES_DAS_LOJAS: readonly CorDaLinha[] = ['principal', 'secundaria'];
 
 export interface OpcaoDePeriodo {
   readonly periodo: PeriodoDoHistorico;
@@ -121,34 +121,34 @@ export function graficoExibido(contexto: ContextoDoGrafico): GraficoExibido {
         .filter((serie) => lojas.includes(serie.loja))
         .map((serie, posicao) => ({
           rotulo: serie.loja,
-          cor: CORES_DAS_LOJAS[posicao] ?? 'historico-1',
+          cor: CORES_DAS_LOJAS[posicao] ?? 'principal',
           pontos: degraus(serie.pontos, fim),
         }))
-    : [{ rotulo: 'Melhor preço do dia', cor: 'historico-1' as const, pontos: degraus(historico.melhorPreco, fim) }];
+    : [{ rotulo: 'Melhor preço do dia', cor: 'principal' as const, pontos: degraus(historico.melhorPreco, fim) }];
   return {
     inicio,
     fim,
     linhas,
     minimo: !porLoja && historico.minimo !== null ? minimoExibido(historico.melhorPreco, historico.minimo, inicio, fim) : null,
-    hoje: melhorOferta === null ? null : { x: fim, y: melhorOferta.valorCentavos },
+    hoje: melhorOferta === null || porLoja ? null : { x: fim, y: melhorOferta.valorCentavos },
     alvo: alvoNaEscala(contexto) ? alvoCentavos : null,
     resumo: resumo(contexto),
   };
 }
 
-export function legendaExibida(contexto: ContextoDoGrafico): CelulaDaLegenda[] {
+export function legendaExibida(contexto: ContextoDoGrafico, comGrafico = true): CelulaDaLegenda[] {
   const { historico, melhorOferta, alvoCentavos, lojas } = contexto;
-  const celulas: CelulaDaLegenda[] = [
-    {
+  const celulas: CelulaDaLegenda[] = [];
+  if (comGrafico && lojas === null) {
+    celulas.push({
       marca: 'hoje',
       titulo: `Hoje, ${diaEMes(historico.consultadoEm)}`,
       valor: melhorOferta === null ? null : melhorOferta.preco.atual,
       detalhe: melhorOferta === null ? 'Indisponível nas lojas' : melhorOferta.loja,
-    },
-  ];
-  if (lojas === null) {
+    });
     celulas.push({ marca: 'linha-1', titulo: 'Melhor preço do dia', valor: null, detalhe: 'entre as lojas' });
-  } else {
+  }
+  if (comGrafico && lojas !== null) {
     celulas.push(...celulasDasLojas(historico.porLoja.filter((serie) => lojas.includes(serie.loja)).map((serie) => serie.loja), contexto.ofertas));
   }
   if (lojas === null && historico.minimo !== null) {
@@ -156,7 +156,7 @@ export function legendaExibida(contexto: ContextoDoGrafico): CelulaDaLegenda[] {
       marca: 'minimo',
       titulo: 'Menor registrado',
       valor: valorDoMinimo(historico.minimo),
-      detalhe: `${historico.minimo.loja}, ${diaMesEAno(historico.minimo.em)}`,
+      detalhe: `${historico.minimo.loja}, ${haQuanto(historico.minimo.em, historico.consultadoEm)}`,
     });
   }
   if (alvoCentavos !== null) {
@@ -164,10 +164,18 @@ export function legendaExibida(contexto: ContextoDoGrafico): CelulaDaLegenda[] {
       marca: 'alvo',
       titulo: 'Alvo de busca',
       valor: reais(alvoCentavos),
-      detalhe: alvoNaEscala(contexto) ? null : 'acima da escala do gráfico',
+      detalhe: comGrafico && !alvoNaEscala(contexto) ? 'acima da escala do gráfico' : null,
     });
   }
   return celulas;
+}
+
+export function haQuanto(instante: number, agora: number): string {
+  if (diaMesEAno(instante) === diaMesEAno(agora)) {
+    return 'hoje';
+  }
+  const dias = Math.max(1, Math.round((agora - instante) / DIA_MS));
+  return dias === 1 ? 'há 1 dia' : `há ${dias} dias`;
 }
 
 function celulasDasLojas(lojas: readonly string[], ofertas: readonly OfertaDaLoja[]): CelulaDaLegenda[] {
@@ -176,7 +184,7 @@ function celulasDasLojas(lojas: readonly string[], ofertas: readonly OfertaDaLoj
     const oferta = hoje[posicao];
     const outra = hoje.length === 2 ? { loja: lojas[1 - posicao], oferta: hoje[1 - posicao] } : null;
     return {
-      marca: posicao === 0 ? 'linha-1' : 'linha-3',
+      marca: posicao === 0 ? 'linha-1' : 'linha-2',
       titulo: loja,
       valor: oferta?.preco.atual ?? null,
       detalhe: comparacao(oferta, outra),
@@ -209,10 +217,6 @@ export function alvoNaEscala({ historico, melhorOferta, alvoCentavos, lojas }: C
   const precos = series.flat().map((ponto) => ponto.valorCentavos);
   const maior = Math.max(0, melhorOferta?.valorCentavos ?? 0, ...precos.filter((valor): valor is number => valor !== null));
   return maior === 0 || alvoCentavos <= maior * ALVO_NA_ESCALA_ATE_VEZES_O_MAIOR_PRECO;
-}
-
-export function lojasIniciais(historico: HistoricoDoProduto): string[] {
-  return historico.porLoja.slice(0, MAXIMO_DE_LOJAS_NO_GRAFICO).map((serie) => serie.loja);
 }
 
 function valorDoMinimo(minimo: MinimoDoHistorico): string {

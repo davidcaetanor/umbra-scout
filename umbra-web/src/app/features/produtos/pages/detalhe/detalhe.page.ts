@@ -4,12 +4,14 @@ import { Title } from '@angular/platform-browser';
 import { carregarEstado, casoDe, mensagemDoErro } from '../../../../core/erro';
 import { PaginaNaoEncontradaPage } from '../../../../core/erro/pagina-nao-encontrada/pagina-nao-encontrada.page';
 import { TokenDaSessao } from '../../../../core/sessao';
-import { diaMesEAno, hora } from '../../../../shared/formatacao/data-curta';
+import { RELOGIO } from '../../../../core/sessao/relogio';
+import { diaMesEAno } from '../../../../shared/formatacao/data-curta';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { EstadoDoBloco, dadosDe } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
 import { GraficoHistoricoComponent } from '../../components/grafico-historico/grafico-historico.component';
 import { LegendaHistoricoComponent } from '../../components/legenda-historico/legenda-historico.component';
+import { ListaDeMudancasComponent } from '../../components/lista-de-mudancas/lista-de-mudancas.component';
 import { PrecoProdutoComponent } from '../../components/preco-produto/preco-produto.component';
 import { OfertaExibida } from '../../components/tabela-lojas/oferta-exibida';
 import { TabelaLojasComponent } from '../../components/tabela-lojas/tabela-lojas.component';
@@ -27,12 +29,12 @@ import {
   diasObservados,
   graficoExibido,
   legendaExibida,
-  lojasIniciais,
   opcoesDePeriodo,
   periodoEfetivo,
   temHistorico,
 } from './historico-exibido';
 import { leituraDoPreco } from './leitura-do-preco';
+import { fraseSemGrafico, lojasQueMudaram, mostraGrafico, mudancasPorLoja, verificacao } from './mudancas-do-historico';
 import { MonitorarComponent, SituacaoDoMonitoramento } from './monitorar/monitorar.component';
 
 const ID_VALIDO = /^[1-9]\d{0,14}$/;
@@ -45,6 +47,7 @@ const TITULO_NAO_ENCONTRADO = 'Página não encontrada';
     EstadoDoBlocoComponent,
     GraficoHistoricoComponent,
     LegendaHistoricoComponent,
+    ListaDeMudancasComponent,
     MascoteComponent,
     MonitorarComponent,
     NgTemplateOutlet,
@@ -62,6 +65,7 @@ export class DetalhePage {
   private readonly monitoramentos = inject(MonitoramentoDoProdutoService);
   private readonly sessao = inject(TokenDaSessao);
   private readonly titulo = inject(Title);
+  private readonly agora = inject(RELOGIO);
 
   readonly id = input.required<string>();
 
@@ -98,7 +102,7 @@ export class DetalhePage {
     const historico = this.historico();
     return opcoesDePeriodo(historico === null ? 0 : diasObservados(historico));
   });
-  protected readonly periodosIndisponiveis = computed(() => this.opcoesDePeriodo().filter((opcao) => !opcao.disponivel));
+  protected readonly periodosVisiveis = computed(() => this.opcoesDePeriodo().filter((opcao) => opcao.disponivel));
   protected readonly periodo = computed(() => periodoEfetivo(this.periodoEscolhido(), this.opcoesDePeriodo()));
   protected readonly comHistorico = computed(() => {
     const historico = this.historico();
@@ -113,18 +117,30 @@ export class DetalhePage {
     return `O Umbra observa este produto há ${dias} ${dias === 1 ? 'dia' : 'dias'}.`;
   });
 
-  protected readonly porLoja = signal(false);
+  private readonly comparando = signal(false);
   protected readonly lojasEscolhidas = linkedSignal<HistoricoDoProduto | null, readonly string[]>({
     source: this.historico,
     computation: (historico, anterior) => {
       if (historico === null) {
         return anterior?.value ?? [];
       }
-      const mantidas = (anterior?.value ?? []).filter((loja) => historico.porLoja.some((serie) => serie.loja === loja));
-      return mantidas.length > 0 ? mantidas : lojasIniciais(historico);
+      const disponiveis = lojasQueMudaram(historico.porLoja);
+      const mantidas = (anterior?.value ?? []).filter((loja) => disponiveis.includes(loja));
+      return mantidas.length > 0 ? mantidas : disponiveis.slice(0, MAXIMO_DE_LOJAS_NO_GRAFICO);
     },
   });
-  protected readonly lojasDoHistorico = computed(() => this.historico()?.porLoja.map((serie) => serie.loja) ?? []);
+  protected readonly lojasDoHistorico = computed(() => lojasQueMudaram(this.historico()?.porLoja ?? []));
+  protected readonly podeComparar = computed(() => this.lojasDoHistorico().length >= MAXIMO_DE_LOJAS_NO_GRAFICO);
+  protected readonly porLoja = computed(() => this.comparando() && this.podeComparar());
+  protected readonly graficoVisivel = computed(() => {
+    const historico = this.historico();
+    return historico !== null && (this.porLoja() || mostraGrafico(historico.melhorPreco));
+  });
+  protected readonly fraseDoHistorico = computed(() => {
+    const historico = this.historico();
+    return historico === null || this.graficoVisivel() ? null : fraseSemGrafico(historico);
+  });
+  protected readonly mudancasDoHistorico = computed(() => mudancasPorLoja(this.historico()?.porLoja ?? []));
   protected readonly maximoDeLojas = MAXIMO_DE_LOJAS_NO_GRAFICO;
 
   private readonly recursoDoMonitoramento = resource({
@@ -168,7 +184,7 @@ export class DetalhePage {
   });
   protected readonly legenda = computed(() => {
     const contexto = this.contexto();
-    return contexto === null ? [] : legendaExibida(contexto);
+    return contexto === null ? [] : legendaExibida(contexto, this.graficoVisivel());
   });
 
   protected readonly ofertas = computed<readonly OfertaExibida[]>(() => {
@@ -183,14 +199,7 @@ export class DetalhePage {
       maisBarata: produto.ofertas.length > 1 && oferta.loja === produto.melhorOferta?.loja,
     }));
   });
-  protected readonly atualizadoEm = computed(() => {
-    const instantes = this.produto()?.ofertas.map((oferta) => Date.parse(oferta.coletadoEm)).filter((valor) => !Number.isNaN(valor)) ?? [];
-    if (instantes.length === 0) {
-      return null;
-    }
-    const maisRecente = Math.max(...instantes);
-    return `${diaMesEAno(maisRecente)} às ${hora(maisRecente)}`;
-  });
+  protected readonly verificado = computed(() => verificacao(this.produto()?.ofertas.map((oferta) => oferta.verificadoEm) ?? [], this.agora()));
   protected readonly topo = computed<TopoExibido | null>(() => {
     const produto = this.produto();
     if (produto === null) {
@@ -207,7 +216,7 @@ export class DetalhePage {
   });
   protected readonly observadoDesde = computed(() => {
     const desde = this.historico()?.observadoDesde;
-    return desde == null ? null : diaMesEAno(desde);
+    return desde == null || !this.graficoVisivel() ? null : diaMesEAno(desde);
   });
 
   constructor() {
@@ -225,8 +234,8 @@ export class DetalhePage {
     this.periodoEscolhido.set(periodo);
   }
 
-  protected alternarPorLoja(): void {
-    this.porLoja.update((atual) => !atual);
+  protected alternarComparacao(): void {
+    this.comparando.update((atual) => !atual);
   }
 
   protected lojaTravada(loja: string): boolean {

@@ -1,4 +1,4 @@
-export type MarcaDaLegenda = 'hoje' | 'linha-1' | 'linha-3' | 'minimo' | 'alvo';
+export type MarcaDaLegenda = 'hoje' | 'linha-1' | 'linha-2' | 'minimo' | 'alvo';
 
 export interface CelulaDaLegenda {
   readonly marca: MarcaDaLegenda;
