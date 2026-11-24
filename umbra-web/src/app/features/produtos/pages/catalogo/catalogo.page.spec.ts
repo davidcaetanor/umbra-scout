@@ -303,6 +303,36 @@ describe('CatalogoPage', () => {
     expect(catalogo.externas).toHaveLength(1);
   });
 
+  it('o botao poe fora=1 na URL, e a busca externa volta sozinha ao recarregar', async () => {
+    await abrir('/catalogo?nome=hollow');
+    await responder(resultado([PRODUTO]));
+
+    [...tela.querySelectorAll('button')].find((b) => b.textContent?.includes('fora do catálogo'))!.click();
+    await harness.fixture.whenStable();
+    expect(url()).toBe('/catalogo?nome=hollow&fora=1');
+
+    TestBed.resetTestingModule();
+    await abrir('/catalogo?nome=hollow&fora=1');
+    await responder(resultado([PRODUTO]));
+
+    expect(catalogo.externas).toHaveLength(1);
+  });
+
+  it('com filtro de hardware nao oferece nem faz busca fora do catalogo', async () => {
+    await abrir('/catalogo?nome=hollow&tipo=HARDWARE');
+    await responder(resultado([PRODUTO]));
+    expect([...tela.querySelectorAll('button')].some((b) => b.textContent?.includes('fora do catálogo'))).toBe(false);
+
+    await harness.navigateByUrl('/catalogo?nome=xyzw&categoria=GPU');
+    await responder(resultado([]));
+    expect(catalogo.externas).toHaveLength(0);
+
+    await harness.navigateByUrl('/catalogo?nome=xyzw&tipo=HARDWARE&fora=1');
+    await responder(resultado([]));
+    expect(catalogo.externas).toHaveLength(0);
+    expect(url()).toBe('/catalogo?nome=xyzw&tipo=HARDWARE');
+  });
+
   it('erro mostra o bloco com o Umbra em erro, sem o do cabecalho, e tentar de novo busca outra vez', async () => {
     await abrir();
     catalogo.respostaLocal.error(new ErroDaApi({ tipo: 'rede' }));

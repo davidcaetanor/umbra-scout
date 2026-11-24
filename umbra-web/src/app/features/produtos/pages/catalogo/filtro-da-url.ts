@@ -151,6 +151,18 @@ function umDe<T extends TipoDeProduto | CategoriaDeHardware | OrdenacaoDaBusca |
   return valor !== null && Object.hasOwn(aceitos, valor) ? (valor as T) : null;
 }
 
+export function admiteJogo(filtro: FiltroDaBusca): boolean {
+  return filtro.tipo !== 'HARDWARE' && filtro.categoria === null;
+}
+
+export function foraNaUrl(parametros: ParamMap): boolean {
+  return parametros.get('fora') === '1';
+}
+
+export function parametrosDaBusca(filtro: FiltroDaBusca, fora: boolean): Params {
+  return { ...parametrosDoFiltro(filtro), fora: fora && filtro.termo !== null && admiteJogo(filtro) ? 1 : null };
+}
+
 export function mesmosParametros(atuais: ParamMap, esperados: Params): boolean {
   const definidos = Object.entries(esperados).filter(([, valor]) => valor !== null && valor !== undefined);
   return (
