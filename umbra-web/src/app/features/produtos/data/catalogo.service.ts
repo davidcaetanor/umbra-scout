@@ -81,6 +81,8 @@ function paraProdutoExterno(produto: ProdutoExternoResponse): ProdutoExterno {
     nome: produto.nome,
     capa: capaPelaOrigem(produto.imagemUrl),
     preco: precoDaOferta(produto.melhorPreco),
+    precoCentavos: produto.melhorPreco.valorCentavos,
+    gratuito: produto.melhorPreco.gratuito || produto.melhorPreco.valorCentavos === 0,
     enderecoDaLoja: produto.melhorPreco.url,
   };
 }

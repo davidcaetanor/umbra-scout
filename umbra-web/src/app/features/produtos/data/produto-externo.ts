@@ -6,5 +6,7 @@ export interface ProdutoExterno {
   readonly nome: string;
   readonly capa: CapaDoProduto | null;
   readonly preco: PrecoDoProduto;
+  readonly precoCentavos: number;
+  readonly gratuito: boolean;
   readonly enderecoDaLoja: string;
 }

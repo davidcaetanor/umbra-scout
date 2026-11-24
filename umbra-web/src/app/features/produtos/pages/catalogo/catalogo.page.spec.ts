@@ -25,6 +25,8 @@ const EXTERNO: ProdutoExterno = {
   nome: 'Hollow Edition',
   capa: null,
   preco: { atual: 'R$ 35,99', original: null, descontoPct: null, loja: 'GOG' },
+  precoCentavos: 3599,
+  gratuito: false,
   enderecoDaLoja: 'https://loja.exemplo/hollow',
 };
 
