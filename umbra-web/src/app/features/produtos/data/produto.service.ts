@@ -48,6 +48,7 @@ function paraOferta(oferta: OfertaResponse): OfertaDaLoja {
     coletadoEm: oferta.coletadoEm,
     expiraEm: oferta.expiraEm === null ? null : Date.parse(oferta.expiraEm),
     verificadoEm: Date.parse(oferta.verificadoEm),
+    situacao: oferta.situacao,
   };
 }
 

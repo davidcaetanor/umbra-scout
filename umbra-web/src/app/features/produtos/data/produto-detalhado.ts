@@ -1,3 +1,4 @@
+import { OfertaResponse } from '../../../api/models/oferta-response';
 import { CapaDoProduto } from './capa-do-produto';
 import { TipoDeProduto } from './filtro-da-busca';
 import { PrecoDoProduto } from './preco-do-produto';
@@ -11,6 +12,7 @@ export interface OfertaDaLoja {
   readonly coletadoEm: string;
   readonly expiraEm: number | null;
   readonly verificadoEm: number;
+  readonly situacao: OfertaResponse['situacao'];
 }
 
 export interface ProdutoDetalhado {

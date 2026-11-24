@@ -28,6 +28,7 @@ const PRODUTO: ProdutoDetalhado = {
     coletadoEm: '2026-11-21T10:00:00Z',
     expiraEm: null,
     verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
+    situacao: 'vigente',
   },
   ofertas: [
     {
@@ -39,6 +40,7 @@ const PRODUTO: ProdutoDetalhado = {
       coletadoEm: '2026-11-21T10:00:00Z',
       expiraEm: null,
       verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
+      situacao: 'vigente',
     },
     {
       loja: 'Steam',
@@ -49,6 +51,7 @@ const PRODUTO: ProdutoDetalhado = {
       coletadoEm: '2026-11-20T10:00:00Z',
       expiraEm: null,
       verificadoEm: Date.parse('2026-11-21T10:00:00Z'),
+      situacao: 'vigente',
     },
   ],
 };
@@ -129,7 +132,7 @@ describe('DetalhePage', () => {
     expect(tela.querySelector('h1')?.textContent).toContain('Hades II');
     expect(texto(tela)).toContain('Ver na GOG');
     expect(texto(tela)).toContain('Mais barato');
-    expect(texto(tela)).toContain('Verificado em 21/11/2026, pode estar desatualizado');
+    expect(texto(tela)).toContain('Verificado em 21/11');
     expect(TestBed.inject(Title).getTitle()).toBe('Hades II · Umbra');
     expect(historico).toHaveBeenCalledWith(42, '90d');
   });

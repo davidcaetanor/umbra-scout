@@ -6,7 +6,6 @@ import {
   mostraGrafico,
   mudancas,
   mudancasPorLoja,
-  verificacao,
 } from './mudancas-do-historico';
 
 const FIM = Date.parse('2026-11-21T15:00:00Z');
@@ -83,13 +82,5 @@ describe('mudanças do histórico', () => {
     );
     expect(fraseSemGrafico({ ...HISTORICO, melhorPreco: [ponto(20, 9000), ponto(4, 9900), ponto(2, 9000)] })).toBeNull();
     expect(fraseSemGrafico({ ...HISTORICO, observadoDesde: null })).toBeNull();
-  });
-
-  it('verificação de hoje, de outro dia e antiga', () => {
-    expect(verificacao([FIM - 3_600_000, FIM - 5 * DIA_MS], FIM)).toEqual({ texto: 'Verificado hoje', antiga: false });
-    expect(verificacao([FIM - DIA_MS], FIM)).toEqual({ texto: 'Verificado em 20/11/2026', antiga: false });
-    expect(verificacao([FIM - 3 * DIA_MS], FIM)).toEqual({ texto: 'Verificado em 18/11/2026', antiga: true });
-    expect(verificacao([], FIM)).toBeNull();
-    expect(verificacao([Number.NaN], FIM)).toBeNull();
   });
 });

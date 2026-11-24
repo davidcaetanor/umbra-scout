@@ -34,7 +34,8 @@ import {
   temHistorico,
 } from './historico-exibido';
 import { leituraDoPreco } from './leitura-do-preco';
-import { fraseSemGrafico, lojasQueMudaram, mostraGrafico, mudancasPorLoja, verificacao } from './mudancas-do-historico';
+import { situacaoExibida } from './situacao-exibida';
+import { fraseSemGrafico, lojasQueMudaram, mostraGrafico, mudancasPorLoja } from './mudancas-do-historico';
 import { MonitorarComponent, SituacaoDoMonitoramento } from './monitorar/monitorar.component';
 
 const ID_VALIDO = /^[1-9]\d{0,14}$/;
@@ -200,9 +201,9 @@ export class DetalhePage {
       preco: oferta.preco,
       endereco: oferta.endereco,
       maisBarata: produto.ofertas.length > 1 && oferta.loja === produto.melhorOferta?.loja,
+      situacao: situacaoExibida(oferta, this.agora()),
     }));
   });
-  protected readonly verificado = computed(() => verificacao(this.produto()?.ofertas.map((oferta) => oferta.verificadoEm) ?? [], this.agora()));
   protected readonly topo = computed<TopoExibido | null>(() => {
     const produto = this.produto();
     if (produto === null) {

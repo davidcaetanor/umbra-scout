@@ -6,6 +6,7 @@
         @if (oferta.maisBarata) {
           <span class="text-dado font-medium text-destaque">Mais barato</span>
         }
+        <span class="text-dado" [class.text-texto-secundario]="!oferta.situacao.aviso" [class.text-destaque]="oferta.situacao.aviso">{{ oferta.situacao.texto }}</span>
         <span class="flex flex-wrap items-baseline gap-x-2">
           <span class="font-mono text-valor tabular-nums" [class.text-destaque]="oferta.maisBarata">{{ oferta.preco.atual }}</span>
           @if (oferta.preco.original !== null) {
@@ -49,6 +50,7 @@
             @if (oferta.maisBarata) {
               <span class="ms-2 rounded-mini bg-destaque-fundo px-1.5 text-dado font-medium text-destaque">Mais barato</span>
             }
+            <span class="block text-dado font-normal" [class.text-texto-secundario]="!oferta.situacao.aviso" [class.text-destaque]="oferta.situacao.aviso">{{ oferta.situacao.texto }}</span>
           </th>
           <td class="px-4 py-3 text-end font-mono tabular-nums" [class.text-destaque]="oferta.maisBarata">{{ oferta.preco.atual }}</td>
           <td class="px-4 py-3 text-end font-mono tabular-nums text-texto-secundario">{{ oferta.preco.original ?? oferta.preco.atual }}</td>

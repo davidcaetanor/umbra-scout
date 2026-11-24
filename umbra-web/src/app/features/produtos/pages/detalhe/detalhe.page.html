@@ -124,11 +124,6 @@
       <section aria-labelledby="titulo-lojas" class="flex flex-col gap-3">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="titulo-lojas" class="font-titulo text-subtitulo">Preços nas lojas</h2>
-          @if (verificado(); as verificado) {
-            <p class="text-apoio" [class.text-texto-secundario]="!verificado.antiga" [class.text-erro]="verificado.antiga">
-              {{ verificado.texto }}{{ verificado.antiga ? ', pode estar desatualizado' : '' }}
-            </p>
-          }
         </div>
         @if (ofertas().length > 0) {
           <umbra-tabela-lojas [ofertas]="ofertas()" [mostrarDesconto]="produto.tipo === 'JOGO'" />

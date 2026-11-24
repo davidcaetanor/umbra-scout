@@ -27,7 +27,7 @@ function oferta(parcial: Partial<OfertaResponse> = {}): OfertaResponse {
     expiraEm: null,
     gratuito: false,
     loja: 'Steam',
-    promocaoEncerrada: false,
+    situacao: 'vigente',
     url: 'https://loja.exemplo/jogo',
     valorCentavos: 9990,
     valorOriginalCentavos: null,
@@ -164,7 +164,7 @@ describe('CatalogoService', () => {
           tipo: 'JOGO',
           categoria: null,
           imagemUrl: null,
-          melhorPreco: oferta({ promocaoEncerrada: true, descontoPct: 50, valorOriginalCentavos: 19980 }),
+          melhorPreco: oferta({ situacao: 'promocao-vencida-sem-coleta', descontoPct: 50, valorOriginalCentavos: 19980 }),
         },
       ]),
     );
