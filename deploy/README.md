@@ -1,6 +1,6 @@
 # Deploy
 
-Produção: `compose.yaml`, nesta pasta. Rode os comandos daqui: o Compose acha este arquivo antes de procurar nas pastas acima, onde está o de desenvolvimento. Requer Docker com Compose v2.
+Produção: `compose.yaml`, 
 
 ## `.env`, ao lado deste arquivo
 
