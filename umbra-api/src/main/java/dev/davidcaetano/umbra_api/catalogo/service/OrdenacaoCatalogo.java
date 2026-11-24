@@ -6,7 +6,7 @@ public enum OrdenacaoCatalogo {
 
     NOME("nome", false),
     MENOR_PRECO("menorPreco", false),
-    MELHORES_OFERTAS("melhoresOfertas", true),
+    MELHORES_OFERTAS("melhoresOfertas", false),
     MAIOR_DESCONTO("maiorDesconto", true);
 
     private final String codigo;
