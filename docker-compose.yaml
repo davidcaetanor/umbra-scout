@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${UMBRA_DB_USER}
       POSTGRES_PASSWORD: ${UMBRA_DB_PASSWORD}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - umbra_data:/var/lib/postgresql
     healthcheck:
