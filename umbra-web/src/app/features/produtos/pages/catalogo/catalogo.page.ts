@@ -8,7 +8,6 @@ import { EstadoMascote } from '../../../../shared/mascote/estado-mascote';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { EstadoDoBloco, dadosDe } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
-import { CardExternoComponent } from '../../components/card-externo/card-externo.component';
 import { CardProdutoComponent } from '../../components/card-produto/card-produto.component';
 import { PaginacaoComponent } from '../../components/paginacao/paginacao.component';
 import { CatalogoService } from '../../data/catalogo.service';
@@ -24,6 +23,7 @@ import {
 import { ResultadoDaBusca } from '../../data/resultado-da-busca';
 import { ROTULO_DA_CATEGORIA, ROTULO_DA_LOJA, ROTULO_DA_ORDENACAO, ROTULO_DO_TIPO } from '../../data/rotulos';
 import { EstadoDaBuscaExterna } from './estado-da-busca-externa';
+import { ForaDoCatalogoComponent } from './fora-do-catalogo/fora-do-catalogo.component';
 import {
   FILTRO_INICIAL,
   PRECO_MAXIMO_EM_CENTAVOS,
@@ -54,7 +54,7 @@ function campoDoPreco(centavos: number | null): string {
 
 @Component({
   selector: 'umbra-catalogo-page',
-  imports: [CardExternoComponent, CardProdutoComponent, EstadoDoBlocoComponent, MascoteComponent, PaginacaoComponent],
+  imports: [CardProdutoComponent, EstadoDoBlocoComponent, ForaDoCatalogoComponent, MascoteComponent, PaginacaoComponent],
   templateUrl: './catalogo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
