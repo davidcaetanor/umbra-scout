@@ -1,0 +1,99 @@
+<article
+  class="grid gap-3 rounded-bloco bg-superficie p-4 largo:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] largo:items-center largo:gap-5"
+  [class.alvo-atingido]="item().alvoAtingido"
+  [attr.aria-labelledby]="idDoTitulo()"
+>
+  <div class="flex min-w-0 items-center gap-3">
+    <umbra-capa-produto [capa]="item().capa" [tipo]="item().tipo" tamanhos="64px" class="size-16 shrink-0 rounded-controle" />
+    <div class="min-w-0">
+      <h2
+        [id]="idDoTitulo()"
+        tabindex="-1"
+        class="font-titulo text-destaque break-words outline-none"
+        [class.text-texto-secundario]="!item().ativo"
+      >
+        {{ item().nome }}
+      </h2>
+      @if (item().alvoAtingido || !item().ativo || item().foraDeVenda) {
+        <p class="mt-1 flex flex-wrap gap-2">
+          @if (item().alvoAtingido) {
+            <span class="carimbo">Alvo atingido</span>
+          }
+          @if (!item().ativo) {
+            <span class="selo">Pausado</span>
+          }
+          @if (item().foraDeVenda) {
+            <span class="selo">Fora de venda</span>
+          }
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-2 largo:contents">
+    <div class="rounded-controle bg-superficie-elevada px-3 py-2">
+      <p class="rotulo">Melhor preço</p>
+      @if (preco(); as preco) {
+        <p class="font-mono text-valor tabular-nums" [class.text-destaque]="item().alvoAtingido">{{ preco.valor }}</p>
+        <p class="text-dado text-texto-secundario">{{ preco.loja }}</p>
+      } @else {
+        <p class="text-apoio">Sem oferta disponível</p>
+      }
+      @if (aviso(); as aviso) {
+        <p class="mt-1 text-dado text-texto-secundario">{{ aviso }}</p>
+      }
+    </div>
+    <div class="rounded-controle bg-superficie-elevada px-3 py-2">
+      <p class="rotulo">Alvo</p>
+      <p class="font-mono text-valor tabular-nums">{{ alvo() }}</p>
+      <div
+        class="my-1.5 h-1.5 overflow-hidden rounded-full bg-filete"
+        role="meter"
+        aria-label="Proximidade do alvo"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="preenchimento()"
+      >
+        <div
+          class="h-full rounded-full"
+          [class.bg-historico-3]="!item().alvoAtingido"
+          [class.bg-destaque]="item().alvoAtingido"
+          [style.width.%]="preenchimento()"
+        ></div>
+      </div>
+      @if (distancia(); as distancia) {
+        <p class="text-dado text-texto-secundario">{{ distancia }}</p>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 largo:flex-col largo:items-stretch">
+    <a
+      [routerLink]="['/catalogo', item().produtoId]"
+      class="inline-flex min-h-11 items-center px-1 text-apoio underline underline-offset-4 largo:justify-center"
+      [attr.aria-label]="'Alterar alvo de ' + item().nome"
+    >
+      Alterar alvo
+    </a>
+    <button
+      type="button"
+      class="min-h-11 botao-secundario px-4"
+      [attr.aria-label]="acaoDoAtivo() + ' ' + item().nome"
+      [attr.aria-disabled]="ocupado() || null"
+      [attr.aria-busy]="ocupado() || null"
+      (click)="pedirAlternancia()"
+    >
+      {{ acaoDoAtivo() }}
+    </button>
+    <button
+      type="button"
+      class="min-h-11 botao-secundario px-4"
+      [attr.data-remover]="item().id"
+      [attr.aria-label]="'Remover ' + item().nome"
+      [attr.aria-disabled]="ocupado() || null"
+      (click)="pedirRemocao()"
+    >
+      Remover
+    </button>
+  </div>
+</article>
