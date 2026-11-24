@@ -1,6 +1,6 @@
 # Deploy
 
-Produção: `docker-compose.prod.yaml` (o da raiz é desenvolvimento). Requer Docker com Compose v2.
+Produção: `compose.yaml`, nesta pasta. Rode os comandos daqui: o Compose acha este arquivo antes de procurar nas pastas acima, onde está o de desenvolvimento. Requer Docker com Compose v2.
 
 ## `.env`, ao lado deste arquivo
 
@@ -61,17 +61,17 @@ Permissão: `chmod 700` no diretório e `chmod 600` no `.env`.
 ## Subir
 
 ```bash
-docker compose -f docker-compose.prod.yaml pull
-docker compose -f docker-compose.prod.yaml up -d
-docker compose -f docker-compose.prod.yaml ps
+docker compose pull
+docker compose up -d
+docker compose ps
 curl -fsS localhost:8080/actuator/health
 ```
 
 ## Atualizar
 
 ```bash
-docker compose -f docker-compose.prod.yaml pull api
-docker compose -f docker-compose.prod.yaml up -d api
+docker compose pull api
+docker compose up -d api
 ```
 
 ## Rollback
@@ -81,15 +81,15 @@ docker compose -f docker-compose.prod.yaml up -d api
 ## Logs
 
 ```bash
-docker compose -f docker-compose.prod.yaml logs -f api
+docker compose logs -f api
 ```
 
 Rotação declarada no compose: 20 MB por arquivo, 5 arquivos por serviço. Para guardar uma janela inteira, extraia antes de ela rolar:
 
 ```bash
-docker compose -f docker-compose.prod.yaml logs --no-color --timestamps api > umbra-api.log
+docker compose logs --no-color --timestamps api > umbra-api.log
 ```
 
 ## Obs Postgres
 
-- **O volume monta `/var/lib/postgresql`, não `/var/lib/postgresql/data`.** A imagem 18 põe o `PGDATA` em `18/docker`; montar o caminho antigo faz o banco nascer vazio a cada recriação. Confira com `docker compose -f docker-compose.prod.yaml exec postgres printenv PGDATA`.
+- **O volume monta `/var/lib/postgresql`, não `/var/lib/postgresql/data`.** A imagem 18 põe o `PGDATA` em `18/docker`; montar o caminho antigo faz o banco nascer vazio a cada recriação. Confira com `docker compose exec postgres printenv PGDATA`.
