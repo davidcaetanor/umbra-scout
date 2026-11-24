@@ -238,10 +238,10 @@ test.describe('T4.5, detalhe do produto', () => {
     const lista = page.getByRole('list', { name: 'Mudanças de preço' });
     await expect(lista.getByRole('listitem').first()).toContainText('Steam caiu para R$ 80,00 (-16%)');
     await expect(page.getByText('disponível a partir de')).toHaveCount(0);
-    await expect(page.getByRole('table').getByText('Verificado em 21/11').first()).toBeVisible();
+    await expect(page.getByRole('table').getByText(/Verificado/)).toHaveCount(0);
   });
 
-  test('a tabela por loja mostra os quatro estados da validade do preço', async ({ page }) => {
+  test('a tabela por loja mostra o prazo da promoção e os avisos, sem a hora da verificação', async ({ page }) => {
     const situacoes = [
       { loja: 'Steam', situacao: 'vigente', expiraEm: null, verificadoEm: '2026-11-21T10:00:00Z' },
       { loja: 'Epic', situacao: 'promocao-no-prazo', expiraEm: '2030-12-01T16:00:00Z', verificadoEm: '2026-11-19T12:00:00Z' },
@@ -254,8 +254,8 @@ test.describe('T4.5, detalhe do produto', () => {
     await page.goto('/catalogo/42');
 
     const tabela = page.getByRole('table');
-    await expect(tabela.getByText('Verificado em 21/11')).toBeVisible();
-    await expect(tabela.getByText('Promoção até 01/12; última verificação em 19/11')).toBeVisible();
+    await expect(tabela.getByText(/Verificado|última verificação/)).toHaveCount(0);
+    await expect(tabela.getByText('Promoção até 01/12', { exact: true })).toBeVisible();
     await expect(tabela.getByText('Última verificação em 10/11, pode estar desatualizado')).toBeVisible();
     await expect(tabela.getByText('Promoção terminou em 20/11, aguardando nova verificação')).toBeVisible();
   });

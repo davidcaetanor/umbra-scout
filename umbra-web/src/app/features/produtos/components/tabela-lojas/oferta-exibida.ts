@@ -10,5 +10,5 @@ export interface OfertaExibida {
   readonly preco: PrecoExibido;
   readonly endereco: string;
   readonly maisBarata: boolean;
-  readonly situacao: SituacaoExibida;
+  readonly situacao: SituacaoExibida | null;
 }
