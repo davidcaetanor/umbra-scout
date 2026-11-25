@@ -220,6 +220,7 @@
     </div>
 
     @if (dados(); as dados) {
+      <h2 class="sr-only">Resultados da busca</h2>
       <ul class="grid gap-3 tablet:grid-cols-2 largo:grid-cols-3">
         @for (produto of dados.produtos; track produto.id; let posicao = $index) {
           <li><umbra-card-produto [produto]="produto" [prioritaria]="posicao < 3" [endereco]="'/catalogo/' + produto.id" /></li>

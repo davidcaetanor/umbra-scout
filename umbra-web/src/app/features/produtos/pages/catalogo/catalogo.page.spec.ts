@@ -94,6 +94,14 @@ describe('CatalogoPage', () => {
     campo.dispatchEvent(new Event('change'));
   }
 
+  it('lista de resultados abre com titulo de nivel 2 oculto, antes dos cards', async () => {
+    await abrir();
+    await responder(resultado([PRODUTO]));
+    const titulo = tela.querySelector('h2.sr-only');
+    expect(titulo?.textContent).toBe('Resultados da busca');
+    expect(titulo?.nextElementSibling?.querySelector('h3')).not.toBeNull();
+  });
+
   it('ordenacoes de oferta e desconto minimo so aparecem para jogos', async () => {
     await abrir('/catalogo?tipo=HARDWARE');
     const opcoes = () => [...tela.querySelectorAll('#ordenacao option')].map((opcao) => opcao.getAttribute('value'));
