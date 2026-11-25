@@ -37,6 +37,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci --no-audit --no-fund
 
+      - name: Gerador da configuracao do conteiner
+        run: sh docker/gerar-configuracao.test.sh
+
       - name: Lint, typecheck, testes e build
         run: npm run verify
 
@@ -107,6 +110,7 @@ jobs:
             -p 127.0.0.1:8081:8080 "$IMAGEM_COMMIT"
           for tentativa in $(seq 1 20); do curl -fsS 127.0.0.1:8081/saude && break; sleep 1; done
           curl -fsS 127.0.0.1:8081/config.json | grep -q '"apiUrl":"https://api.exemplo.com"'
+          curl -fsS 127.0.0.1:8081/catalogo | grep -qF '<script id="configuracao" type="application/json">{"apiUrl":"https://api.exemplo.com","loginGoogle":false}</script>'
           curl -fsSI 127.0.0.1:8081/login/callback | grep -qi '^referrer-policy: no-referrer'
           docker rm -f web
 
