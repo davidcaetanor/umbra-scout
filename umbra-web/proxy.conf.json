@@ -1,14 +1,14 @@
 {
-  "/imagens/itad": {
+  "^/imagens/(240|480|600)/itad/": {
     "target": "https://assets.isthereanydeal.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/imagens/itad": "" }
+    "pathRewrite": { "^/imagens/(240|480|600)/itad": "" }
   },
-  "/imagens/kabum": {
+  "^/imagens/(240|480|600)/kabum/": {
     "target": "https://images.kabum.com.br",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/imagens/kabum": "" }
+    "pathRewrite": { "^/imagens/(240|480|600)/kabum": "" }
   }
 }

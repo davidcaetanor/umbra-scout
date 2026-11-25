@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { CapaExibida } from './capa-exibida';
 import { CapaProdutoComponent } from './capa-produto.component';
 
-const FAIXA: CapaExibida = { endereco: '/imagens/itad/a/banner300.jpg', alternativas: '', enquadramento: 'faixa' };
+const FAIXA: CapaExibida = { endereco: '/imagens/240/itad/a/banner300.jpg', alternativas: '', enquadramento: 'faixa' };
 const FOTO: CapaExibida = {
-  endereco: '/imagens/kabum/produtos/fotos/1/1_index_g.jpg',
+  endereco: '/imagens/240/kabum/produtos/fotos/1/1_index_g.jpg',
   alternativas: '',
   enquadramento: 'foto',
 };

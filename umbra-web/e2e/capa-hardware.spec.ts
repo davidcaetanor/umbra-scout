@@ -39,7 +39,7 @@ test('T4.4c, foto do hardware aparece inteira, na moldura clara e pela nossa ori
   await page.goto('/catalogo?tipo=HARDWARE');
   const imagem = page.locator('umbra-capa-produto img');
 
-  await expect(imagem).toHaveAttribute('src', '/imagens/kabum/produtos/fotos/85948/85948_index_g.jpg');
+  await expect(imagem).toHaveAttribute('src', '/imagens/240/kabum/produtos/fotos/85948/85948_index_g.jpg');
   await expect(imagem).toHaveClass(/object-contain/);
   await expect(page.locator('umbra-capa-produto')).toHaveClass(/bg-moldura-foto/);
   await expect.poll(() => imagem.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
