@@ -4,7 +4,7 @@ import { alterarMonitoramento } from '../../../api/fn/monitoramento/alterar-moni
 import { criarMonitoramento } from '../../../api/fn/monitoramento/criar-monitoramento';
 import { listarMonitoramentos } from '../../../api/fn/monitoramento/listar-monitoramentos';
 import { MonitoramentoResponse } from '../../../api/models/monitoramento-response';
-import { MonitoramentoDoProduto } from './monitoramento-do-produto';
+import { MonitoramentoCriado, MonitoramentoDoProduto } from './monitoramento-do-produto';
 
 @Injectable({ providedIn: 'root' })
 export class MonitoramentoDoProdutoService {
@@ -18,6 +18,11 @@ export class MonitoramentoDoProdutoService {
 
   async criar(produtoId: number, precoAlvoCentavos: number): Promise<MonitoramentoDoProduto> {
     return paraMonitoramento(await this.api.invoke(criarMonitoramento, { body: { produtoId, precoAlvoCentavos } }));
+  }
+
+  async criarPorGid(gid: string, precoAlvoCentavos: number): Promise<MonitoramentoCriado> {
+    const criado = await this.api.invoke(criarMonitoramento, { body: { gid, precoAlvoCentavos } });
+    return { produtoId: criado.produtoId, precoAlvoCentavos: criado.precoAlvoCentavos };
   }
 
   async alterarAlvo(id: number, precoAlvoCentavos: number): Promise<MonitoramentoDoProduto> {

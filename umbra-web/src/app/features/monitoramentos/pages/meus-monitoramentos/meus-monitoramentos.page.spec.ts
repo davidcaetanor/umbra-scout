@@ -243,7 +243,7 @@ describe('MeusMonitoramentosPage', () => {
 
   describe('alterar o alvo na propria tela', () => {
     function dialogoDoAlvo(): HTMLDialogElement {
-      return tela.querySelector('umbra-alterar-alvo dialog')!;
+      return tela.querySelector('umbra-dialogo-de-alvo dialog')!;
     }
 
     function campo(): HTMLInputElement {
@@ -269,7 +269,7 @@ describe('MeusMonitoramentosPage', () => {
       expect(dialogoDoAlvo().open).toBe(true);
       expect(campo().value).toBe('150,00');
       expect(document.activeElement).toBe(campo());
-      expect(dialogoDoAlvo().textContent).toContain('melhor preço R$ 172,49');
+      expect(dialogoDoAlvo().textContent).toContain('melhor preço R$\u00a0172,49');
     });
 
     it('valor invalido mostra o erro e nao envia', async () => {

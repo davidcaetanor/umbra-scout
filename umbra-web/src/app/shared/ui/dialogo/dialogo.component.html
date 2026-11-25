@@ -1,0 +1,10 @@
+<dialog
+  #dialogo
+  [attr.role]="papel()"
+  [attr.aria-labelledby]="rotuladoPor()"
+  [attr.aria-describedby]="descritoPor()"
+  class="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-bloco border-2 border-filete bg-superficie-elevada p-5 text-texto backdrop:bg-fundo/70"
+  (cancel)="aoCancelarPeloTeclado($event)"
+>
+  <ng-content />
+</dialog>

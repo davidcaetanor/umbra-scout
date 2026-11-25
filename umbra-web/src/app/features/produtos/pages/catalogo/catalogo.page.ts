@@ -8,7 +8,6 @@ import { EstadoMascote } from '../../../../shared/mascote/estado-mascote';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { EstadoDoBloco, dadosDe } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
-import { CardExternoComponent } from '../../components/card-externo/card-externo.component';
 import { CardProdutoComponent } from '../../components/card-produto/card-produto.component';
 import { PaginacaoComponent } from '../../components/paginacao/paginacao.component';
 import { CatalogoService } from '../../data/catalogo.service';
@@ -24,17 +23,21 @@ import {
 import { ResultadoDaBusca } from '../../data/resultado-da-busca';
 import { ROTULO_DA_CATEGORIA, ROTULO_DA_LOJA, ROTULO_DA_ORDENACAO, ROTULO_DO_TIPO } from '../../data/rotulos';
 import { EstadoDaBuscaExterna } from './estado-da-busca-externa';
+import { ForaDoCatalogoComponent } from './fora-do-catalogo/fora-do-catalogo.component';
 import {
   FILTRO_INICIAL,
   PRECO_MAXIMO_EM_CENTAVOS,
+  admiteJogo,
   faixaInvertidaNaUrl,
   filtroDaUrl,
+  foraNaUrl,
   lojasPara,
   mesmoFiltro,
   mesmosParametros,
   normalizarFiltro,
   normalizarTermo,
   ordenacaoAoBuscar,
+  parametrosDaBusca,
   parametrosDoFiltro,
   situacaoDoTermo,
 } from './filtro-da-url';
@@ -51,7 +54,7 @@ function campoDoPreco(centavos: number | null): string {
 
 @Component({
   selector: 'umbra-catalogo-page',
-  imports: [CardExternoComponent, CardProdutoComponent, EstadoDoBlocoComponent, MascoteComponent, PaginacaoComponent],
+  imports: [CardProdutoComponent, EstadoDoBlocoComponent, ForaDoCatalogoComponent, MascoteComponent, PaginacaoComponent],
   templateUrl: './catalogo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -60,7 +63,6 @@ export class CatalogoPage {
   private readonly router = inject(Router);
   private readonly catalogo = inject(CatalogoService);
   private readonly digitacao = new Subject<string>();
-  private readonly pedidoDeBuscaExterna = new Subject<void>();
   private readonly recarga = new Subject<void>();
 
   protected readonly tipos = Object.entries(ROTULO_DO_TIPO) as [TipoDeProduto, string][];
@@ -72,6 +74,13 @@ export class CatalogoPage {
     this.rota.queryParamMap.pipe(map(filtroDaUrl), distinctUntilChanged(mesmoFiltro)),
     { initialValue: FILTRO_INICIAL },
   );
+
+  private readonly fora = toSignal(this.rota.queryParamMap.pipe(map(foraNaUrl), distinctUntilChanged()), {
+    initialValue: false,
+  });
+  private readonly consultaExterna = computed(() => ({ filtro: this.filtro(), fora: this.fora() }), {
+    equal: (a, b) => a.fora === b.fora && mesmoFiltro(a.filtro, b.filtro),
+  });
 
   protected readonly ordenacoes = computed(() =>
     (Object.entries(ROTULO_DA_ORDENACAO) as [OrdenacaoDaBusca, string][]).filter(
@@ -105,12 +114,9 @@ export class CatalogoPage {
   protected readonly dados = computed(() => dadosDe(this.resultado()));
 
   protected readonly buscaExterna = toSignal(
-    toObservable(this.filtro).pipe(
-      switchMap((filtro) =>
-        this.pedidoDeBuscaExterna.pipe(
-          switchMap(() => this.buscarForaDoCatalogo(filtro)),
-          startWith(SEM_BUSCA_EXTERNA),
-        ),
+    toObservable(this.consultaExterna).pipe(
+      switchMap(({ filtro, fora }) =>
+        fora && filtro.termo !== null && admiteJogo(filtro) ? this.buscarForaDoCatalogo(filtro) : of(SEM_BUSCA_EXTERNA),
       ),
     ),
     { initialValue: SEM_BUSCA_EXTERNA },
@@ -123,13 +129,18 @@ export class CatalogoPage {
     const externa = this.buscaExterna();
     return (
       this.filtro().termo === null ||
+      !admiteJogo(this.filtro()) ||
       externa.tipo === 'falhou' ||
       (externa.tipo === 'concluida' && externa.produtos.length === 0)
     );
   });
 
   protected readonly podeBuscarFora = computed(
-    () => this.filtro().termo !== null && this.resultado().tipo === 'sucesso' && this.buscaExterna().tipo === 'inativa',
+    () =>
+      this.filtro().termo !== null &&
+      admiteJogo(this.filtro()) &&
+      this.resultado().tipo === 'sucesso' &&
+      this.buscaExterna().tipo === 'inativa',
   );
 
   protected readonly umbraDoCabecalho = computed((): EstadoMascote | null => {
@@ -180,7 +191,7 @@ export class CatalogoPage {
   }
 
   private limparUrl(parametros: ParamMap): void {
-    const esperados = parametrosDoFiltro(filtroDaUrl(parametros));
+    const esperados = parametrosDaBusca(filtroDaUrl(parametros), foraNaUrl(parametros));
     if (mesmosParametros(parametros, esperados)) {
       return;
     }
@@ -240,7 +251,7 @@ export class CatalogoPage {
   }
 
   protected buscarFora(): void {
-    this.pedidoDeBuscaExterna.next();
+    this.pedirBuscaExterna(false);
   }
 
   protected limparFiltros(): void {
@@ -257,9 +268,20 @@ export class CatalogoPage {
     if (resultado.tipo === 'sucesso' && filtro.pagina >= resultado.dados.totalDePaginas) {
       this.aplicar({ pagina: resultado.dados.totalDePaginas - 1 }, true);
     }
-    if (resultado.tipo === 'vazio' && filtro.termo !== null && filtro.pagina === 0) {
-      this.pedidoDeBuscaExterna.next();
+    if (resultado.tipo === 'vazio' && filtro.termo !== null && filtro.pagina === 0 && admiteJogo(filtro)) {
+      this.pedirBuscaExterna(true);
     }
+  }
+
+  private pedirBuscaExterna(substituir: boolean): void {
+    if (this.fora()) {
+      return;
+    }
+    void this.router.navigate([], {
+      relativeTo: this.rota,
+      queryParams: parametrosDaBusca(this.filtro(), true),
+      replaceUrl: substituir,
+    });
   }
 
   private buscarForaDoCatalogo(filtro: FiltroDaBusca) {

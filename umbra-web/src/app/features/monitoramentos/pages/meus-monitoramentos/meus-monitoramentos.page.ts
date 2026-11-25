@@ -16,15 +16,15 @@ import {
 import { RouterLink } from '@angular/router';
 import { carregarEstado, mensagemDoErro } from '../../../../core/erro';
 import { RELOGIO } from '../../../../core/sessao/relogio';
-import { reais } from '../../../../shared/formatacao/reais';
+import { reais, reaisSemQuebra } from '../../../../shared/formatacao/reais';
 import { BalaoFalaComponent } from '../../../../shared/mascote/balao-fala.component';
 import { EntradasVistas } from '../../../../shared/mascote/entradas-vistas';
 import { MascoteDestaqueComponent } from '../../../../shared/mascote/mascote-destaque.component';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
 import { AvisoService } from '../../../../shared/ui/aviso/aviso.service';
+import { DialogoDeAlvoComponent, PedidoDeAlvo } from '../../../../shared/ui/dialogo/dialogo-de-alvo.component';
 import { EstadoDoBloco } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco';
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
-import { AlteracaoPedida, AlterarAlvoComponent } from '../../components/alterar-alvo/alterar-alvo.component';
 import { ConfirmarRemocaoComponent } from '../../components/confirmar-remocao/confirmar-remocao.component';
 import { ItemMonitoramentoComponent } from '../../components/item-monitoramento/item-monitoramento.component';
 import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, nomeCurto, todosPausados } from '../../components/leitura-da-lista';
@@ -45,9 +45,9 @@ export interface NovidadeExibida {
 @Component({
   selector: 'umbra-meus-monitoramentos-page',
   imports: [
-    AlterarAlvoComponent,
     BalaoFalaComponent,
     ConfirmarRemocaoComponent,
+    DialogoDeAlvoComponent,
     EstadoDoBlocoComponent,
     ItemMonitoramentoComponent,
     MascoteComponent,
@@ -130,11 +130,9 @@ export class MeusMonitoramentosPage {
   protected readonly pedidoDeRemocao = signal<MonitoramentoListado | null>(null);
   protected readonly removendo = signal(false);
   protected readonly pedidoDeAlteracao = signal<MonitoramentoListado | null>(null);
-  protected readonly alteracaoPedida = computed<AlteracaoPedida | null>(() => {
+  protected readonly alteracaoPedida = computed<PedidoDeAlvo | null>(() => {
     const item = this.pedidoDeAlteracao();
-    return item === null
-      ? null
-      : { nome: item.nome, precoAlvoCentavos: item.precoAlvoCentavos, melhorPrecoCentavos: item.melhorPreco?.valorCentavos ?? null };
+    return item === null ? null : pedidoDeAlteracaoDe(item);
   });
   protected readonly salvandoAlvo = signal(false);
   protected readonly erroDoAlvo = signal<string | null>(null);
@@ -291,4 +289,18 @@ export class MeusMonitoramentosPage {
   private focarDepois(foco: () => void): void {
     afterNextRender(foco, { injector: this.injector });
   }
+}
+
+function pedidoDeAlteracaoDe(item: MonitoramentoListado): PedidoDeAlvo {
+  const melhor = item.melhorPreco;
+  const alvoAtual = `Alvo atual ${reaisSemQuebra(item.precoAlvoCentavos)}`;
+  return {
+    titulo: item.nome,
+    apoio: melhor === null ? alvoAtual : `${alvoAtual} · melhor preço ${reaisSemQuebra(melhor.valorCentavos)}`,
+    rotuloDoCampo: 'Novo alvo',
+    alvoCentavos: item.precoAlvoCentavos,
+    acao: 'Salvar',
+    acaoEmAndamento: 'Salvando…',
+    focarAcao: false,
+  };
 }

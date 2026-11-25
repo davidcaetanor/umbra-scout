@@ -186,6 +186,8 @@ describe('CatalogoService', () => {
         nome: 'Hollow',
         capa: null,
         preco: { atual: 'R$ 99,90', original: null, descontoPct: null, loja: 'Steam' },
+        precoCentavos: 9990,
+        gratuito: false,
         enderecoDaLoja: 'https://loja.exemplo/jogo',
       },
     ]);

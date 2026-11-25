@@ -2,17 +2,54 @@
   <umbra-capa-produto [capa]="produto().capa" tipo="JOGO" class="aspect-[300/140] w-30 shrink-0 rounded-peca" />
   <div class="flex min-w-0 flex-1 flex-col gap-1">
     <h3 class="break-words text-interface font-medium">{{ produto().nome }}</h3>
-    <umbra-preco-produto [preco]="produto().preco" />
+    <umbra-preco-produto [preco]="produto().preco" class="w-fit max-w-full" />
   </div>
-  <a
-    [href]="produto().enderecoDaLoja"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="flex min-h-11 w-full items-center justify-center gap-1 botao-secundario px-3 tablet:w-auto"
-  >
-    Ver na loja<span class="sr-only">: {{ produto().nome }}, abre em nova aba</span>
-    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
-    </svg>
-  </a>
+  <div class="flex w-full flex-wrap items-center gap-2 tablet:w-auto">
+    @if (monitorando(); as monitorando) {
+      <p class="flex items-center gap-1.5 font-medium text-apoio">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M5 12l5 5L19 7" />
+        </svg>
+        Monitorando, alvo <span class="whitespace-nowrap font-mono tabular-nums">{{ monitorando.alvo }}</span>
+      </p>
+      <a
+        #linkDoMonitoramento
+        [routerLink]="['/catalogo', monitorando.produtoId]"
+        class="flex min-h-11 flex-1 items-center justify-center botao-secundario px-3 tablet:flex-none"
+      >
+        Ver produto<span class="sr-only">: {{ produto().nome }}</span>
+      </a>
+    } @else if (jaMonitorado()) {
+      <p class="text-apoio text-texto-secundario">Você já monitora este jogo.</p>
+      <a
+        #linkDoMonitoramento
+        routerLink="/monitoramentos"
+        class="flex min-h-11 flex-1 items-center justify-center botao-secundario px-3 tablet:flex-none"
+      >
+        Ver em Meus monitoramentos
+      </a>
+    } @else {
+      @if (!produto().gratuito) {
+        <button
+          #botaoMonitorar
+          type="button"
+          class="min-h-11 flex-1 botao-principal px-4 tablet:flex-none"
+          (click)="monitorar.emit()"
+        >
+          Monitorar<span class="sr-only">: {{ produto().nome }}</span>
+        </button>
+      }
+      <a
+        [href]="produto().enderecoDaLoja"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex min-h-11 flex-1 items-center justify-center gap-1 botao-secundario px-3 tablet:flex-none"
+      >
+        Ver na loja<span class="sr-only">: {{ produto().nome }}, abre em nova aba</span>
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+        </svg>
+      </a>
+    }
+  </div>
 </article>

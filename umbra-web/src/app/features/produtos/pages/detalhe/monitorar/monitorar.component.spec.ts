@@ -6,7 +6,7 @@ import { AvisoService } from '../../../../../shared/ui/aviso/aviso.service';
 import { MonitoramentoDoProdutoService } from '../../../data/monitoramento-do-produto.service';
 import { MonitorarComponent, SituacaoDoMonitoramento } from './monitorar.component';
 import { FAIXAS_DE_PIADAS } from './piadas-do-alvo';
-import { CHAVE_DO_RASCUNHO, RascunhoDoAlvo } from './rascunho-do-alvo';
+import { CHAVE_DO_RASCUNHO, RascunhoDoAlvo, rascunhoDoProduto } from '../../../data/rascunho-do-alvo';
 
 describe('MonitorarComponent', () => {
   let fixture: ComponentFixture<MonitorarComponent>;
@@ -95,7 +95,7 @@ describe('MonitorarComponent', () => {
     await enviar(tela, '149,90');
 
     expect(navegar).toHaveBeenCalledWith(['/entrar'], { queryParams: { returnUrl: '/' } });
-    expect(TestBed.inject(RascunhoDoAlvo).retomar(42)).toBe(14990);
+    expect(TestBed.inject(RascunhoDoAlvo).retomar(rascunhoDoProduto(42))).toBe(14990);
   });
 
   it('aceita o máximo com separador de milhar e ponto decimal', async () => {

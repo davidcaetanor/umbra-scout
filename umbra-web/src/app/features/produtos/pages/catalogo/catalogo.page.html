@@ -254,15 +254,7 @@
     @case ('concluida') {
       @if (buscaExterna(); as externa) {
         @if (externa.tipo === 'concluida' && externa.produtos.length > 0) {
-          <section class="mt-4 border-t border-filete pt-4" aria-labelledby="fora-do-catalogo">
-            <h2 id="fora-do-catalogo" class="font-titulo text-subtitulo">Fora do catálogo</h2>
-            <p class="text-apoio text-texto-secundario">Ainda não acompanhados pelo Umbra.</p>
-            <ul class="mt-3 flex flex-col gap-3">
-              @for (produto of externa.produtos; track produto.gid) {
-                <li><umbra-card-externo [produto]="produto" /></li>
-              }
-            </ul>
-          </section>
+          <umbra-fora-do-catalogo [produtos]="externa.produtos" />
         } @else if (resultado().tipo === 'sucesso') {
           <p role="status" class="mt-4 border-t border-filete pt-4 text-texto-secundario">Nada novo fora do catálogo.</p>
         }
