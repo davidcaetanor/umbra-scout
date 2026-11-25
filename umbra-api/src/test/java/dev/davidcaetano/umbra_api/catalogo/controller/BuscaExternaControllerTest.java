@@ -113,6 +113,61 @@ class BuscaExternaControllerTest extends WireMockIntegrationTestBase {
     }
 
     @Test
+    void filtroDeHardware_naoDeveConsultarOItadNemTrazerJogo() throws Exception {
+        stubItad("t46b hardware");
+
+        mockMvc.perform(get("/produtos").param("nome", "t46b hardware").param("incluirExterno", "true")
+                        .param("tipo", "HARDWARE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.externos").isEmpty());
+        mockMvc.perform(get("/produtos").param("nome", "t46b hardware").param("incluirExterno", "true")
+                        .param("categoria", "GPU"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.externos").isEmpty());
+
+        WIREMOCK.verify(0, anyRequestedFor(anyUrl()));
+    }
+
+    @Test
+    void lojaSemJogoNoItad_deveTrazerExternosVazio() throws Exception {
+        stubItad("t46b kabum");
+
+        mockMvc.perform(get("/produtos").param("nome", "t46b kabum").param("incluirExterno", "true")
+                        .param("loja", "KABUM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.externos").isEmpty());
+    }
+
+    @Test
+    void comLoja_deveTrazerSoJogosDaLojaComOPrecoDela() throws Exception {
+        stubItad("t46b steam");
+
+        mockMvc.perform(get("/produtos").param("nome", "t46b steam").param("incluirExterno", "true")
+                        .param("loja", "STEAM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.externos.length()").value(3))
+                .andExpect(jsonPath("$.externos[0].gid").value(GID_ELDEN_RING))
+                .andExpect(jsonPath("$.externos[0].melhorPreco.loja").value("Steam"))
+                .andExpect(jsonPath("$.externos[0].melhorPreco.valorCentavos").value(27450));
+    }
+
+    @Test
+    void faixaDePrecoEDesconto_devemValerParaOsExternos() throws Exception {
+        stubItad("t46b faixa");
+
+        mockMvc.perform(get("/produtos").param("nome", "t46b faixa").param("incluirExterno", "true")
+                        .param("precoMax", "20000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.externos.length()").value(1))
+                .andExpect(jsonPath("$.externos[0].gid").value(GID_NIGHTREIGN));
+        mockMvc.perform(get("/produtos").param("nome", "t46b faixa").param("incluirExterno", "true")
+                        .param("tipo", "JOGO").param("descontoMin", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.externos.length()").value(2))
+                .andExpect(jsonPath("$.externos[*].gid").value(not(hasItem(GID_NIGHTREIGN_DELUXE))));
+    }
+
+    @Test
     void itadEm500_deveResponder200ComExternosVazio() throws Exception {
         WIREMOCK.stubFor(WireMock.get(urlPathEqualTo("/games/search/v1")).willReturn(aResponse().withStatus(500)));
 

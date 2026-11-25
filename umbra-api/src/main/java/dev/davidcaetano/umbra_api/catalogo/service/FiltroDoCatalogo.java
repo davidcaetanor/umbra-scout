@@ -15,4 +15,8 @@ public record FiltroDoCatalogo(String termo,
     public static FiltroDoCatalogo dosDestaques() {
         return new FiltroDoCatalogo(null, TipoProduto.JOGO, null, null, null, null, null);
     }
+
+    public boolean admiteJogo() {
+        return tipo != TipoProduto.HARDWARE && categoria == null;
+    }
 }
