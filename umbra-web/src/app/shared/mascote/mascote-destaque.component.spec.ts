@@ -12,13 +12,13 @@ describe('MascoteDestaqueComponent', () => {
   }
 
   it('usa a arte que olha para a direita no lado esquerdo da tela', () => {
-    expect(montar().querySelector('img')?.getAttribute('src')).toBe('mascote/destaque/umbra-destaque-256.png');
+    expect(montar().querySelector('img')?.getAttribute('src')).toBe('/mascote/destaque/umbra-destaque-256.png');
   });
 
   it('usa a arte espelhada redesenhada no lado direito, nunca uma inversão por CSS', () => {
     const raiz = montar('direita');
     const imagem = raiz.querySelector('img') as HTMLImageElement;
-    expect(imagem.getAttribute('src')).toBe('mascote/destaque/umbra-destaque-espelhado-256.png');
+    expect(imagem.getAttribute('src')).toBe('/mascote/destaque/umbra-destaque-espelhado-256.png');
     expect(imagem.style.transform).toBe('');
   });
 
