@@ -150,4 +150,17 @@
   .link-texto:hover {
     text-decoration-thickness: 2px;
   }
+
+  .esqueleto {
+    animation: esqueleto-surge 0s 300ms both;
+  }
+}
+
+@keyframes esqueleto-surge {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
+  }
 }
