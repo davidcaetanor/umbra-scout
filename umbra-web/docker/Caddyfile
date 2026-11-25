@@ -22,23 +22,20 @@
 	@foraDoCallback not path /login/callback
 	header @foraDoCallback Referrer-Policy strict-origin-when-cross-origin
 
-	@comHash path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
-	header @comHash Cache-Control "public, max-age=31536000, immutable"
-
-	@semHash {
-		not path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
-		not path /imagens/*
+	map {http.request.orig_uri.path} {origem_da_imagem} {politica_de_cache} {
+		~^/imagens/itad/ https://assets.isthereanydeal.com "public, max-age=31536000, immutable"
+		~^/imagens/kabum/ https://images.kabum.com.br "public, max-age=2592000"
+		~^/(?:mascote|marca)/v1/ - "public, max-age=31536000, immutable"
+		~-[A-Za-z0-9_-]{8}\.(?:js|css|woff2?)$ - "public, max-age=31536000, immutable"
+		default - "no-store"
 	}
-	header @semHash Cache-Control "no-store"
+
+	@foraDasImagens not path /imagens/*
+	header @foraDasImagens Cache-Control {politica_de_cache}
 
 	handle /config.json {
 		root * /run/umbra
 		file_server
-	}
-
-	map {path} {origem_da_imagem} {
-		~^/imagens/itad/ https://assets.isthereanydeal.com
-		~^/imagens/kabum/ https://images.kabum.com.br
 	}
 
 	@imagemDeLoja {
@@ -55,6 +52,7 @@
 			header_up -Cookie
 			header_up -Authorization
 			header_down -Set-Cookie
+			header_down Cache-Control "^max-age=31536000, public$" {politica_de_cache}
 
 			@falhou status 4xx 5xx
 			handle_response @falhou {
