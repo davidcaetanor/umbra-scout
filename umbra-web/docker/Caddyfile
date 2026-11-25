@@ -25,7 +25,7 @@
 	map {http.request.orig_uri.path} {origem_da_imagem} {politica_de_cache} {
 		~^/imagens/(?:[0-9]+/)?itad/ https://assets.isthereanydeal.com "public, max-age=31536000, immutable"
 		~^/imagens/(?:[0-9]+/)?kabum/ https://images.kabum.com.br "public, max-age=2592000"
-		~^/(?:mascote|marca)/v1/ - "public, max-age=31536000, immutable"
+		~^/(?:mascote|marca|fontes)/v1/ - "public, max-age=31536000, immutable"
 		~-[A-Za-z0-9_-]{8}\.(?:js|css|woff2?)$ - "public, max-age=31536000, immutable"
 		default - "no-store"
 	}

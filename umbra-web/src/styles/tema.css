@@ -56,10 +56,10 @@
 
 @theme {
   --font-*: initial;
-  --font-titulo: 'Fraunces Variable', Georgia, serif;
+  --font-titulo: 'Fraunces Variable', 'Fraunces Reserva', Georgia, serif;
   --font-titulo--font-variation-settings: 'wght' 560;
-  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Reserva', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'IBM Plex Mono Reserva', ui-monospace, monospace;
 
   /* Tamanhos de título fluidos: mínimo em 360 px, valor do guia a partir de 1024 px. */
   --text-nome: clamp(2.5rem, 1.415rem + 4.82vw, 4.5rem);
