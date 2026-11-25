@@ -21,7 +21,7 @@ describe('AvisoComponent', () => {
     const regiao = elemento.querySelector('[role="status"]');
     expect(regiao?.getAttribute('aria-live')).toBe('polite');
     expect(regiao?.textContent).toContain('Monitoramento criado.');
-    expect(elemento.querySelector('img')?.getAttribute('src')).toBe('/mascote/retratos/feliz.png');
+    expect(elemento.querySelector('img')?.getAttribute('src')).toBe('/mascote/v1/retratos/feliz.png');
     expect(elemento.querySelector('img')?.getAttribute('width')).toBe('64');
   });
 

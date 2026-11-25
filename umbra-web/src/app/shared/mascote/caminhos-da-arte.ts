@@ -1,5 +1,6 @@
-const RAIZ_DO_MASCOTE = '/mascote';
-const RAIZ_DA_MARCA = '/marca';
+const VERSAO_DA_ARTE = 'v1';
+const RAIZ_DO_MASCOTE = `/mascote/${VERSAO_DA_ARTE}`;
+const RAIZ_DA_MARCA = `/marca/${VERSAO_DA_ARTE}`;
 
 export type RetratoDoMascote = 'base' | 'confuso' | 'feliz' | 'surpreso' | 'tranquilo';
 
