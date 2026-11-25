@@ -10,7 +10,6 @@ const PRODUTO: ProdutoExibido = {
   capa: {
     endereco: '/imagens/itad/a/banner300.jpg',
     alternativas: '/imagens/itad/a/banner300.jpg 300w, /imagens/itad/a/banner400.jpg 400w',
-    reserva: '/imagens/itad/a/boxart.jpg',
     enquadramento: 'faixa',
   },
   categoria: 'Placa de vídeo',
@@ -63,22 +62,13 @@ describe('CardProdutoComponent', () => {
     expect(imagem(await mostrar(PRODUTO, false))!.getAttribute('loading')).toBe('lazy');
   });
 
-  it('entra transparente e aparece quando termina de carregar', async () => {
+  it('capa aparece direto, sem esmaecer', async () => {
     const card = await mostrar(PRODUTO);
 
-    expect(imagem(card)!.classList.contains('opacity-100')).toBe(false);
-    imagem(card)!.dispatchEvent(new Event('load'));
-    await fixture.whenStable();
-    expect(imagem(card)!.classList.contains('opacity-100')).toBe(true);
+    expect(imagem(card)!.className).not.toMatch(/opacity|transition/);
   });
-
-  it('faixa ausente cai na capa em pe, e sem nenhuma vira o marcador do tipo', async () => {
+  it('falha de rede na faixa vira o marcador do tipo, sem segunda tentativa', async () => {
     const card = await mostrar(PRODUTO);
-
-    imagem(card)!.dispatchEvent(new Event('error'));
-    await fixture.whenStable();
-    expect(imagem(card)!.getAttribute('src')).toBe('/imagens/itad/a/boxart.jpg');
-    expect(imagem(card)!.hasAttribute('srcset')).toBe(false);
 
     imagem(card)!.dispatchEvent(new Event('error'));
     await fixture.whenStable();

@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { CapaExibida } from './capa-exibida';
 import { TipoExibido } from './tipo-exibido';
 
-type FaseDaCapa = 'faixa' | 'reserva' | 'sem-imagem';
+type FaseDaCapa = 'imagem' | 'sem-imagem';
 
 @Component({
   selector: 'umbra-capa-produto',
@@ -22,19 +22,14 @@ export class CapaProdutoComponent {
 
   protected readonly fase = linkedSignal<CapaExibida | null, FaseDaCapa>({
     source: this.capa,
-    computation: (capa) => (capa === null ? 'sem-imagem' : 'faixa'),
+    computation: (capa) => (capa === null ? 'sem-imagem' : 'imagem'),
   });
-  protected readonly carregada = signal(false);
   protected readonly emMoldura = computed(() => this.capa()?.enquadramento === 'foto' && this.fase() !== 'sem-imagem');
 
-  protected readonly endereco = computed(() => {
-    const capa = this.capa();
-    return this.fase() === 'reserva' ? capa?.reserva : capa?.endereco;
-  });
-  protected readonly alternativas = computed(() => (this.fase() === 'faixa' ? this.capa()?.alternativas || null : null));
+  protected readonly endereco = computed(() => this.capa()?.endereco);
+  protected readonly alternativas = computed(() => this.capa()?.alternativas || null);
 
   protected falhou(): void {
-    this.carregada.set(false);
-    this.fase.set(this.fase() === 'faixa' && this.capa()?.reserva ? 'reserva' : 'sem-imagem');
+    this.fase.set('sem-imagem');
   }
 }

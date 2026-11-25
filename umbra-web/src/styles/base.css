@@ -88,8 +88,7 @@
     transition:
       background-color 150ms ease-out,
       border-color 150ms ease-out,
-      color 150ms ease-out,
-      filter 150ms ease-out;
+      color 150ms ease-out;
   }
 
   .botao-principal:active:not(:disabled),
@@ -114,11 +113,11 @@
   }
 
   .botao-principal:hover:not(:disabled) {
-    filter: brightness(1.1);
+    background-color: var(--color-destaque-hover);
   }
 
   .botao-principal:active:not(:disabled) {
-    filter: brightness(0.92);
+    background-color: var(--color-destaque-ativo);
   }
 
   .botao-secundario,
@@ -150,5 +149,18 @@
 
   .link-texto:hover {
     text-decoration-thickness: 2px;
+  }
+
+  .esqueleto {
+    animation: esqueleto-surge 0s 300ms both;
+  }
+}
+
+@keyframes esqueleto-surge {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
   }
 }

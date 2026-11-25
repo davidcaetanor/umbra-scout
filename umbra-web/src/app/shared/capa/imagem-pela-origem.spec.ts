@@ -1,11 +1,10 @@
 import { capaPelaOrigem } from './imagem-pela-origem';
 
 describe('capaPelaOrigem', () => {
-  it('troca a capa em pe pelas faixas deitadas de mesma proporcao, pela nossa origem, guardando a reserva', () => {
+  it('troca a capa em pe pelas faixas deitadas de mesma proporcao, pela nossa origem', () => {
     expect(capaPelaOrigem('https://assets.isthereanydeal.com/018d/boxart.jpg?t=1')).toEqual({
       endereco: '/imagens/itad/018d/banner300.jpg?t=1',
       alternativas: '/imagens/itad/018d/banner300.jpg?t=1 300w, /imagens/itad/018d/banner400.jpg?t=1 400w',
-      reserva: '/imagens/itad/018d/boxart.jpg?t=1',
       enquadramento: 'faixa',
     });
   });
@@ -18,7 +17,6 @@ describe('capaPelaOrigem', () => {
     expect(capaPelaOrigem('https://assets.isthereanydeal.com/018d/outra.png')).toEqual({
       endereco: '/imagens/itad/018d/outra.png',
       alternativas: '',
-      reserva: null,
       enquadramento: 'faixa',
     });
   });
@@ -27,7 +25,6 @@ describe('capaPelaOrigem', () => {
     expect(capaPelaOrigem('https://images.kabum.com.br/produtos/fotos/85948/85948_index_g.jpg')).toEqual({
       endereco: '/imagens/kabum/produtos/fotos/85948/85948_index_g.jpg',
       alternativas: '',
-      reserva: null,
       enquadramento: 'foto',
     });
   });

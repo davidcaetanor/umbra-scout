@@ -143,7 +143,6 @@ describe('CatalogoService', () => {
         capa: {
           endereco: '/imagens/itad/a/banner300.jpg',
           alternativas: '/imagens/itad/a/banner300.jpg 300w, /imagens/itad/a/banner400.jpg 400w',
-          reserva: '/imagens/itad/a/boxart.jpg',
           enquadramento: 'faixa',
         },
         categoria: 'Placa de vídeo',

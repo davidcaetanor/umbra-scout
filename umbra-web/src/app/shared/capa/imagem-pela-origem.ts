@@ -16,7 +16,6 @@ export function capaPelaOrigem(
     return {
       endereco: CAMINHO_DA_KABUM_PELA_NOSSA_ORIGEM + endereco.slice(ORIGEM_DA_KABUM.length),
       alternativas: '',
-      reserva: null,
       enquadramento: 'foto',
     };
   }
@@ -25,13 +24,12 @@ export function capaPelaOrigem(
   }
   const local = CAMINHO_PELA_NOSSA_ORIGEM + endereco.slice(ORIGEM_DO_ITAD.length);
   if (!ARQUIVO_DA_CAPA_EM_PE.test(local)) {
-    return { endereco: local, alternativas: '', reserva: null, enquadramento: 'faixa' };
+    return { endereco: local, alternativas: '', enquadramento: 'faixa' };
   }
   const faixa = (largura: number) => local.replace(ARQUIVO_DA_CAPA_EM_PE, `/banner${largura}.jpg`);
   return {
     endereco: faixa(larguras[0]),
     alternativas: larguras.map((largura) => `${faixa(largura)} ${largura}w`).join(', '),
-    reserva: local,
     enquadramento: 'faixa',
   };
 }
