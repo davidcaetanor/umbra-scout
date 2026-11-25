@@ -81,7 +81,7 @@ services:
     image: darthsim/imgproxy:v4.0.24@sha256:5f3546e097bde5d2c568bf5110c4e3fb4af9bbe2cc5da6390067fda034a88db3
     environment:
       IMGPROXY_ONLY_PRESETS: "true"
-      IMGPROXY_PRESETS: capa=quality:75/format:webp
+      IMGPROXY_PRESETS: capa=quality:75/format:webp,capa-240=resize:fit:240:0/quality:82/format:webp,capa-480=resize:fit:480:0/quality:82/format:webp,capa-600=resize:fit:600:0/quality:82/format:webp
       IMGPROXY_ALLOWED_SOURCES: https://assets.isthereanydeal.com/,https://images.kabum.com.br/
       IMGPROXY_MAX_SRC_RESOLUTION: "2"
       IMGPROXY_MAX_SRC_FILE_SIZE: "2097152"
