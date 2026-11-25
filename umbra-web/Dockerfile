@@ -17,6 +17,7 @@ RUN addgroup -S -g 10001 umbra && adduser -S -u 10001 -G umbra -H -s /sbin/nolog
 COPY --from=build /build/umbra-web/dist/umbra-web/browser/ /srv/
 RUN rm /srv/config.json
 COPY umbra-web/docker/Caddyfile /etc/caddy/Caddyfile
+COPY --chmod=0555 umbra-web/docker/gerar-configuracao.sh /usr/local/bin/gerar-configuracao.sh
 COPY --chmod=0555 umbra-web/docker/iniciar.sh /usr/local/bin/iniciar.sh
 
 ENV XDG_DATA_HOME=/data XDG_CONFIG_HOME=/config

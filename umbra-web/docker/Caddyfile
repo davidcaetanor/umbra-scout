@@ -73,7 +73,11 @@
 	}
 
 	handle {
-		try_files {path} /index.html
-		file_server
+		route {
+			try_files {path} /index.html
+			@paginaDoApp path / /index.html
+			root @paginaDoApp /run/umbra
+			file_server
+		}
 	}
 }
