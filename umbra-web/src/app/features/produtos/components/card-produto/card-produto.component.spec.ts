@@ -62,15 +62,11 @@ describe('CardProdutoComponent', () => {
     expect(imagem(await mostrar(PRODUTO, false))!.getAttribute('loading')).toBe('lazy');
   });
 
-  it('entra transparente e aparece quando termina de carregar', async () => {
+  it('capa aparece direto, sem esmaecer', async () => {
     const card = await mostrar(PRODUTO);
 
-    expect(imagem(card)!.classList.contains('opacity-100')).toBe(false);
-    imagem(card)!.dispatchEvent(new Event('load'));
-    await fixture.whenStable();
-    expect(imagem(card)!.classList.contains('opacity-100')).toBe(true);
+    expect(imagem(card)!.className).not.toMatch(/opacity|transition/);
   });
-
   it('falha de rede na faixa vira o marcador do tipo, sem segunda tentativa', async () => {
     const card = await mostrar(PRODUTO);
 
