@@ -120,6 +120,7 @@ jobs:
           for sem_versao in / catalogo config.json robots.txt; do
             curl -fsSI "127.0.0.1:8081/$sem_versao" | grep -qi '^cache-control: no-store'
           done
+          test "$(curl -s -o /dev/null -w '%{http_code}' 127.0.0.1:8081/imagens/999/itad/a/banner300.jpg)" = 404
           docker rm -f web
 
       - name: Autenticar no GHCR
