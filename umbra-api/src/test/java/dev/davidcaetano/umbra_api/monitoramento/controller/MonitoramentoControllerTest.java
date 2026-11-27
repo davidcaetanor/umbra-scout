@@ -89,6 +89,11 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
         }
     }
 
+    private Long precoAvisado(Long monitoramentoId) {
+        return jdbc.queryForObject("SELECT preco_avisado_centavos FROM monitoramento WHERE id = ?",
+                Long.class, monitoramentoId);
+    }
+
     private ResultActions como(Long usuarioId, MockHttpServletRequestBuilder requisicao) throws Exception {
         return mockMvc.perform(requisicao
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtService.emitir(usuarioId).valor())
@@ -344,6 +349,39 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.precoAlvoCentavos").value(800));
         assertThat(jdbc.queryForObject("SELECT ultimo_aviso_em IS NOT NULL FROM monitoramento WHERE id = ?",
                 Boolean.class, monitoramento)).isTrue();
+    }
+
+    @Test
+    void alterar_trocarOAlvoDeveReabrirOAvisoMantendoOTeto() throws Exception {
+        Long usuario = inserirUsuario("reabre@umbra.dev");
+        Long monitoramento = criar(usuario, inserirProduto("Reabre"), 1000);
+        jdbc.update("""
+                UPDATE monitoramento SET ultimo_aviso_em = now() - INTERVAL '1 hour', preco_avisado_centavos = 900
+                 WHERE id = ?
+                """, monitoramento);
+
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"precoAlvoCentavos\": 1200}"))
+                .andExpect(status().isOk());
+
+        assertThat(precoAvisado(monitoramento)).isNull();
+        assertThat(jdbc.queryForObject("SELECT ultimo_aviso_em IS NOT NULL FROM monitoramento WHERE id = ?",
+                Boolean.class, monitoramento)).isTrue();
+    }
+
+    @Test
+    void alterar_mesmoAlvoOuPausaNaoDevemReabrirOAviso() throws Exception {
+        Long usuario = inserirUsuario("naoreabre@umbra.dev");
+        Long monitoramento = criar(usuario, inserirProduto("Nao Reabre"), 1000);
+        jdbc.update("UPDATE monitoramento SET preco_avisado_centavos = 900 WHERE id = ?", monitoramento);
+
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"precoAlvoCentavos\": 1000}"))
+                .andExpect(status().isOk());
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"ativo\": false}"))
+                .andExpect(status().isOk());
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"ativo\": true}"))
+                .andExpect(status().isOk());
+
+        assertThat(precoAvisado(monitoramento)).isEqualTo(900L);
     }
 
     @Test

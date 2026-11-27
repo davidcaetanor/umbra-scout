@@ -92,6 +92,8 @@ public class MonitoramentoService {
                 .orElseThrow(() -> new MonitoramentoNaoEncontradoException(id));
         OffsetDateTime agora = OffsetDateTime.now(clock);
 
+        boolean alvoMudou = pedido.precoAlvoCentavos() != null
+                && pedido.precoAlvoCentavos() != monitoramento.getPrecoAlvoCentavos();
         if (pedido.precoAlvoCentavos() != null) {
             recusarAlvoEmProdutoGratuito(monitoramento.getProdutoId());
             monitoramento.alterarAlvo(pedido.precoAlvoCentavos(), agora);
@@ -101,6 +103,9 @@ public class MonitoramentoService {
         }
 
         monitoramentoRepository.saveAndFlush(monitoramento);
+        if (alvoMudou) {
+            monitoramentoRepository.rearmarAviso(id);
+        }
         return resumoDoUsuario(id, usuario);
     }
 
