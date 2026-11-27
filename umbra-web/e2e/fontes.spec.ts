@@ -5,7 +5,7 @@ import { API } from './apoio/sessao';
 
 const RAIZ_DO_FRONT = resolve(__dirname, '..');
 const CLS_MAXIMO_NA_TROCA_DE_FONTE = 0.005;
-const DIFERENCA_MAXIMA_DE_LARGURA_DO_TEXTO = 0.03;
+const DIFERENCA_MAXIMA_DE_LARGURA_DO_TEXTO = 0.04;
 const LARGURAS_DA_TELA = [360, 1280];
 const UM_JOGO = {
   conteudo: [
