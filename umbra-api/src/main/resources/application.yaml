@@ -34,6 +34,19 @@ spring:
             user-info-uri: https://discord.com/api/users/@me
             user-name-attribute: id
 
+  mail:
+    host: ${UMBRA_SMTP_HOST:}
+    port: ${UMBRA_SMTP_PORT:587}
+    username: ${UMBRA_SMTP_USER:}
+    password: ${UMBRA_SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
   task:
     scheduling:
       pool:
@@ -41,6 +54,9 @@ spring:
       thread-name-prefix: coleta-
 
 management:
+  health:
+    mail:
+      enabled: false
   endpoint:
     health:
       probes:
@@ -123,7 +139,16 @@ umbra:
       tentar-de-novo-em: 60s
   notificacao:
     avaliacao-habilitada: ${UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA:true}
+    envio-habilitado: ${UMBRA_NOTIFICACAO_ENVIO_HABILITADO:false}
     teto-entre-avisos: 24h
+    envio:
+      agenda: "0 0 8,13,19 * * *"
+      remetente: ${UMBRA_SMTP_REMETENTE:}
+      url-do-front: ${UMBRA_FRONT_URL:}
+      teto-diario-por-usuario: 3
+      itens-por-email: 20
+      tentativas: 3
+      validade-do-pendente: 24h
 
 itad:
   itad-api:
