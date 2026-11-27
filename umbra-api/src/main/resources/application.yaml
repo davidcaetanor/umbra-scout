@@ -101,6 +101,9 @@ umbra:
   catalogo:
     prazo-da-consulta-segundos: 3
     tentar-de-novo-em: 5s
+    qualidade:
+      lote: 150
+      validade: 7d
   ofertas:
     peso-economia: 0.7
     referencia-economia-centavos: 11342
