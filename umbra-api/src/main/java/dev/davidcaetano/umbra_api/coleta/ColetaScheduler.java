@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api.coleta;
 
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaQualidade;
 import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaVitrine;
 import dev.davidcaetano.umbra_api.coleta.itad.ItadRefresh;
 import dev.davidcaetano.umbra_api.coleta.itad.ResolucaoDeGidFaltante;
@@ -38,21 +39,26 @@ public class ColetaScheduler {
 
     private static final String CHAVE_DESCOBERTA = "umbra.coleta.agenda.descoberta";
     private static final String CHAVE_REFRESH = "umbra.coleta.agenda.refresh";
+    private static final String CHAVE_QUALIDADE = "umbra.coleta.agenda.qualidade";
     private static final String CHAVE_RODADA_INICIAL = "umbra.coleta.agenda.rodada-inicial";
     private static final String VARIAVEL_RODADA_INICIAL = "UMBRA_COLETA_AGENDA_RODADAINICIAL";
     private static final String FALHA = "FALHA";
+    private static final String CONCLUIDA = "CONCLUIDA";
 
     private final List<Scraper> scrapers;
     private final ColetaService coletaService;
     private final ResolucaoDeGidFaltante resolucaoDeGidFaltante;
     private final ItadRefresh itadRefresh;
     private final AtualizacaoDaVitrine atualizacaoDaVitrine;
+    private final AtualizacaoDaQualidade atualizacaoDaQualidade;
     private final Map<OrigemColeta, String> cronPorFonte;
     private final String cronRefresh;
+    private final String cronQualidade;
     private final boolean rodadaInicial;
     private final Clock clock;
     private final Map<OrigemColeta, Semaphore> bloqueioPorFonte = new HashMap<>();
     private final Semaphore bloqueioDoRefresh = new Semaphore(1);
+    private final Semaphore bloqueioDaQualidade = new Semaphore(1);
     private ScheduledTaskRegistrar registrar;
 
     public ColetaScheduler(List<Scraper> scrapers,
@@ -60,6 +66,7 @@ public class ColetaScheduler {
                            ResolucaoDeGidFaltante resolucaoDeGidFaltante,
                            ItadRefresh itadRefresh,
                            AtualizacaoDaVitrine atualizacaoDaVitrine,
+                           AtualizacaoDaQualidade atualizacaoDaQualidade,
                            AgendaColetaProperties agenda,
                            Clock clock) {
 
@@ -70,8 +77,10 @@ public class ColetaScheduler {
         this.resolucaoDeGidFaltante = resolucaoDeGidFaltante;
         this.itadRefresh = itadRefresh;
         this.atualizacaoDaVitrine = atualizacaoDaVitrine;
+        this.atualizacaoDaQualidade = atualizacaoDaQualidade;
         this.cronPorFonte = Map.copyOf(agenda.descoberta());
         this.cronRefresh = agenda.refresh();
+        this.cronQualidade = agenda.qualidade();
         this.rodadaInicial = agenda.rodadaInicial();
         this.clock = clock;
         this.scrapers.forEach(scraper -> bloqueioPorFonte.put(scraper.fonte(), new Semaphore(1)));
@@ -80,13 +89,21 @@ public class ColetaScheduler {
     public void executarDescoberta(Scraper scraper) {
         Semaphore bloqueio = Objects.requireNonNull(bloqueioPorFonte.get(scraper.fonte()),
                 () -> "Scraper sem tarefa registrada na agenda: fonte=" + scraper.fonte());
-        executar("tarefa=descoberta fonte=" + scraper.fonte(), bloqueio, () -> coletaService.gravar(scraper.coletar()));
+        executarRodada("tarefa=descoberta fonte=" + scraper.fonte(), bloqueio, () -> coletaService.gravar(scraper.coletar()));
     }
 
     public void executarRefresh() {
-        executar("tarefa=refresh", bloqueioDoRefresh, () -> {
+        executarRodada("tarefa=refresh", bloqueioDoRefresh, () -> {
             resolverGidFaltante();
             return coletaService.gravar(itadRefresh.atualizar());
+        });
+    }
+
+    public void executarAtualizacaoDaQualidade() {
+        executar("tarefa=qualidade", bloqueioDaQualidade, () -> {
+            atualizacaoDaQualidade.atualizarLote();
+            return CONCLUIDA;
+        }, () -> {
         });
     }
 
@@ -101,6 +118,9 @@ public class ColetaScheduler {
 
         registrar.addTriggerTask(this::executarRefresh, new CronTrigger(cronRefresh, zona));
         log.info("Tarefa de coleta registrada: tarefa=refresh cron={} fuso={}", cronRefresh, zona);
+
+        registrar.addTriggerTask(this::executarAtualizacaoDaQualidade, new CronTrigger(cronQualidade, zona));
+        log.info("Tarefa de coleta registrada: tarefa=qualidade cron={} fuso={}", cronQualidade, zona);
 
         this.registrar = registrar;
     }
@@ -132,7 +152,11 @@ public class ColetaScheduler {
         executarRefresh();
     }
 
-    private void executar(String tarefa, Semaphore bloqueio, Supplier<VereditoRodada> rodada) {
+    private void executarRodada(String tarefa, Semaphore bloqueio, Supplier<VereditoRodada> rodada) {
+        executar(tarefa, bloqueio, () -> String.valueOf(rodada.get().situacao()), this::atualizarVitrine);
+    }
+
+    private void executar(String tarefa, Semaphore bloqueio, Supplier<String> trabalho, Runnable depois) {
         try {
             MDC.put(MDC_KEY, UUID.randomUUID().toString());
 
@@ -144,10 +168,10 @@ public class ColetaScheduler {
             try {
                 Instant inicio = clock.instant();
                 log.info("Rodada iniciada: {}", tarefa);
-                String situacao = situacaoOuFalha(tarefa, rodada);
+                String situacao = situacaoOuFalha(tarefa, trabalho);
                 log.info("Rodada finalizada: {} situacao={} duracaoMs={}",
                         tarefa, situacao, Duration.between(inicio, clock.instant()).toMillis());
-                atualizarVitrine();
+                depois.run();
             } finally {
                 bloqueio.release();
             }
@@ -156,9 +180,9 @@ public class ColetaScheduler {
         }
     }
 
-    private String situacaoOuFalha(String tarefa, Supplier<VereditoRodada> rodada) {
+    private String situacaoOuFalha(String tarefa, Supplier<String> trabalho) {
         try {
-            return String.valueOf(rodada.get().situacao());
+            return trabalho.get();
         } catch (RuntimeException falha) {
             log.error("Rodada falhou: {}", tarefa, falha);
             return FALHA;
@@ -208,6 +232,7 @@ public class ColetaScheduler {
         }
 
         validarCron(agenda.refresh(), CHAVE_REFRESH);
+        validarCron(agenda.qualidade(), CHAVE_QUALIDADE);
     }
 
     private static void validarCron(String cron, String chave) {

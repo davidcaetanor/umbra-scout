@@ -20,11 +20,13 @@ class AgendaColetaPropertiesTest {
     private static final String CRON_ITAD_DA_VARIAVEL = "0 10 1,7,13,19 * * *";
     private static final String DESCOBERTA_ITAD_VALIDA = "umbra.coleta.agenda.descoberta.itad-api=" + CRON_ITAD;
     private static final String REFRESH_VALIDO = "umbra.coleta.agenda.refresh=0 30 0,6,12,18 * * *";
+    private static final String QUALIDADE_VALIDA = "umbra.coleta.agenda.qualidade=0 50 * * * *";
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withInitializer(contexto -> contexto.getEnvironment().getPropertySources()
                     .remove(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME))
-            .withUserConfiguration(TestConfig.class);
+            .withUserConfiguration(TestConfig.class)
+            .withPropertyValues(QUALIDADE_VALIDA);
 
     @EnableConfigurationProperties(AgendaColetaProperties.class)
     @Configuration
@@ -89,6 +91,18 @@ class AgendaColetaPropertiesTest {
                     assertThat(context.getStartupFailure())
                             .rootCause()
                             .hasMessageContaining("umbra.coleta.agenda.refresh");
+                });
+    }
+
+    @Test
+    void deveFalharComQualidadeEmBranco() {
+        contextRunner
+                .withPropertyValues(DESCOBERTA_ITAD_VALIDA, REFRESH_VALIDO, "umbra.coleta.agenda.qualidade= ")
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .rootCause()
+                            .hasMessageContaining("umbra.coleta.agenda.qualidade");
                 });
     }
 
