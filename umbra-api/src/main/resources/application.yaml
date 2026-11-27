@@ -146,6 +146,10 @@ resilience4j:
         limit-for-period: 800
         limit-refresh-period: 5m
         timeout-duration: 0
+      itad-qualidade:
+        limit-for-period: 150
+        limit-refresh-period: 5m
+        timeout-duration: 2s
       itad-materializacao:
         limit-for-period: 20
         limit-refresh-period: 5m
@@ -188,6 +192,8 @@ resilience4j:
       itad:
         base-config: default
       itad-busca:
+        base-config: default
+      itad-qualidade:
         base-config: default
       steam:
         base-config: default
