@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter, map } from 'rxjs';
 import { DESTINO_PADRAO } from '../../navegacao/destino-interno';
 import { ITENS_NAVEGACAO } from '../../navegacao/itens-navegacao';
+import { MARCA_DO_CABECALHO } from '../../../shared/mascote/caminhos-da-arte';
 import { SessaoService } from '../../sessao';
 
 const ROTAS_SEM_BUSCA_NO_CABECALHO = ['/', '/catalogo', '/entrar', '/cadastro', '/login/callback'];
@@ -29,6 +30,7 @@ export class CabecalhoComponent {
   private readonly conta = viewChild<ElementRef<HTMLElement>>('conta');
   private readonly botaoDaConta = viewChild<ElementRef<HTMLButtonElement>>('botaoDaConta');
 
+  protected readonly marca = MARCA_DO_CABECALHO;
   protected readonly itens = ITENS_NAVEGACAO;
   protected readonly autenticado = this.sessao.autenticado;
   protected readonly usuario = this.sessao.usuario;

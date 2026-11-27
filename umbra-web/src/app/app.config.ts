@@ -5,6 +5,7 @@ import { ConfiguracaoAmbiente, provideConfiguracaoAmbiente } from './core/ambien
 import { autenticacaoInterceptor, erroInterceptor } from './core/http';
 import { provideFocoNaTrocaDeRota } from './core/navegacao/foco-na-troca-de-rota';
 import { provideIndexacaoPorRota } from './core/navegacao/indexacao-por-rota';
+import { providePinturaCompletaNaNavegacao } from './core/navegacao/pintura-completa-na-navegacao';
 import { TituloComMarcaStrategy } from './core/navegacao/titulo-com-marca.strategy';
 import { provideSessao } from './core/sessao';
 import { routes } from './app.routes';
@@ -20,6 +21,7 @@ export function criarAppConfig(configuracao: ConfiguracaoAmbiente): ApplicationC
       { provide: TitleStrategy, useClass: TituloComMarcaStrategy },
       provideFocoNaTrocaDeRota(),
       provideIndexacaoPorRota(),
+      providePinturaCompletaNaNavegacao(),
     ],
   };
 }

@@ -8,7 +8,8 @@ import { PontoHistoricoResponse } from '../../../api/models/ponto-historico-resp
 import { ProdutoResponse } from '../../../api/models/produto-response';
 import { CategoriaDeHardware } from './filtro-da-busca';
 import { HistoricoDoProduto, PeriodoDoHistorico, PontoDoHistorico } from './historico-do-produto';
-import { LARGURAS_DA_FAIXA_EM_DESTAQUE, capaPelaOrigem } from '../../../shared/capa/imagem-pela-origem';
+import { capaPelaOrigem } from '../../../shared/capa/imagem-pela-origem';
+import { LARGURAS_DO_DESTAQUE } from '../../../shared/capa/larguras-da-capa';
 import { precoDaOferta } from './preco-da-oferta';
 import { OfertaDaLoja, ProdutoDetalhado } from './produto-detalhado';
 import { ROTULO_DA_CATEGORIA } from './rotulos';
@@ -31,7 +32,7 @@ function paraProdutoDetalhado(produto: ProdutoResponse): ProdutoDetalhado {
     id: produto.id,
     nome: produto.nome,
     tipo: produto.tipo,
-    capa: capaPelaOrigem(produto.imagemUrl, LARGURAS_DA_FAIXA_EM_DESTAQUE),
+    capa: capaPelaOrigem(produto.imagemUrl, LARGURAS_DO_DESTAQUE),
     categoria: produto.categoria ? (ROTULO_DA_CATEGORIA[produto.categoria as CategoriaDeHardware] ?? null) : null,
     melhorOferta: produto.melhorPreco ? paraOferta(produto.melhorPreco) : null,
     ofertas: produto.ofertas.map(paraOferta).sort((a, b) => a.valorCentavos - b.valorCentavos),

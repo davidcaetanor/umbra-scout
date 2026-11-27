@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { caminhoDoRetrato } from '../../mascote/caminhos-da-arte';
 import { EstadoMascote } from '../../mascote/estado-mascote';
 import { MascoteComponent } from '../../mascote/mascote.component';
 import { Aviso, AvisoService, RetratoDoAviso } from './aviso.service';
@@ -15,7 +16,11 @@ import { Aviso, AvisoService, RetratoDoAviso } from './aviso.service';
 export class AvisoComponent {
   protected readonly avisos = inject(AvisoService);
 
-  protected retratoDe(aviso: Aviso): RetratoDoAviso {
+  protected retratoDe(aviso: Aviso): string {
+    return caminhoDoRetrato(this.nomeDoRetrato(aviso));
+  }
+
+  private nomeDoRetrato(aviso: Aviso): RetratoDoAviso {
     return aviso.figura.tipo === 'retrato' ? aviso.figura.retrato : 'feliz';
   }
 

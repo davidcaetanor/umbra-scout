@@ -22,31 +22,36 @@
 	@foraDoCallback not path /login/callback
 	header @foraDoCallback Referrer-Policy strict-origin-when-cross-origin
 
-	@comHash path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
-	header @comHash Cache-Control "public, max-age=31536000, immutable"
-
-	@semHash {
-		not path_regexp \-[A-Z0-9]{8}\.(js|css|woff2?)$
-		not path /imagens/*
+	map {http.request.orig_uri.path} {origem_da_imagem} {politica_de_cache} {
+		~^/imagens/(?:[0-9]+/)?itad/ https://assets.isthereanydeal.com "public, max-age=31536000, immutable"
+		~^/imagens/(?:[0-9]+/)?kabum/ https://images.kabum.com.br "public, max-age=2592000"
+		~^/(?:mascote|marca|fontes)/v1/ - "public, max-age=31536000, immutable"
+		~-[A-Za-z0-9_-]{8}\.(?:js|css|woff2?)$ - "public, max-age=31536000, immutable"
+		default - "no-store"
 	}
-	header @semHash Cache-Control "no-store"
+
+	@foraDasImagens not path /imagens/*
+	header @foraDasImagens Cache-Control {politica_de_cache}
 
 	handle /config.json {
 		root * /run/umbra
 		file_server
 	}
 
-	map {path} {origem_da_imagem} {
-		~^/imagens/itad/ https://assets.isthereanydeal.com
-		~^/imagens/kabum/ https://images.kabum.com.br
-	}
-
 	@imagemDeLoja {
 		method GET
-		path_regexp imagem ^/imagens/(?:itad|kabum)/(.+)$
+		path_regexp imagem ^/imagens/(?:(240|480|600)/)?(?:itad|kabum)/(.+)$
 	}
+
+	map {re.imagem.1} {preset_da_capa} {
+		240 capa-240
+		480 capa-480
+		600 capa-600
+		default capa
+	}
+
 	handle @imagemDeLoja {
-		rewrite * /_/capa/plain/{origem_da_imagem}/{re.imagem.1}?
+		rewrite * /_/{preset_da_capa}/plain/{origem_da_imagem}/{re.imagem.2}?
 		reverse_proxy {$UMBRA_WEB_IMAGENS_URL:http://imagens:8080} {
 			header_up -X-Forwarded-For
 			header_up -X-Forwarded-Host
@@ -55,6 +60,7 @@
 			header_up -Cookie
 			header_up -Authorization
 			header_down -Set-Cookie
+			header_down Cache-Control "^max-age=31536000, public$" {politica_de_cache}
 
 			@falhou status 4xx 5xx
 			handle_response @falhou {
@@ -73,7 +79,11 @@
 	}
 
 	handle {
-		try_files {path} /index.html
-		file_server
+		route {
+			try_files {path} /index.html
+			@paginaDoApp path / /index.html
+			root @paginaDoApp /run/umbra
+			file_server
+		}
 	}
 }

@@ -1,7 +1,7 @@
+import { PASTA_DOS_SPRITES } from './caminhos-da-arte';
 import { DirecaoMascote, EstadoMascote, TamanhoMascote } from './estado-mascote';
 import { PoseMascote } from './pose-mascote';
 
-const PASTA = 'mascote/spritesheets';
 const QUADROS = 9;
 
 interface DefinicaoDePose {
@@ -15,7 +15,7 @@ interface DefinicaoDePose {
 
 function pose(definicao: DefinicaoDePose): PoseMascote {
   return {
-    arquivo: `${PASTA}/${definicao.nome}.png`,
+    arquivo: `${PASTA_DOS_SPRITES}/${definicao.nome}.png`,
     larguraQuadro: definicao.largura,
     alturaQuadro: definicao.largura,
     sobraAbaixoDosPes: definicao.sobraAbaixoDosPes,

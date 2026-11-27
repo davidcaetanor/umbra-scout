@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { CapaExibida } from './capa-exibida';
 import { CapaProdutoComponent } from './capa-produto.component';
 
-const FAIXA: CapaExibida = { endereco: '/imagens/itad/a/banner300.jpg', alternativas: '', enquadramento: 'faixa' };
+const FAIXA: CapaExibida = { endereco: '/imagens/240/itad/a/banner300.jpg', alternativas: '', enquadramento: 'faixa' };
 const FOTO: CapaExibida = {
-  endereco: '/imagens/kabum/produtos/fotos/1/1_index_g.jpg',
+  endereco: '/imagens/240/kabum/produtos/fotos/1/1_index_g.jpg',
   alternativas: '',
   enquadramento: 'foto',
 };
@@ -12,7 +12,6 @@ const FOTO: CapaExibida = {
 async function montar(capa: CapaExibida | null) {
   const fixture = TestBed.createComponent(CapaProdutoComponent);
   fixture.componentRef.setInput('capa', capa);
-  fixture.componentRef.setInput('tipo', 'HARDWARE');
   await fixture.whenStable();
   const host = fixture.nativeElement as HTMLElement;
   return { host, imagem: host.querySelector('img') };
@@ -35,19 +34,19 @@ describe('CapaProdutoComponent', () => {
     expect(host.classList).not.toContain('bg-superficie-elevada');
   });
 
-  it('sem imagem mostra o icone do tipo, sem moldura', async () => {
+  it('sem imagem mostra a galeria em 30% da altura, no cinza proprio, sem moldura', async () => {
     const { host, imagem } = await montar(null);
 
     expect(imagem).toBeNull();
-    expect(host.querySelector('svg')).not.toBeNull();
+    expect(host.querySelector('svg')?.classList).toContain('h-[30%]');
+    expect(host.classList).toContain('text-sem-imagem');
     expect(host.classList).not.toContain('bg-moldura-foto');
   });
 
   it('foto que falha ao carregar perde a moldura e cai no icone', async () => {
     const fixture = TestBed.createComponent(CapaProdutoComponent);
     fixture.componentRef.setInput('capa', FOTO);
-    fixture.componentRef.setInput('tipo', 'HARDWARE');
-    await fixture.whenStable();
+      await fixture.whenStable();
     const host = fixture.nativeElement as HTMLElement;
 
     host.querySelector('img')!.dispatchEvent(new Event('error'));
@@ -55,5 +54,6 @@ describe('CapaProdutoComponent', () => {
 
     expect(host.querySelector('img')).toBeNull();
     expect(host.classList).not.toContain('bg-moldura-foto');
+    expect(host.querySelector('svg')?.innerHTML).toBe((await montar(null)).host.querySelector('svg')?.innerHTML);
   });
 });

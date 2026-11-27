@@ -8,8 +8,8 @@ const PRODUTO: ProdutoExibido = {
   nome: 'Placa RTX',
   tipo: 'HARDWARE',
   capa: {
-    endereco: '/imagens/itad/a/banner300.jpg',
-    alternativas: '/imagens/itad/a/banner300.jpg 300w, /imagens/itad/a/banner400.jpg 400w',
+    endereco: '/imagens/240/itad/a/banner300.jpg',
+    alternativas: '/imagens/240/itad/a/banner300.jpg 240w, /imagens/480/itad/a/banner600.jpg 480w',
     enquadramento: 'faixa',
   },
   categoria: 'Placa de vídeo',
@@ -49,8 +49,8 @@ describe('CardProdutoComponent', () => {
     const card = await mostrar(PRODUTO);
     const capa = imagem(card)!;
 
-    expect(capa.getAttribute('src')).toBe('/imagens/itad/a/banner300.jpg');
-    expect(capa.getAttribute('srcset')).toContain('banner400.jpg 400w');
+    expect(capa.getAttribute('src')).toBe('/imagens/240/itad/a/banner300.jpg');
+    expect(capa.getAttribute('srcset')).toContain('banner600.jpg 480w');
     expect(capa.getAttribute('sizes')).toContain('120px');
     expect(capa.getAttribute('alt')).toBe('');
     expect(capa.getAttribute('referrerpolicy')).toBe('no-referrer');

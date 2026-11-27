@@ -1,35 +1,49 @@
 import { CapaDoProduto } from './capa-do-produto';
+import { LARGURAS_DA_LISTA, LarguraDaCapa } from './larguras-da-capa';
 
-const ORIGEM_DO_ITAD = 'https://assets.isthereanydeal.com/';
-const CAMINHO_PELA_NOSSA_ORIGEM = '/imagens/itad/';
-const ORIGEM_DA_KABUM = 'https://images.kabum.com.br/';
-const CAMINHO_DA_KABUM_PELA_NOSSA_ORIGEM = '/imagens/kabum/';
-const ARQUIVO_DA_CAPA_EM_PE = /\/boxart\.(?:jpg|png)(?=\?|$)/;
-const LARGURAS_DA_FAIXA: readonly number[] = [300, 400];
-export const LARGURAS_DA_FAIXA_EM_DESTAQUE: readonly number[] = [400, 600];
+interface OrigemDaImagem {
+  readonly endereco: string;
+  readonly caminhoLocal: string;
+  readonly enquadramento: CapaDoProduto['enquadramento'];
+  readonly arquivoPorLargura: (arquivo: string, largura: LarguraDaCapa) => string;
+}
+
+const CAPA_EM_PE_DO_ITAD = /\/boxart\.(?:jpg|png)(?=\?|$)/;
+const FAIXA_DO_ITAD_POR_LARGURA: Readonly<Record<LarguraDaCapa, number>> = { 240: 300, 480: 600, 600: 600 };
+
+const ORIGENS: readonly OrigemDaImagem[] = [
+  {
+    endereco: 'https://assets.isthereanydeal.com/',
+    caminhoLocal: 'itad',
+    enquadramento: 'faixa',
+    arquivoPorLargura: faixaDoItad,
+  },
+  {
+    endereco: 'https://images.kabum.com.br/',
+    caminhoLocal: 'kabum',
+    enquadramento: 'foto',
+    arquivoPorLargura: (arquivo) => arquivo,
+  },
+];
 
 export function capaPelaOrigem(
   endereco: string | null | undefined,
-  larguras: readonly number[] = LARGURAS_DA_FAIXA,
+  larguras: readonly LarguraDaCapa[] = LARGURAS_DA_LISTA,
 ): CapaDoProduto | null {
-  if (endereco?.startsWith(ORIGEM_DA_KABUM)) {
-    return {
-      endereco: CAMINHO_DA_KABUM_PELA_NOSSA_ORIGEM + endereco.slice(ORIGEM_DA_KABUM.length),
-      alternativas: '',
-      enquadramento: 'foto',
-    };
-  }
-  if (!endereco?.startsWith(ORIGEM_DO_ITAD)) {
+  const origem = ORIGENS.find((candidata) => endereco?.startsWith(candidata.endereco));
+  if (!endereco || !origem) {
     return null;
   }
-  const local = CAMINHO_PELA_NOSSA_ORIGEM + endereco.slice(ORIGEM_DO_ITAD.length);
-  if (!ARQUIVO_DA_CAPA_EM_PE.test(local)) {
-    return { endereco: local, alternativas: '', enquadramento: 'faixa' };
-  }
-  const faixa = (largura: number) => local.replace(ARQUIVO_DA_CAPA_EM_PE, `/banner${largura}.jpg`);
+  const arquivo = endereco.slice(origem.endereco.length);
+  const variante = (largura: LarguraDaCapa) =>
+    `/imagens/${largura}/${origem.caminhoLocal}/${origem.arquivoPorLargura(arquivo, largura)}`;
   return {
-    endereco: faixa(larguras[0]),
-    alternativas: larguras.map((largura) => `${faixa(largura)} ${largura}w`).join(', '),
-    enquadramento: 'faixa',
+    endereco: variante(larguras[0]),
+    alternativas: larguras.map((largura) => `${variante(largura)} ${largura}w`).join(', '),
+    enquadramento: origem.enquadramento,
   };
+}
+
+function faixaDoItad(arquivo: string, largura: LarguraDaCapa): string {
+  return arquivo.replace(CAPA_EM_PE_DO_ITAD, `/banner${FAIXA_DO_ITAD_POR_LARGURA[largura]}.jpg`);
 }

@@ -141,8 +141,8 @@ describe('CatalogoService', () => {
         nome: 'Placa',
         tipo: 'HARDWARE',
         capa: {
-          endereco: '/imagens/itad/a/banner300.jpg',
-          alternativas: '/imagens/itad/a/banner300.jpg 300w, /imagens/itad/a/banner400.jpg 400w',
+          endereco: '/imagens/240/itad/a/banner300.jpg',
+          alternativas: '/imagens/240/itad/a/banner300.jpg 240w, /imagens/480/itad/a/banner600.jpg 480w',
           enquadramento: 'faixa',
         },
         categoria: 'Placa de vídeo',

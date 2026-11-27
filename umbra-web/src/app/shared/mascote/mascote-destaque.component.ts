@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { PASTA_DO_DESTAQUE } from './caminhos-da-arte';
 
 export type LadoDaTela = 'esquerda' | 'direita';
 
@@ -6,8 +7,8 @@ const LADO_DA_ARTE = 256;
 const SOBRA_ABAIXO_DOS_PES = 11;
 
 const ARTE_POR_LADO: Readonly<Record<LadoDaTela, string>> = {
-  esquerda: 'mascote/destaque/umbra-destaque-256.png',
-  direita: 'mascote/destaque/umbra-destaque-espelhado-256.png',
+  esquerda: `${PASTA_DO_DESTAQUE}/umbra-destaque-256.png`,
+  direita: `${PASTA_DO_DESTAQUE}/umbra-destaque-espelhado-256.png`,
 };
 
 @Component({

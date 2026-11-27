@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { CapaExibida } from './capa-exibida';
-import { TipoExibido } from './tipo-exibido';
 
 type FaseDaCapa = 'imagem' | 'sem-imagem';
 
@@ -9,14 +8,13 @@ type FaseDaCapa = 'imagem' | 'sem-imagem';
   templateUrl: './capa-produto.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex items-center justify-center overflow-hidden text-texto-secundario',
+    class: 'flex items-center justify-center overflow-hidden text-sem-imagem',
     '[class.bg-superficie-elevada]': '!emMoldura()',
     '[class.bg-moldura-foto]': 'emMoldura()',
   },
 })
 export class CapaProdutoComponent {
   readonly capa = input.required<CapaExibida | null>();
-  readonly tipo = input.required<TipoExibido>();
   readonly tamanhos = input('120px');
   readonly prioritaria = input(false);
 

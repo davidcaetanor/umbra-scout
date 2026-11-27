@@ -18,6 +18,7 @@ import { carregarEstado, mensagemDoErro } from '../../../../core/erro';
 import { RELOGIO } from '../../../../core/sessao/relogio';
 import { reais, reaisSemQuebra } from '../../../../shared/formatacao/reais';
 import { BalaoFalaComponent } from '../../../../shared/mascote/balao-fala.component';
+import { caminhoDoRetrato } from '../../../../shared/mascote/caminhos-da-arte';
 import { EntradasVistas } from '../../../../shared/mascote/entradas-vistas';
 import { MascoteDestaqueComponent } from '../../../../shared/mascote/mascote-destaque.component';
 import { MascoteComponent } from '../../../../shared/mascote/mascote.component';
@@ -70,6 +71,7 @@ export class MeusMonitoramentosPage {
 
   private readonly recurso = resource({ loader: () => carregarEstado(() => this.servico.listarTodos()) });
 
+  protected readonly retratoTranquilo = caminhoDoRetrato('tranquilo');
   protected readonly itens = linkedSignal<EstadoDoBloco<MonitoramentoListado[]> | undefined, MonitoramentoListado[] | null>({
     source: () => this.recurso.value(),
     computation: (estado) => (estado?.tipo === 'sucesso' ? estado.dados : null),

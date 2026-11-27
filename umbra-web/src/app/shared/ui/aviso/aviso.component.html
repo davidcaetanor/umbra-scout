@@ -6,7 +6,7 @@
       @switch (aviso.figura.tipo) {
         @case ('retrato') {
           <img
-            [src]="'/mascote/retratos/' + retratoDe(aviso) + '.png'"
+            [src]="retratoDe(aviso)"
             alt=""
             width="64"
             height="64"

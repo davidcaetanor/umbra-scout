@@ -28,7 +28,7 @@ describe('MascoteComponent', () => {
   it('usa a tira do estado pedido em escala 2x por padrão, sem a sobra abaixo dos pés', () => {
     montar('observando');
     const estilo = sprite().style;
-    expect(estilo.getPropertyValue('--sprite')).toContain('mascote/spritesheets/observando-south.png');
+    expect(estilo.getPropertyValue('--sprite')).toContain('/mascote/v1/spritesheets/observando-south.png');
     expect(estilo.getPropertyValue('--largura')).toBe('184px');
     expect(estilo.getPropertyValue('--altura-visivel')).toBe('156px');
   });
