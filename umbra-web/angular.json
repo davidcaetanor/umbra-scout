@@ -98,7 +98,17 @@
             "coverageReporters": [
               "text-summary",
               "html",
-              "lcov"
+              "lcov",
+              "json-summary"
+            ],
+            "reporters": [
+              "default",
+              [
+                "json",
+                {
+                  "outputFile": "coverage/testes.json"
+                }
+              ]
             ]
           }
         },
