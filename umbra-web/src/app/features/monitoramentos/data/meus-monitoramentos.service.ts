@@ -60,6 +60,7 @@ function paraListado(monitoramento: MonitoramentoResponse): MonitoramentoListado
     melhorPreco: monitoramento.melhorPreco === null ? null : paraMelhorPreco(monitoramento.melhorPreco),
     distanciaDoAlvoCentavos: monitoramento.distanciaDoAlvoCentavos,
     alvoAtingido: monitoramento.ativo && monitoramento.alvoAtingido,
+    avisadoEm: monitoramento.ultimoAvisoEm == null ? null : Date.parse(monitoramento.ultimoAvisoEm),
     foraDeVenda: monitoramento.aparentementeDescontinuado,
   };
 }
