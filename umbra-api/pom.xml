@@ -393,6 +393,10 @@
 								<param>dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistorico</param>
 								<param>dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntity</param>
 								<param>dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequest</param>
+								<param>dev.davidcaetano.umbra_api.notificacao.AvaliadorDeAlvo</param>
+								<param>dev.davidcaetano.umbra_api.notificacao.Avisar</param>
+								<param>dev.davidcaetano.umbra_api.notificacao.EstadoDoAviso</param>
+								<param>dev.davidcaetano.umbra_api.notificacao.OfertaAvaliada</param>
 							</targetClasses>
 							<targetTests>
 								<param>dev.davidcaetano.umbra_api.coleta.service.JulgamentoDeRodadaTest</param>
@@ -423,6 +427,7 @@
 								<param>dev.davidcaetano.umbra_api.catalogo.service.OrdenacaoCatalogoTest</param>
 								<param>dev.davidcaetano.umbra_api.catalogo.service.PeriodoHistoricoTest</param>
 								<param>dev.davidcaetano.umbra_api.usuario.entity.UsuarioEntityTest</param>
+								<param>dev.davidcaetano.umbra_api.notificacao.AvaliadorDeAlvoTest</param>
 								<param>dev.davidcaetano.umbra_api.usuario.dto.request.CadastroRequestTest</param>
 							</targetTests>
 						</configuration>
