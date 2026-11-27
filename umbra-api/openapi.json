@@ -1130,6 +1130,9 @@
           },
           "500" : {
             "$ref" : "#/components/responses/ErroInterno"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/ServicoIndisponivel"
           }
         },
         "security" : [ ],
@@ -1154,6 +1157,9 @@
           },
           "500" : {
             "$ref" : "#/components/responses/ErroInterno"
+          },
+          "503" : {
+            "$ref" : "#/components/responses/ServicoIndisponivel"
           }
         },
         "security" : [ ],

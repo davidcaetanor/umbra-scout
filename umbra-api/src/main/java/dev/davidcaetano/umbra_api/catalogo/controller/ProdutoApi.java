@@ -39,6 +39,7 @@ public interface ProdutoApi {
             schema = @Schema(type = "integer", format = "int32", minimum = "1", maximum = "20", defaultValue = "20"))
     @ApiResponse(responseCode = "200", description = "Página do catálogo.")
     @ApiResponse(responseCode = "400", ref = RespostaDeErro.REF_PARAMETRO_INVALIDO)
+    @ApiResponse(responseCode = "503", ref = RespostaDeErro.REF_SERVICO_INDISPONIVEL)
     BuscaProdutosResponse buscar(@ParameterObject BuscaProdutoRequest busca,
                                  @Parameter(hidden = true) Pageable paginacao,
                                  @Parameter(hidden = true) HttpServletRequest requisicao);
@@ -47,6 +48,7 @@ public interface ProdutoApi {
             description = "Jogos com a maior economia, pela mesma pontuação de `melhoresOfertas`, "
                     + "com uma edição por jogo. Recalculado no máximo a cada 10 minutos.")
     @ApiResponse(responseCode = "200", description = "Lista curta, já ordenada.")
+    @ApiResponse(responseCode = "503", ref = RespostaDeErro.REF_SERVICO_INDISPONIVEL)
     DestaquesResponse destaques();
 
     @Operation(operationId = "detalharProduto", summary = "Detalhe do produto com as ofertas atuais")

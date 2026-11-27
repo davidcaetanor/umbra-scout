@@ -15,7 +15,6 @@ import dev.davidcaetano.umbra_api.catalogo.enums.CodigoLoja;
 import dev.davidcaetano.umbra_api.catalogo.enums.SituacaoDoPreco;
 import dev.davidcaetano.umbra_api.catalogo.mapper.ProdutoMapper;
 import dev.davidcaetano.umbra_api.catalogo.properties.BuscaProperties;
-import dev.davidcaetano.umbra_api.catalogo.properties.OfertasProperties;
 import dev.davidcaetano.umbra_api.catalogo.repository.LojaRepository;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaAtualProjecao;
 import dev.davidcaetano.umbra_api.catalogo.repository.OfertaRepository;
@@ -53,7 +52,7 @@ public class ProdutoService {
     private final LojaRepository lojaRepository;
     private final BuscaExternaService buscaExternaService;
     private final BuscaProperties buscaProperties;
-    private final OfertasProperties ofertasProperties;
+    private final ConsultaDoCatalogo consultaDoCatalogo;
     private final ProdutoMapper produtoMapper;
     private final Clock clock;
 
@@ -65,7 +64,7 @@ public class ProdutoService {
         Instant agora = clock.instant();
         Pageable semOrdenacaoDoCliente = PageRequest.of(paginacao.getPageNumber(), paginacao.getPageSize());
 
-        Page<ProdutoResumoProjecao> locais = buscarNoCatalogo(filtro, ordenacao, semOrdenacaoDoCliente);
+        Page<ProdutoResumoProjecao> locais = consultaDoCatalogo.buscar(filtro, ordenacao, semOrdenacaoDoCliente);
         List<ProdutoResumoResponse> conteudo = locais.getContent().stream()
                 .map(produto -> produtoMapper.paraResumo(produto, melhorPrecoDo(produto, agora)))
                 .toList();
@@ -188,24 +187,6 @@ public class ProdutoService {
 
     private ProdutoEntity buscarAtivo(Long id) {
         return produtoRepository.findByIdAndAtivoTrue(id).orElseThrow(() -> new ProdutoNaoEncontradoException(id));
-    }
-
-    private Page<ProdutoResumoProjecao> buscarNoCatalogo(FiltroDoCatalogo filtro,
-                                                         OrdenacaoCatalogo ordenacao,
-                                                         Pageable paginacao) {
-        String codigoTipo = filtro.tipo() == null ? null : filtro.tipo().name();
-        String codigoCategoria = filtro.categoria() == null ? null : filtro.categoria().name();
-        String codigoOrdenacao = (ordenacao == null ? OrdenacaoCatalogo.NOME : ordenacao).toString();
-
-        if (filtro.loja() == null) {
-            return produtoRepository.buscarCatalogo(filtro.termo(), codigoTipo, codigoCategoria,
-                    filtro.precoMinCentavos(), filtro.precoMaxCentavos(), filtro.descontoMin(), codigoOrdenacao,
-                    ofertasProperties.regua(), paginacao);
-        }
-
-        return produtoRepository.buscarCatalogoDaLoja(filtro.loja().name(), filtro.termo(), codigoTipo,
-                codigoCategoria, filtro.precoMinCentavos(), filtro.precoMaxCentavos(), filtro.descontoMin(),
-                codigoOrdenacao, ofertasProperties.regua(), paginacao);
     }
 
     private OfertaResponse melhorPrecoDo(ProdutoResumoProjecao produto, Instant agora) {

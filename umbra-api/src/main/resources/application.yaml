@@ -98,6 +98,9 @@ umbra:
       cache-ttl: 6m
       prazo: 4s
       maximo-resultados: 5
+  catalogo:
+    prazo-da-consulta-segundos: 3
+    tentar-de-novo-em: 5s
   ofertas:
     peso-economia: 0.7
     referencia-economia-centavos: 11342

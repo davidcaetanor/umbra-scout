@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaVitrine;
 import dev.davidcaetano.umbra_api.coleta.itad.ItadRefresh;
 import dev.davidcaetano.umbra_api.coleta.itad.ResolucaoDeGidFaltante;
 import dev.davidcaetano.umbra_api.coleta.properties.AgendaColetaProperties;
@@ -41,9 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -63,6 +66,7 @@ class ColetaSchedulerTest {
     private final ColetaService coletaService = mock(ColetaService.class);
     private final ResolucaoDeGidFaltante resolucaoDeGidFaltante = mock(ResolucaoDeGidFaltante.class);
     private final ItadRefresh itadRefresh = mock(ItadRefresh.class);
+    private final AtualizacaoDaVitrine atualizacaoDaVitrine = mock(AtualizacaoDaVitrine.class);
 
     private final ScraperFalso itad = new ScraperFalso(OrigemColeta.ITAD_API);
     private final ScraperFalso steam = new ScraperFalso(OrigemColeta.STEAM_API);
@@ -153,6 +157,43 @@ class ColetaSchedulerTest {
                 .contains("ITAD fora do ar")
                 .contains("Rodada finalizada: tarefa=descoberta fonte=ITAD_API situacao=FALHA duracaoMs=0")
                 .contains("Rodada finalizada: tarefa=descoberta fonte=STEAM_API situacao=SAUDAVEL duracaoMs=0");
+    }
+
+    @Test
+    void deveAtualizarAVitrineDepoisDeGravarARodada() {
+        ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
+
+        scheduler.executarDescoberta(steam);
+
+        InOrder ordem = inOrder(coletaService, atualizacaoDaVitrine);
+        ordem.verify(coletaService).gravar(steam.resultado);
+        ordem.verify(atualizacaoDaVitrine).atualizar();
+    }
+
+    @Test
+    void deveAtualizarAVitrineMesmoQuandoARodadaFalha() {
+        ScraperFalso quebrado = new ScraperFalso(OrigemColeta.ITAD_API, new IllegalStateException("ITAD fora do ar"));
+        ColetaScheduler scheduler = scheduler(List.of(quebrado, steam, kabum), agendaCompleta(), CRON_REFRESH);
+
+        scheduler.executarDescoberta(quebrado);
+
+        verify(atualizacaoDaVitrine).atualizar();
+    }
+
+    @Test
+    void deveTerminarARodadaQuandoAAtualizacaoDaVitrineLancar(CapturedOutput saida) {
+        doThrow(new IllegalStateException("refresh recusado")).when(atualizacaoDaVitrine).atualizar();
+        ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
+
+        assertThatCode(() -> scheduler.executarDescoberta(steam)).doesNotThrowAnyException();
+        assertThatCode(() -> scheduler.executarDescoberta(steam)).doesNotThrowAnyException();
+
+        verify(coletaService, times(2)).gravar(steam.resultado);
+        assertThat(MDC.get(ColetaScheduler.MDC_KEY)).isNull();
+        assertThat(saida.getOut())
+                .contains("WARN")
+                .contains("Atualizacao da vitrine falhou")
+                .contains("refresh recusado");
     }
 
     @Test
@@ -428,12 +469,12 @@ class ColetaSchedulerTest {
     }
 
     private ColetaScheduler scheduler(List<Scraper> scrapers, Map<OrigemColeta, String> descoberta, String refresh) {
-        return new ColetaScheduler(scrapers, coletaService, resolucaoDeGidFaltante, itadRefresh,
+        return new ColetaScheduler(scrapers, coletaService, resolucaoDeGidFaltante, itadRefresh, atualizacaoDaVitrine,
                 new AgendaColetaProperties(descoberta, refresh, false), CLOCK);
     }
 
     private ColetaScheduler schedulerComRodadaInicial(List<Scraper> scrapers) {
-        return new ColetaScheduler(scrapers, coletaService, resolucaoDeGidFaltante, itadRefresh,
+        return new ColetaScheduler(scrapers, coletaService, resolucaoDeGidFaltante, itadRefresh, atualizacaoDaVitrine,
                 new AgendaColetaProperties(agendaCompleta(), CRON_REFRESH, true), CLOCK);
     }
 
