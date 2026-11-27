@@ -12,6 +12,7 @@ import dev.davidcaetano.umbra_api.comum.log.ChaveDeLog;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -51,6 +53,7 @@ public class ColetaScheduler {
     private final ItadRefresh itadRefresh;
     private final AtualizacaoDaVitrine atualizacaoDaVitrine;
     private final AtualizacaoDaQualidade atualizacaoDaQualidade;
+    private final ApplicationEventPublisher eventos;
     private final Map<OrigemColeta, String> cronPorFonte;
     private final String cronRefresh;
     private final String cronQualidade;
@@ -67,6 +70,7 @@ public class ColetaScheduler {
                            ItadRefresh itadRefresh,
                            AtualizacaoDaVitrine atualizacaoDaVitrine,
                            AtualizacaoDaQualidade atualizacaoDaQualidade,
+                           ApplicationEventPublisher eventos,
                            AgendaColetaProperties agenda,
                            Clock clock) {
 
@@ -78,6 +82,7 @@ public class ColetaScheduler {
         this.itadRefresh = itadRefresh;
         this.atualizacaoDaVitrine = atualizacaoDaVitrine;
         this.atualizacaoDaQualidade = atualizacaoDaQualidade;
+        this.eventos = eventos;
         this.cronPorFonte = Map.copyOf(agenda.descoberta());
         this.cronRefresh = agenda.refresh();
         this.cronQualidade = agenda.qualidade();
@@ -103,7 +108,7 @@ public class ColetaScheduler {
         executar("tarefa=qualidade", bloqueioDaQualidade, () -> {
             atualizacaoDaQualidade.atualizarLote();
             return CONCLUIDA;
-        }, () -> {
+        }, situacao -> {
         });
     }
 
@@ -153,10 +158,13 @@ public class ColetaScheduler {
     }
 
     private void executarRodada(String tarefa, Semaphore bloqueio, Supplier<VereditoRodada> rodada) {
-        executar(tarefa, bloqueio, () -> String.valueOf(rodada.get().situacao()), this::atualizarVitrine);
+        executar(tarefa, bloqueio, () -> String.valueOf(rodada.get().situacao()), situacao -> {
+            atualizarVitrine();
+            publicarConclusao(tarefa, situacao);
+        });
     }
 
-    private void executar(String tarefa, Semaphore bloqueio, Supplier<String> trabalho, Runnable depois) {
+    private void executar(String tarefa, Semaphore bloqueio, Supplier<String> trabalho, Consumer<String> depois) {
         try {
             MDC.put(MDC_KEY, UUID.randomUUID().toString());
 
@@ -171,7 +179,7 @@ public class ColetaScheduler {
                 String situacao = situacaoOuFalha(tarefa, trabalho);
                 log.info("Rodada finalizada: {} situacao={} duracaoMs={}",
                         tarefa, situacao, Duration.between(inicio, clock.instant()).toMillis());
-                depois.run();
+                depois.accept(situacao);
             } finally {
                 bloqueio.release();
             }
@@ -194,6 +202,17 @@ public class ColetaScheduler {
             atualizacaoDaVitrine.atualizar();
         } catch (RuntimeException falha) {
             log.warn("Atualizacao da vitrine falhou; o catalogo segue com a vitrine da rodada anterior", falha);
+        }
+    }
+
+    private void publicarConclusao(String tarefa, String situacao) {
+        if (FALHA.equals(situacao)) {
+            return;
+        }
+        try {
+            eventos.publishEvent(new RodadaDeColetaConcluida(tarefa));
+        } catch (RuntimeException falha) {
+            log.warn("Reacao a rodada concluida falhou: {}", tarefa, falha);
         }
     }
 
