@@ -4,6 +4,7 @@ import dev.davidcaetano.umbra_api.catalogo.entity.ProdutoEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,9 +23,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
 
     String MELHOR_OFERTA_DO_PRODUTO = """
               FROM produto p
-              LEFT JOIN (SELECT mo.*, om.verificado_em
-                           FROM vw_melhor_oferta_atual mo
-                           JOIN oferta om ON om.id = mo.oferta_id) m ON m.produto_id = p.id
+              LEFT JOIN mv_vitrine_ofertas m ON m.produto_id = p.id
               LEFT JOIN loja l ON l.id = m.loja_id
             """;
 
@@ -32,10 +31,11 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
               FROM produto p
               JOIN (SELECT DISTINCT ON (o.produto_id)
                            o.produto_id, o.loja_id, o.url, v.valor_centavos, v.valor_original_centavos,
-                           v.desconto_pct, v.expira_em, v.coletado_em, o.verificado_em
+                           v.desconto_pct, v.expira_em, v.coletado_em, o.verificado_em, vm.minimo_centavos
                       FROM oferta o
                       JOIN vw_preco_atual v ON v.oferta_id = o.id
                       JOIN loja lj ON lj.id = o.loja_id
+                      LEFT JOIN mv_vitrine_ofertas vm ON vm.produto_id = o.produto_id
                      WHERE o.ativa AND v.disponivel AND lj.codigo = :loja
                        AND NOT (v.expira_em IS NOT NULL AND v.expira_em <= now() AND o.verificado_em < v.expira_em)
                      ORDER BY o.produto_id, v.valor_centavos, o.id) m ON m.produto_id = p.id
@@ -73,11 +73,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                       END
                     + CASE WHEN p.tipo = 'HARDWARE' THEN CAST(:#{#regua.pesoMinimoHardware()} AS DOUBLE PRECISION)
                            ELSE CAST(:#{#regua.pesoMinimo()} AS DOUBLE PRECISION) END
-                        * COALESCE((SELECT min(pr.valor_centavos)
-                                      FROM preco pr
-                                      JOIN oferta om ON om.id = pr.oferta_id
-                                     WHERE om.produto_id = p.id AND om.ativa AND pr.disponivel)
-                                   / NULLIF(CAST(m.valor_centavos AS DOUBLE PRECISION), 0), 1)
+                        * COALESCE(m.minimo_centavos / NULLIF(CAST(m.valor_centavos AS DOUBLE PRECISION), 0), 1)
                         DESC NULLS LAST, p.id)
                END,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'melhoresOfertas' THEN CASE WHEN p.tipo = 'JOGO' THEN 0 ELSE 1 END END,
@@ -87,6 +83,14 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                CASE WHEN CAST(:ordenacao AS TEXT) = 'nome' THEN p.nome END,
                p.id
             """;
+
+    @Modifying
+    @Query(value = "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_vitrine_ofertas", nativeQuery = true)
+    void atualizarVitrine();
+
+    @Query(value = "SELECT CAST(greatest(reltuples, 0) AS BIGINT) FROM pg_class WHERE oid = 'preco'::regclass",
+            nativeQuery = true)
+    long estimarPrecosDoHistorico();
 
     List<ProdutoEntity> findByChaveItadIn(Collection<String> chavesItad);
 

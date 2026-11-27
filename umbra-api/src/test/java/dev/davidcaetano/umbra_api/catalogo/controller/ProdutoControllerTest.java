@@ -2,6 +2,7 @@ package dev.davidcaetano.umbra_api.catalogo.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import dev.davidcaetano.umbra_api.catalogo.enums.CategoriaHardware;
+import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaVitrine;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,11 +49,19 @@ class ProdutoControllerTest extends IntegrationTestBase {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private AtualizacaoDaVitrine atualizacaoDaVitrine;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void montarMockMvc() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(contexto).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(contexto)
+                .addFilter((pedido, resposta, cadeia) -> {
+                    atualizacaoDaVitrine.atualizar();
+                    cadeia.doFilter(pedido, resposta);
+                })
+                .build();
     }
 
     @Test

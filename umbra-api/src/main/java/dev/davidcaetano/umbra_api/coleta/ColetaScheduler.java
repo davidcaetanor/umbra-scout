@@ -1,6 +1,7 @@
 package dev.davidcaetano.umbra_api.coleta;
 
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaVitrine;
 import dev.davidcaetano.umbra_api.coleta.itad.ItadRefresh;
 import dev.davidcaetano.umbra_api.coleta.itad.ResolucaoDeGidFaltante;
 import dev.davidcaetano.umbra_api.coleta.properties.AgendaColetaProperties;
@@ -45,6 +46,7 @@ public class ColetaScheduler {
     private final ColetaService coletaService;
     private final ResolucaoDeGidFaltante resolucaoDeGidFaltante;
     private final ItadRefresh itadRefresh;
+    private final AtualizacaoDaVitrine atualizacaoDaVitrine;
     private final Map<OrigemColeta, String> cronPorFonte;
     private final String cronRefresh;
     private final boolean rodadaInicial;
@@ -57,6 +59,7 @@ public class ColetaScheduler {
                            ColetaService coletaService,
                            ResolucaoDeGidFaltante resolucaoDeGidFaltante,
                            ItadRefresh itadRefresh,
+                           AtualizacaoDaVitrine atualizacaoDaVitrine,
                            AgendaColetaProperties agenda,
                            Clock clock) {
 
@@ -66,6 +69,7 @@ public class ColetaScheduler {
         this.coletaService = coletaService;
         this.resolucaoDeGidFaltante = resolucaoDeGidFaltante;
         this.itadRefresh = itadRefresh;
+        this.atualizacaoDaVitrine = atualizacaoDaVitrine;
         this.cronPorFonte = Map.copyOf(agenda.descoberta());
         this.cronRefresh = agenda.refresh();
         this.rodadaInicial = agenda.rodadaInicial();
@@ -143,6 +147,7 @@ public class ColetaScheduler {
                 String situacao = situacaoOuFalha(tarefa, rodada);
                 log.info("Rodada finalizada: {} situacao={} duracaoMs={}",
                         tarefa, situacao, Duration.between(inicio, clock.instant()).toMillis());
+                atualizarVitrine();
             } finally {
                 bloqueio.release();
             }
@@ -157,6 +162,14 @@ public class ColetaScheduler {
         } catch (RuntimeException falha) {
             log.error("Rodada falhou: {}", tarefa, falha);
             return FALHA;
+        }
+    }
+
+    private void atualizarVitrine() {
+        try {
+            atualizacaoDaVitrine.atualizar();
+        } catch (RuntimeException falha) {
+            log.warn("Atualizacao da vitrine falhou; o catalogo segue com a vitrine da rodada anterior", falha);
         }
     }
 
