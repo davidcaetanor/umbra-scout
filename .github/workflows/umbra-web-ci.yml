@@ -47,10 +47,15 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Fontes locais medidas pela reserva
+        env:
+          GELASIO_URL: https://raw.githubusercontent.com/google/fonts/a60a77e14f28abd4ef243a1b5dfc48df0cec5205/ofl/gelasio/Gelasio%5Bwght%5D.ttf
+          GELASIO_SHA256: 4daecea457258c9ebeb8bc99ed3fd24353618bfad3ea4b93fa0b5d0468fc04e4
         run: |
-          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
-          sudo apt-get install -y --no-install-recommends ttf-mscorefonts-installer
-          fc-list | grep -E "Georgia|Arial|Courier New" | head -3
+          sudo mkdir -p /usr/local/share/fonts/gelasio
+          sudo curl -fsSL --retry 3 "$GELASIO_URL" -o /usr/local/share/fonts/gelasio/Gelasio.ttf
+          echo "$GELASIO_SHA256  /usr/local/share/fonts/gelasio/Gelasio.ttf" | sha256sum -c -
+          fc-cache -f
+          fc-list | grep -E "Gelasio|Liberation Sans" | head -3
 
       - name: Larguras extremas e roteiro de teclado
         run: npm run e2e
