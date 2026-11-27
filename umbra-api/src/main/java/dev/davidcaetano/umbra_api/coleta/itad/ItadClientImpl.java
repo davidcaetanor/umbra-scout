@@ -1,17 +1,20 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
+import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoInfoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -95,9 +98,33 @@ public class ItadClientImpl implements ItadClient {
         return resposta == null ? List.of() : resposta;
     }
 
+    @Override
+    @CircuitBreaker(name = "itad-qualidade")
+    @RateLimiter(name = "itad-qualidade")
+    public Optional<ItadJogoInfoResponse> buscarInfo(UUID gid) {
+        try {
+            return Optional.ofNullable(executar(() -> itadRestClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/games/info/v2").queryParam("id", gid).build())
+                    .retrieve()
+                    .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(), (pedido, resposta) -> {
+                        throw new JogoAusenteNoItad();
+                    })
+                    .body(ItadJogoInfoResponse.class)));
+        } catch (JogoAusenteNoItad ausente) {
+            return Optional.empty();
+        }
+    }
+
     private static String juntar(List<Integer> shopIds) {
         return shopIds.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
+    }
+
+    private static final class JogoAusenteNoItad extends RuntimeException {
+
+        private JogoAusenteNoItad() {
+            super(null, null, false, false);
+        }
     }
 }

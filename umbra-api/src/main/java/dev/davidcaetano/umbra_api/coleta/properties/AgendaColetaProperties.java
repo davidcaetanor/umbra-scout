@@ -17,6 +17,9 @@ public record AgendaColetaProperties(
         @NotBlank(message = "umbra.coleta.agenda.refresh e obrigatorio e nao pode estar vazio!")
         String refresh,
 
+        @NotBlank(message = "umbra.coleta.agenda.qualidade e obrigatorio e nao pode estar vazio!")
+        String qualidade,
+
         boolean rodadaInicial
 ) {
 }

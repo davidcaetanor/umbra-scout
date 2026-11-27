@@ -1,10 +1,12 @@
 package dev.davidcaetano.umbra_api.coleta.itad;
 
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
+import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoInfoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ItadClient {
@@ -16,4 +18,6 @@ public interface ItadClient {
     Map<String, UUID> resolverGidPorIdentificador(int shopId, List<String> identificadoresItad);
 
     List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids);
+
+    Optional<ItadJogoInfoResponse> buscarInfo(UUID gid);
 }

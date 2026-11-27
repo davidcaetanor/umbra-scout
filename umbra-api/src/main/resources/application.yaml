@@ -70,6 +70,7 @@ umbra:
         steam-api: "0 15 0,6,12,18 * * *"
         kabum-api: "0 45 3,15 * * *"
       refresh: "0 30 0,6,12,18 * * *"
+      qualidade: "0 50 * * * *"
       rodada-inicial: false
     alarme:
       padrao:
@@ -101,6 +102,9 @@ umbra:
   catalogo:
     prazo-da-consulta-segundos: 3
     tentar-de-novo-em: 5s
+    qualidade:
+      lote: 150
+      validade: 7d
   ofertas:
     peso-economia: 0.7
     referencia-economia-centavos: 11342
@@ -146,6 +150,10 @@ resilience4j:
         limit-for-period: 800
         limit-refresh-period: 5m
         timeout-duration: 0
+      itad-qualidade:
+        limit-for-period: 150
+        limit-refresh-period: 5m
+        timeout-duration: 2s
       itad-materializacao:
         limit-for-period: 20
         limit-refresh-period: 5m
@@ -188,6 +196,8 @@ resilience4j:
       itad:
         base-config: default
       itad-busca:
+        base-config: default
+      itad-qualidade:
         base-config: default
       steam:
         base-config: default

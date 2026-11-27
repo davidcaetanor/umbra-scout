@@ -14,6 +14,7 @@ import dev.davidcaetano.umbra_api.coleta.OfertaColetada;
 import dev.davidcaetano.umbra_api.coleta.Reconciliacao;
 import dev.davidcaetano.umbra_api.coleta.ResultadoColeta;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadDescobertaResponse;
+import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadJogoInfoResponse;
 import dev.davidcaetano.umbra_api.coleta.itad.dto.response.ItadPrecoJogoResponse;
 import dev.davidcaetano.umbra_api.coleta.service.ColetaService;
 import dev.davidcaetano.umbra_api.comum.IntegrationTestBase;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -230,6 +232,11 @@ class ResolucaoDeGidFaltanteTest extends IntegrationTestBase {
         @Override
         public List<ItadPrecoJogoResponse> buscarPrecos(List<UUID> gids) {
             throw new UnsupportedOperationException("a resolucao de gid nao usa precos");
+        }
+
+        @Override
+        public Optional<ItadJogoInfoResponse> buscarInfo(UUID gid) {
+            throw new UnsupportedOperationException("a resolucao de gid nao usa a ficha do jogo");
         }
     }
 }

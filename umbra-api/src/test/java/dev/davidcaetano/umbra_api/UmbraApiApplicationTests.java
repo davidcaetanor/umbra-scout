@@ -79,18 +79,21 @@ class UmbraApiApplicationTests extends IntegrationTestBase {
 	}
 
 	@Test
-	void deveDividirACotaDoItadEntreColetaEBusca_semInstanciaOrfa() {
+	void deveDividirACotaDoItadEntreColetaBuscaEQualidade_semInstanciaOrfa() {
 		assertThat(rateLimiterRegistry.find("itad")).isEmpty();
-		assertThat(nomesDeRateLimiter(ItadClientImpl.class)).containsOnly("itad-coleta");
+		assertThat(nomesDeRateLimiter(ItadClientImpl.class)).containsOnly("itad-coleta", "itad-qualidade");
 		assertThat(nomesDeRateLimiter(ItadBuscaClient.class)).containsOnly("itad-busca");
 
 		RateLimiterConfig coleta = rateLimiterRegistry.rateLimiter("itad-coleta").getRateLimiterConfig();
 		RateLimiterConfig busca = rateLimiterRegistry.rateLimiter("itad-busca").getRateLimiterConfig();
+		RateLimiterConfig qualidade = rateLimiterRegistry.rateLimiter("itad-qualidade").getRateLimiterConfig();
 		assertThat(coleta.getLimitForPeriod()).isEqualTo(600);
 		assertThat(coleta.getTimeoutDuration()).isEqualTo(Duration.ofSeconds(2));
 		assertThat(busca.getLimitForPeriod()).isEqualTo(800);
 		assertThat(busca.getTimeoutDuration()).isZero();
-		assertThat(Stream.of(coleta, busca))
+		assertThat(qualidade.getLimitForPeriod()).isEqualTo(150);
+		assertThat(qualidade.getTimeoutDuration()).isEqualTo(Duration.ofSeconds(2));
+		assertThat(Stream.of(coleta, busca, qualidade))
 				.allSatisfy(config -> assertThat(config.getLimitRefreshPeriod()).isEqualTo(Duration.ofMinutes(5)));
 	}
 

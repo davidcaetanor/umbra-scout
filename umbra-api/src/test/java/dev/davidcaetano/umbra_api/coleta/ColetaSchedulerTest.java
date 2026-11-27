@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import dev.davidcaetano.umbra_api.catalogo.enums.OrigemColeta;
+import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaQualidade;
 import dev.davidcaetano.umbra_api.catalogo.service.AtualizacaoDaVitrine;
 import dev.davidcaetano.umbra_api.coleta.itad.ItadRefresh;
 import dev.davidcaetano.umbra_api.coleta.itad.ResolucaoDeGidFaltante;
@@ -60,13 +61,16 @@ class ColetaSchedulerTest {
     private static final String CRON_STEAM = "0 15 0,6,12,18 * * *";
     private static final String CRON_KABUM = "0 45 3,15 * * *";
     private static final String CRON_REFRESH = "0 30 0,6,12,18 * * *";
+    private static final String CRON_QUALIDADE = "0 50 * * * *";
     private static final String TAREFA_REFRESH = "refresh";
+    private static final String TAREFA_QUALIDADE = "qualidade";
     private static final long ESPERA_SEGUNDOS = 10;
 
     private final ColetaService coletaService = mock(ColetaService.class);
     private final ResolucaoDeGidFaltante resolucaoDeGidFaltante = mock(ResolucaoDeGidFaltante.class);
     private final ItadRefresh itadRefresh = mock(ItadRefresh.class);
     private final AtualizacaoDaVitrine atualizacaoDaVitrine = mock(AtualizacaoDaVitrine.class);
+    private final AtualizacaoDaQualidade atualizacaoDaQualidade = mock(AtualizacaoDaQualidade.class);
 
     private final ScraperFalso itad = new ScraperFalso(OrigemColeta.ITAD_API);
     private final ScraperFalso steam = new ScraperFalso(OrigemColeta.STEAM_API);
@@ -197,6 +201,39 @@ class ColetaSchedulerTest {
     }
 
     @Test
+    void tarefaDeQualidade_deveAtualizarOLoteSemMexerNaVitrine(CapturedOutput saida) {
+        ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
+
+        scheduler.executarAtualizacaoDaQualidade();
+
+        verify(atualizacaoDaQualidade).atualizarLote();
+        verifyNoInteractions(atualizacaoDaVitrine, coletaService);
+        assertThat(saida.getOut()).contains("Rodada finalizada: tarefa=qualidade situacao=CONCLUIDA");
+        assertThat(MDC.get(ColetaScheduler.MDC_KEY)).isNull();
+    }
+
+    @Test
+    void tarefaDeQualidade_falhaInesperadaNaoEscapaDoAgendador(CapturedOutput saida) {
+        doThrow(new IllegalStateException("banco indisponivel")).when(atualizacaoDaQualidade).atualizarLote();
+        ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
+
+        assertThatCode(scheduler::executarAtualizacaoDaQualidade).doesNotThrowAnyException();
+
+        assertThat(saida.getOut())
+                .contains("Rodada falhou: tarefa=qualidade")
+                .contains("Rodada finalizada: tarefa=qualidade situacao=FALHA");
+    }
+
+    @Test
+    void deveFalharQuandoCronDaQualidadeForInvalido() {
+        assertThatThrownBy(() -> new ColetaScheduler(List.of(itad, steam, kabum), coletaService, resolucaoDeGidFaltante,
+                itadRefresh, atualizacaoDaVitrine, atualizacaoDaQualidade,
+                new AgendaColetaProperties(agendaCompleta(), CRON_REFRESH, "toda hora", false), CLOCK))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("umbra.coleta.agenda.qualidade");
+    }
+
+    @Test
     void deveManterRodadaIdSoDuranteAExecucao() {
         ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
 
@@ -273,13 +310,13 @@ class ColetaSchedulerTest {
     }
 
     @Test
-    void deveRegistrarUmaTarefaPorFonteMaisORefreshNoFusoDeSaoPaulo() {
+    void deveRegistrarUmaTarefaPorFonteMaisORefreshEAQualidadeNoFusoDeSaoPaulo() {
         ColetaScheduler scheduler = scheduler(List.of(itad, steam, kabum), agendaCompleta(), CRON_REFRESH);
         ScheduledTaskRegistrar registrar = new ScheduledTaskRegistrar();
 
         scheduler.registrarTarefas(registrar);
 
-        assertThat(registrar.getTriggerTaskList()).hasSize(4);
+        assertThat(registrar.getTriggerTaskList()).hasSize(5);
 
         Map<String, Instant> proximaExecucaoPorTarefa = new HashMap<>();
         for (TriggerTask tarefa : registrar.getTriggerTaskList()) {
@@ -290,7 +327,8 @@ class ColetaSchedulerTest {
                 "ITAD_API", Instant.parse("2026-10-21T15:00:00Z"),
                 "STEAM_API", Instant.parse("2026-10-21T15:15:00Z"),
                 "KABUM_API", Instant.parse("2026-10-21T18:45:00Z"),
-                TAREFA_REFRESH, Instant.parse("2026-10-21T15:30:00Z")));
+                TAREFA_REFRESH, Instant.parse("2026-10-21T15:30:00Z"),
+                TAREFA_QUALIDADE, Instant.parse("2026-10-21T13:50:00Z")));
     }
 
     @Test
@@ -430,6 +468,7 @@ class ColetaSchedulerTest {
         List<ScraperFalso> falsos = List.of(itad, steam, kabum);
         List<Integer> chamadasAntes = falsos.stream().map(falso -> falso.rodadaIdsVistos.size()).toList();
         int refreshesAntes = mockingDetails(itadRefresh).getInvocations().size();
+        int qualidadesAntes = mockingDetails(atualizacaoDaQualidade).getInvocations().size();
 
         tarefa.getRunnable().run();
 
@@ -437,6 +476,9 @@ class ColetaSchedulerTest {
             if (falsos.get(i).rodadaIdsVistos.size() > chamadasAntes.get(i)) {
                 return String.valueOf(falsos.get(i).fonte());
             }
+        }
+        if (mockingDetails(atualizacaoDaQualidade).getInvocations().size() > qualidadesAntes) {
+            return TAREFA_QUALIDADE;
         }
         assertThat(mockingDetails(itadRefresh).getInvocations()).hasSizeGreaterThan(refreshesAntes);
         return TAREFA_REFRESH;
@@ -470,12 +512,13 @@ class ColetaSchedulerTest {
 
     private ColetaScheduler scheduler(List<Scraper> scrapers, Map<OrigemColeta, String> descoberta, String refresh) {
         return new ColetaScheduler(scrapers, coletaService, resolucaoDeGidFaltante, itadRefresh, atualizacaoDaVitrine,
-                new AgendaColetaProperties(descoberta, refresh, false), CLOCK);
+                atualizacaoDaQualidade,
+                new AgendaColetaProperties(descoberta, refresh, CRON_QUALIDADE, false), CLOCK);
     }
 
     private ColetaScheduler schedulerComRodadaInicial(List<Scraper> scrapers) {
         return new ColetaScheduler(scrapers, coletaService, resolucaoDeGidFaltante, itadRefresh, atualizacaoDaVitrine,
-                new AgendaColetaProperties(agendaCompleta(), CRON_REFRESH, true), CLOCK);
+                atualizacaoDaQualidade, new AgendaColetaProperties(agendaCompleta(), CRON_REFRESH, CRON_QUALIDADE, true), CLOCK);
     }
 
     private static ScheduledTaskRegistrar registrarCom(TaskScheduler taskScheduler) {
