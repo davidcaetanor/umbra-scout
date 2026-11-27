@@ -218,6 +218,23 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void criar_deveAceitarAteOTetoERecusarOSeguinteCom422() throws Exception {
+        Long usuario = inserirUsuario("teto@umbra.dev");
+        for (int i = 0; i < 99; i++) {
+            Long produto = inserirProduto("Teto " + i);
+            jdbc.update("INSERT INTO monitoramento (usuario_id, produto_id, preco_alvo_centavos) VALUES (?, ?, 1000)",
+                    usuario, produto);
+        }
+
+        como(usuario, post("/monitoramentos").content(corpoDeCriacao(inserirProduto("Centesimo"), 1000)))
+                .andExpect(status().isCreated());
+        como(usuario, post("/monitoramentos").content(corpoDeCriacao(inserirProduto("Excedente"), 1000)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(TIPO_REGRA_VIOLADA))
+                .andExpect(jsonPath("$.detail").value("Você chegou ao limite de 100 monitoramentos. Remova um para incluir outro."));
+    }
+
+    @Test
     void criar_deveResponder400ParaAlvoForaDaFaixaOuCampoAusente() throws Exception {
         Long usuario = inserirUsuario("faixa@umbra.dev");
         Long produto = inserirProduto("Faixa");

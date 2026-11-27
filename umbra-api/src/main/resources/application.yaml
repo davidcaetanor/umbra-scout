@@ -117,6 +117,7 @@ umbra:
       teto-economia-centavos: 50000
   monitoramento:
     dias-para-descontinuado: 180
+    teto-por-usuario: 100
     externo:
       prazo: 8s
       tentar-de-novo-em: 60s

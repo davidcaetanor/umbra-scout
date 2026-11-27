@@ -46,6 +46,8 @@ public interface MonitoramentoRepository extends Repository<MonitoramentoEntity,
 
     boolean existsByUsuarioIdAndProdutoId(Long usuarioId, Long produtoId);
 
+    long countByUsuarioId(Long usuarioId);
+
     @Modifying
     @Query("DELETE FROM MonitoramentoEntity m WHERE m.id = :id AND m.usuarioId = :usuarioId")
     int apagarDoUsuario(@Param("id") Long id, @Param("usuarioId") Long usuarioId);

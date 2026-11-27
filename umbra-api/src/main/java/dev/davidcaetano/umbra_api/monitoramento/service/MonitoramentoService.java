@@ -12,6 +12,7 @@ import dev.davidcaetano.umbra_api.catalogo.service.ClassificacaoDePreco;
 import dev.davidcaetano.umbra_api.monitoramento.AlvoEmProdutoGratuitoException;
 import dev.davidcaetano.umbra_api.monitoramento.MonitoramentoDuplicadoException;
 import dev.davidcaetano.umbra_api.monitoramento.MonitoramentoNaoEncontradoException;
+import dev.davidcaetano.umbra_api.monitoramento.TetoDeMonitoramentosAtingidoException;
 import dev.davidcaetano.umbra_api.monitoramento.dto.request.AlterarMonitoramentoRequest;
 import dev.davidcaetano.umbra_api.monitoramento.dto.request.CriarMonitoramentoRequest;
 import dev.davidcaetano.umbra_api.monitoramento.dto.response.MonitoramentoResponse;
@@ -134,6 +135,7 @@ public class MonitoramentoService {
         if (monitoramentoRepository.existsByUsuarioIdAndProdutoId(usuario.id(), produtoId)) {
             throw new MonitoramentoDuplicadoException();
         }
+        recusarAcimaDoTeto(usuario.id());
 
         MonitoramentoEntity monitoramento;
         try {
@@ -147,6 +149,13 @@ public class MonitoramentoService {
         }
 
         return resumoDoUsuario(monitoramento.getId(), usuario);
+    }
+
+    private void recusarAcimaDoTeto(Long usuarioId) {
+        int teto = monitoramentoProperties.tetoPorUsuario();
+        if (monitoramentoRepository.countByUsuarioId(usuarioId) >= teto) {
+            throw new TetoDeMonitoramentosAtingidoException(teto);
+        }
     }
 
     private static boolean violouAUnicidadeDoMonitoramento(DataIntegrityViolationException violacao) {
