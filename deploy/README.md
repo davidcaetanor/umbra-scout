@@ -23,6 +23,13 @@ Produção: `compose.yaml`,
 | `UMBRA_COLETA_HABILITADA`           | não         | `false`     |
 | `UMBRA_COLETA_AGENDA_RODADAINICIAL` | não         | `false`     |
 | `UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA` | não   | `true`      |
+| `UMBRA_NOTIFICACAO_ENVIO_HABILITADO` | não     | `false`     |
+| `UMBRA_SMTP_HOST`                   | com envio   | nenhum      |
+| `UMBRA_SMTP_PORT`                   | não         | `587`       |
+| `UMBRA_SMTP_USER`                   | com envio   | nenhum      |
+| `UMBRA_SMTP_PASSWORD`               | com envio   | nenhum      |
+| `UMBRA_SMTP_REMETENTE`              | com envio   | nenhum      |
+| `UMBRA_FRONT_URL`                   | com envio   | nenhum      |
 | `UMBRA_WEB_API_URL`                 | sim (web)   | nenhum      |
 | `UMBRA_WEB_LOGIN_GOOGLE`            | não         | `false`     |
 | `UMBRA_WEB_IMAGE_TAG`               | não         | `latest`    |
@@ -34,6 +41,8 @@ Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_JWT_SE
 Login com Discord e Google: as credenciais vêm da aplicação registrada em cada provedor, que precisa aceitar como endereço de retorno `https://<host da API>/login/oauth2/code/discord` e `https://<host da API>/login/oauth2/code/google`. `UMBRA_LOGIN_RETORNO_FRONT` é a URL da tela do frontend que recebe `?codigo=` ou `?erro=` ao fim do login e troca o código pelo token em `POST /auth/oauth2/token`.
 
 `UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA=false` desliga a avaliação dos alvos depois de cada rodada; nenhum aviso é registrado enquanto estiver desligada.
+
+`UMBRA_NOTIFICACAO_ENVIO_HABILITADO=true` liga o email de alvo atingido, enviado às 08:00, 13:00 e 19:00 de Brasília, só para contas com email confirmado pelo Google ou pelo Discord. Com ele ligado, as variáveis marcadas "com envio" passam a ser obrigatórias: o servidor SMTP exige STARTTLS, `UMBRA_SMTP_REMETENTE` é o endereço autenticado no provedor e `UMBRA_FRONT_URL` é a origem do front (`https://host`, sem caminho), usada nos links e no retrato do email. Avisos pendentes há mais de 24 horas são descartados no despacho seguinte, então ligar o envio depois de dias desligado não manda acumulado.
 
 `UMBRA_DB_URL`, `SPRING_PROFILES_ACTIVE=prod` e `TZ` já vêm no compose.
 
