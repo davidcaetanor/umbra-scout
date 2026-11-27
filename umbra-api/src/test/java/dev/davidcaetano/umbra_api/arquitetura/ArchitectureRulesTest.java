@@ -19,6 +19,7 @@ import dev.davidcaetano.umbra_api.coleta.ColetaScheduler;
 import dev.davidcaetano.umbra_api.coleta.Scraper;
 import dev.davidcaetano.umbra_api.comum.log.ContextoDeLog;
 import dev.davidcaetano.umbra_api.config.log.RequestIdFilter;
+import dev.davidcaetano.umbra_api.notificacao.NotificacaoConfig;
 import jakarta.persistence.Entity;
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -95,6 +96,15 @@ class ArchitectureRulesTest {
             .matching("dev.davidcaetano.umbra_api.(*)..")
             .should().beFreeOfCycles()
             .because("ciclo entre pacotes de topo impede entender ou mover um módulo sem o outro (ARCHITECTURE.md §3.3)");
+
+    @ArchTest
+    static final ArchRule regraDoAlvoSemInfraestrutura = classes()
+            .that().resideInAPackage("dev.davidcaetano.umbra_api.notificacao")
+            .and().doNotBelongToAnyOf(NotificacaoConfig.class)
+            .should().onlyDependOnClassesThat()
+            .resideInAnyPackage("java..", "dev.davidcaetano.umbra_api.notificacao", "dev.davidcaetano.umbra_api.catalogo.enums")
+            .because("a regra do alvo é função pura: sem Spring, banco nem relógio, cada caso de borda vira teste "
+                    + "sem contexto (BACKLOG.md, T5.1)");
 
     @ArchTest
     static final ArchRule mdcSoNasClassesDeCorrelacao = noClasses()

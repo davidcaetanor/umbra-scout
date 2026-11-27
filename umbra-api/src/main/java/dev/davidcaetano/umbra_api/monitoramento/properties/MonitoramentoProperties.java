@@ -14,6 +14,9 @@ public record MonitoramentoProperties(
         @Min(value = 1, message = "umbra.monitoramento.dias-para-descontinuado deve ser maior ou igual a 1")
         int diasParaDescontinuado,
 
+        @Min(value = 1, message = "umbra.monitoramento.teto-por-usuario deve ser maior ou igual a 1")
+        int tetoPorUsuario,
+
         @Valid @NotNull(message = "umbra.monitoramento.externo é obrigatório")
         Externo externo) {
 

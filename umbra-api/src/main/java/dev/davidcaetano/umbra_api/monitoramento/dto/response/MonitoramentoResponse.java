@@ -16,5 +16,7 @@ public record MonitoramentoResponse(
         @Nullable OfertaResponse melhorPreco,
         @Nullable Long distanciaDoAlvoCentavos,
         boolean alvoAtingido,
-        boolean aparentementeDescontinuado) {
+        boolean aparentementeDescontinuado,
+        @Nullable Instant ultimoAvisoEm,
+        @Nullable Long precoAvisadoCentavos) {
 }

@@ -117,4 +117,39 @@ class MonitoramentoMigrationTest extends IntegrationTestBase {
         assertThat(jdbc.queryForObject(
                 "SELECT ultimo_aviso_em IS NULL FROM monitoramento WHERE id = ?", Boolean.class, id)).isTrue();
     }
+
+    @Test
+    void deveNascerSemPrecoAvisado() {
+        Long id = inserirMonitoramento(inserirUsuario("avisado@umbra.dev"), inserirProduto(), 5000);
+
+        assertThat(jdbc.queryForObject(
+                "SELECT preco_avisado_centavos IS NULL FROM monitoramento WHERE id = ?", Boolean.class, id)).isTrue();
+    }
+
+    @Test
+    void deveApagarOsAvisosQuandoOMonitoramentoForApagado() {
+        Long monitoramentoId = inserirMonitoramento(inserirUsuario("aviso@umbra.dev"), inserirProduto(), 5000);
+        inserirAviso(monitoramentoId, "ENTRADA");
+
+        jdbc.update("DELETE FROM monitoramento WHERE id = ?", monitoramentoId);
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM aviso_de_alvo WHERE monitoramento_id = ?",
+                Integer.class, monitoramentoId)).isZero();
+    }
+
+    @Test
+    void deveRecusarMotivoDeAvisoDesconhecido() {
+        Long monitoramentoId = inserirMonitoramento(inserirUsuario("motivo@umbra.dev"), inserirProduto(), 5000);
+
+        assertThatThrownBy(() -> inserirAviso(monitoramentoId, "SUBIDA"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_aviso_motivo");
+    }
+
+    private void inserirAviso(Long monitoramentoId, String motivo) {
+        jdbc.update("""
+                INSERT INTO aviso_de_alvo (monitoramento_id, motivo, melhor_preco_centavos, registrado_em)
+                VALUES (?, ?, 4500, now())
+                """, monitoramentoId, motivo);
+    }
 }

@@ -308,12 +308,20 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "precoAvisadoCentavos" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
           "produtoId" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "ultimoAvisoEm" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "alvoAtingido", "aparentementeDescontinuado", "ativo", "criadoEm", "distanciaDoAlvoCentavos", "id", "imagemUrl", "melhorPreco", "nome", "precoAlvoCentavos", "produtoId" ],
+        "required" : [ "alvoAtingido", "aparentementeDescontinuado", "ativo", "criadoEm", "distanciaDoAlvoCentavos", "id", "imagemUrl", "melhorPreco", "nome", "precoAlvoCentavos", "precoAvisadoCentavos", "produtoId", "ultimoAvisoEm" ],
         "type" : "object"
       },
       "MonitoramentosResponse" : {

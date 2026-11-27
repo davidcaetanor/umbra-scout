@@ -22,6 +22,7 @@ Produção: `compose.yaml`,
 | `UMBRA_IMAGE_TAG`                   | não         | `latest`    |
 | `UMBRA_COLETA_HABILITADA`           | não         | `false`     |
 | `UMBRA_COLETA_AGENDA_RODADAINICIAL` | não         | `false`     |
+| `UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA` | não   | `true`      |
 | `UMBRA_WEB_API_URL`                 | sim (web)   | nenhum      |
 | `UMBRA_WEB_LOGIN_GOOGLE`            | não         | `false`     |
 | `UMBRA_WEB_IMAGE_TAG`               | não         | `latest`    |
@@ -31,6 +32,8 @@ Sem qualquer uma das obrigatórias a aplicação morre na partida. `UMBRA_JWT_SE
 `UMBRA_CORS_ORIGENS` lista, separadas por vírgula, as origens do frontend autorizadas a chamar a API pelo navegador (`https://host` ou `https://host:porta`, sem curinga). Sem ela, nenhuma origem externa é aceita.
 
 Login com Discord e Google: as credenciais vêm da aplicação registrada em cada provedor, que precisa aceitar como endereço de retorno `https://<host da API>/login/oauth2/code/discord` e `https://<host da API>/login/oauth2/code/google`. `UMBRA_LOGIN_RETORNO_FRONT` é a URL da tela do frontend que recebe `?codigo=` ou `?erro=` ao fim do login e troca o código pelo token em `POST /auth/oauth2/token`.
+
+`UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA=false` desliga a avaliação dos alvos depois de cada rodada; nenhum aviso é registrado enquanto estiver desligada.
 
 `UMBRA_DB_URL`, `SPRING_PROFILES_ACTIVE=prod` e `TZ` já vêm no compose.
 

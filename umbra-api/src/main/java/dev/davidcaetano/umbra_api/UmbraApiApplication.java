@@ -14,6 +14,7 @@ import dev.davidcaetano.umbra_api.coleta.properties.ItadColetaProperties;
 import dev.davidcaetano.umbra_api.coleta.steam.properties.SteamProperties;
 import dev.davidcaetano.umbra_api.config.UmbraProperties;
 import dev.davidcaetano.umbra_api.monitoramento.properties.MonitoramentoProperties;
+import dev.davidcaetano.umbra_api.notificacao.properties.NotificacaoProperties;
 import dev.davidcaetano.umbra_api.usuario.oauth2.properties.LoginExternoProperties;
 import dev.davidcaetano.umbra_api.usuario.viacep.properties.ViaCepProperties;
 import org.springframework.boot.SpringApplication;
@@ -24,7 +25,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties({UmbraProperties.class, ItadProperties.class, SteamProperties.class, KabumProperties.class,
         AgendaColetaProperties.class, AlarmeColetaProperties.class, GravacaoPrecoProperties.class,
         ItadColetaProperties.class, AusenciaColetaProperties.class, BuscaProperties.class, OfertasProperties.class, CatalogoProperties.class, QualidadeProperties.class,
-        ViaCepProperties.class, LoginExternoProperties.class, MonitoramentoProperties.class})
+        ViaCepProperties.class, LoginExternoProperties.class, MonitoramentoProperties.class,
+        NotificacaoProperties.class})
 public class UmbraApiApplication {
 
     static void main(String[] args) {

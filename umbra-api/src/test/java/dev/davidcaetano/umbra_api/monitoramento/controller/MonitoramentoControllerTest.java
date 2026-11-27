@@ -89,6 +89,11 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
         }
     }
 
+    private Long precoAvisado(Long monitoramentoId) {
+        return jdbc.queryForObject("SELECT preco_avisado_centavos FROM monitoramento WHERE id = ?",
+                Long.class, monitoramentoId);
+    }
+
     private ResultActions como(Long usuarioId, MockHttpServletRequestBuilder requisicao) throws Exception {
         return mockMvc.perform(requisicao
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtService.emitir(usuarioId).valor())
@@ -210,6 +215,23 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.melhorPreco.gratuito").value(false))
                 .andExpect(jsonPath("$.alvoAtingido").value(true));
+    }
+
+    @Test
+    void criar_deveAceitarAteOTetoERecusarOSeguinteCom422() throws Exception {
+        Long usuario = inserirUsuario("teto@umbra.dev");
+        for (int i = 0; i < 99; i++) {
+            Long produto = inserirProduto("Teto " + i);
+            jdbc.update("INSERT INTO monitoramento (usuario_id, produto_id, preco_alvo_centavos) VALUES (?, ?, 1000)",
+                    usuario, produto);
+        }
+
+        como(usuario, post("/monitoramentos").content(corpoDeCriacao(inserirProduto("Centesimo"), 1000)))
+                .andExpect(status().isCreated());
+        como(usuario, post("/monitoramentos").content(corpoDeCriacao(inserirProduto("Excedente"), 1000)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.type").value(TIPO_REGRA_VIOLADA))
+                .andExpect(jsonPath("$.detail").value("Você chegou ao limite de 100 monitoramentos. Remova um para incluir outro."));
     }
 
     @Test
@@ -344,6 +366,63 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.precoAlvoCentavos").value(800));
         assertThat(jdbc.queryForObject("SELECT ultimo_aviso_em IS NOT NULL FROM monitoramento WHERE id = ?",
                 Boolean.class, monitoramento)).isTrue();
+    }
+
+    @Test
+    void alterar_trocarOAlvoDeveReabrirOAvisoMantendoOTeto() throws Exception {
+        Long usuario = inserirUsuario("reabre@umbra.dev");
+        Long monitoramento = criar(usuario, inserirProduto("Reabre"), 1000);
+        jdbc.update("""
+                UPDATE monitoramento SET ultimo_aviso_em = now() - INTERVAL '1 hour', preco_avisado_centavos = 900
+                 WHERE id = ?
+                """, monitoramento);
+
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"precoAlvoCentavos\": 1200}"))
+                .andExpect(status().isOk());
+
+        assertThat(precoAvisado(monitoramento)).isNull();
+        assertThat(jdbc.queryForObject("SELECT ultimo_aviso_em IS NOT NULL FROM monitoramento WHERE id = ?",
+                Boolean.class, monitoramento)).isTrue();
+    }
+
+    @Test
+    void listar_deveTrazerOUltimoAvisoEOPrecoAvisado() throws Exception {
+        Long usuario = inserirUsuario("avisado@umbra.dev");
+        Long monitoramento = criar(usuario, inserirProduto("Avisado"), 1000);
+        jdbc.update("""
+                UPDATE monitoramento SET ultimo_aviso_em = TIMESTAMPTZ '2026-11-27 18:30:00+00', preco_avisado_centavos = 900
+                 WHERE id = ?
+                """, monitoramento);
+
+        como(usuario, get("/monitoramentos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[0].ultimoAvisoEm").value("2026-11-27T18:30:00Z"))
+                .andExpect(jsonPath("$.conteudo[0].precoAvisadoCentavos").value(900));
+    }
+
+    @Test
+    void criar_deveNascerSemAviso() throws Exception {
+        como(inserirUsuario("semaviso@umbra.dev"),
+                post("/monitoramentos").content(corpoDeCriacao(inserirProduto("Sem Aviso"), 1000)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ultimoAvisoEm").value(nullValue()))
+                .andExpect(jsonPath("$.precoAvisadoCentavos").value(nullValue()));
+    }
+
+    @Test
+    void alterar_mesmoAlvoOuPausaNaoDevemReabrirOAviso() throws Exception {
+        Long usuario = inserirUsuario("naoreabre@umbra.dev");
+        Long monitoramento = criar(usuario, inserirProduto("Nao Reabre"), 1000);
+        jdbc.update("UPDATE monitoramento SET preco_avisado_centavos = 900 WHERE id = ?", monitoramento);
+
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"precoAlvoCentavos\": 1000}"))
+                .andExpect(status().isOk());
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"ativo\": false}"))
+                .andExpect(status().isOk());
+        como(usuario, patch("/monitoramentos/" + monitoramento).content("{\"ativo\": true}"))
+                .andExpect(status().isOk());
+
+        assertThat(precoAvisado(monitoramento)).isEqualTo(900L);
     }
 
     @Test

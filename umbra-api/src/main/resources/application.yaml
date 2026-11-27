@@ -117,9 +117,13 @@ umbra:
       teto-economia-centavos: 50000
   monitoramento:
     dias-para-descontinuado: 180
+    teto-por-usuario: 100
     externo:
       prazo: 8s
       tentar-de-novo-em: 60s
+  notificacao:
+    avaliacao-habilitada: ${UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA:true}
+    teto-entre-avisos: 24h
 
 itad:
   itad-api:
