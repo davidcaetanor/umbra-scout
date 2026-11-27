@@ -85,6 +85,18 @@ describe('MeusMonitoramentosService', () => {
     expect(item.alvoAtingido).toBe(false);
   });
 
+  it('aviso registrado pela API chega como instante e sem aviso fica nulo', async () => {
+    const resposta = servico.listarTodos();
+    http.expectOne(`${API}/monitoramentos?page=0&size=20`).flush(
+      pagina([monitoramento({ id: 1, ultimoAvisoEm: '2026-11-27T18:30:00Z' }), monitoramento({ id: 2 })], 0, 1),
+    );
+
+    const [avisado, semAviso] = await resposta;
+
+    expect(avisado.avisadoEm).toBe(Date.parse('2026-11-27T18:30:00Z'));
+    expect(semAviso.avisadoEm).toBeNull();
+  });
+
   it('foto da Kabum vira capa de hardware e falta de imagem fica sem capa', async () => {
     const resposta = servico.listarTodos();
     http.expectOne(`${API}/monitoramentos?page=0&size=20`).flush(

@@ -28,7 +28,7 @@ import { EstadoDoBloco } from '../../../../shared/ui/estado-do-bloco/estado-do-b
 import { EstadoDoBlocoComponent } from '../../../../shared/ui/estado-do-bloco/estado-do-bloco.component';
 import { ConfirmarRemocaoComponent } from '../../components/confirmar-remocao/confirmar-remocao.component';
 import { ItemMonitoramentoComponent } from '../../components/item-monitoramento/item-monitoramento.component';
-import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, nomeCurto, todosPausados } from '../../components/leitura-da-lista';
+import { atingidosPrimeiro, chaveDaNovidade, contagem, diaLocal, fraseDaRonda, nomeCurto, temNovidade, todosPausados } from '../../components/leitura-da-lista';
 import { MeusMonitoramentosService } from '../../data/meus-monitoramentos.service';
 import { MonitoramentoListado } from '../../data/monitoramento-listado';
 
@@ -245,7 +245,7 @@ export class MeusMonitoramentosPage {
   }
 
   private registrarNovidades(itens: readonly MonitoramentoListado[]): readonly number[] {
-    const atingidos = itens.filter((item) => item.alvoAtingido && !this.entradas.jaViu(chaveDaNovidade(item)));
+    const atingidos = itens.filter((item) => temNovidade(item) && !this.entradas.jaViu(chaveDaNovidade(item)));
     atingidos.forEach((item) => this.entradas.registrar(chaveDaNovidade(item)));
     return atingidos.map((item) => item.id);
   }

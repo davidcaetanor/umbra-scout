@@ -32,8 +32,12 @@ export function todosPausados(itens: readonly MonitoramentoExibido[]): boolean {
   return itens.length > 0 && itens.every((item) => !item.ativo);
 }
 
+export function temNovidade(item: MonitoramentoExibido): boolean {
+  return item.alvoAtingido && item.avisadoEm !== null;
+}
+
 export function chaveDaNovidade(item: MonitoramentoExibido): string {
-  return `monitoramento#${item.id}#${item.melhorPreco?.valorCentavos ?? ''}`;
+  return `monitoramento#${item.id}#${item.avisadoEm ?? ''}`;
 }
 
 export function preenchimento(item: MonitoramentoExibido): number {

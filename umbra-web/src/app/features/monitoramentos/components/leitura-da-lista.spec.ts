@@ -1,5 +1,5 @@
 import { MonitoramentoExibido, SituacaoExibida } from './monitoramento-exibido';
-import { FRASES_DA_RONDA, MAXIMO_DO_NOME_NA_FALA, alvoAConfirmar, atingidosPrimeiro, avisoDoPreco, contagem, distancia, fraseDaRonda, nomeCurto, preenchimento, todosPausados } from './leitura-da-lista';
+import { FRASES_DA_RONDA, MAXIMO_DO_NOME_NA_FALA, alvoAConfirmar, atingidosPrimeiro, avisoDoPreco, chaveDaNovidade, contagem, distancia, fraseDaRonda, nomeCurto, preenchimento, temNovidade, todosPausados } from './leitura-da-lista';
 
 function item(parcial: Partial<MonitoramentoExibido> = {}): MonitoramentoExibido {
   return {
@@ -20,12 +20,30 @@ function item(parcial: Partial<MonitoramentoExibido> = {}): MonitoramentoExibido
     },
     distanciaDoAlvoCentavos: 2249,
     alvoAtingido: false,
+    avisadoEm: null,
     foraDeVenda: false,
     ...parcial,
   };
 }
 
 describe('leitura da lista de monitoramentos', () => {
+  it('so ha novidade com alvo atingido e aviso registrado pela API', () => {
+    const avisadoEm = Date.parse('2026-11-27T18:30:00Z');
+
+    expect(temNovidade(item({ alvoAtingido: true, avisadoEm }))).toBe(true);
+    expect(temNovidade(item({ alvoAtingido: true, avisadoEm: null }))).toBe(false);
+    expect(temNovidade(item({ alvoAtingido: false, avisadoEm }))).toBe(false);
+  });
+
+  it('a chave da novidade muda com um aviso novo e nao com o preco', () => {
+    const primeiro = item({ alvoAtingido: true, avisadoEm: Date.parse('2026-11-27T18:30:00Z') });
+    const outroPreco = { ...primeiro, distanciaDoAlvoCentavos: -1 };
+    const avisoNovo = { ...primeiro, avisadoEm: Date.parse('2026-11-28T18:30:00Z') };
+
+    expect(chaveDaNovidade(outroPreco)).toBe(chaveDaNovidade(primeiro));
+    expect(chaveDaNovidade(avisoNovo)).not.toBe(chaveDaNovidade(primeiro));
+  });
+
   it('conta ativos e pausados no singular e no plural', () => {
     expect(contagem([item(), item(), item(), item({ ativo: false })])).toBe('3 ativos · 1 pausado');
     expect(contagem([item({ ativo: false }), item({ ativo: false })])).toBe('2 pausados');

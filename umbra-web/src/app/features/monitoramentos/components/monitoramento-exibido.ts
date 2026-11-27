@@ -23,5 +23,6 @@ export interface MonitoramentoExibido {
   readonly melhorPreco: MelhorPrecoExibido | null;
   readonly distanciaDoAlvoCentavos: number | null;
   readonly alvoAtingido: boolean;
+  readonly avisadoEm: number | null;
   readonly foraDeVenda: boolean;
 }

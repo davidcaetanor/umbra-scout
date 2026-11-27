@@ -29,6 +29,7 @@ function item(id: number, nome: string, parcial: Partial<MonitoramentoListado> =
     },
     distanciaDoAlvoCentavos: 2249,
     alvoAtingido: false,
+    avisadoEm: null,
     foraDeVenda: false,
     ...parcial,
   };
@@ -39,6 +40,7 @@ const ATINGIDO = item(1, 'Hollow Knight: Silksong', {
   melhorPreco: { valorCentavos: 6990, loja: 'Steam', gratuito: false, situacao: 'vigente', expiraEm: null, verificadoEm: AGORA },
   distanciaDoAlvoCentavos: -1010,
   alvoAtingido: true,
+  avisadoEm: AGORA,
 });
 
 class ServicoFalso {
@@ -168,6 +170,22 @@ describe('MeusMonitoramentosPage', () => {
     expect(tela.textContent).not.toContain('Achei');
   });
 
+  it('alvo atingido sem aviso registrado nao vira novidade', async () => {
+    await abrir([{ ...ATINGIDO, avisadoEm: null }]);
+
+    expect(tela.textContent).not.toContain('Achei');
+  });
+
+  it('aviso novo do mesmo item fala de novo na mesma sessao', async () => {
+    await abrir([ATINGIDO]);
+    expect(tela.textContent).toContain('Achei!');
+
+    TestBed.resetTestingModule();
+    await abrir([{ ...ATINGIDO, avisadoEm: AGORA + 86_400_000 }]);
+
+    expect(tela.textContent).toContain('Achei!');
+  });
+
   it('pausar o item da novidade cala o Umbra sobre ele', async () => {
     await abrir([ATINGIDO, item(2, 'Black Myth: Wukong')]);
     expect(tela.textContent).toContain('Achei!');
@@ -179,7 +197,7 @@ describe('MeusMonitoramentosPage', () => {
   });
 
   it('varios alvos atingidos viram uma fala so com a contagem', async () => {
-    await abrir([ATINGIDO, item(2, 'Celeste', { alvoAtingido: true, distanciaDoAlvoCentavos: -100 })]);
+    await abrir([ATINGIDO, item(2, 'Celeste', { alvoAtingido: true, distanciaDoAlvoCentavos: -100, avisadoEm: AGORA })]);
 
     expect(tela.querySelector('umbra-balao-fala')?.textContent).toContain('Achei 2!');
     expect(tela.querySelector('umbra-balao-fala')?.textContent).toContain('mais 1 abaixo do alvo');
