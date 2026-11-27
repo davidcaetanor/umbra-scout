@@ -120,6 +120,9 @@ umbra:
     externo:
       prazo: 8s
       tentar-de-novo-em: 60s
+  notificacao:
+    avaliacao-habilitada: ${UMBRA_NOTIFICACAO_AVALIACAO_HABILITADA:true}
+    teto-entre-avisos: 24h
 
 itad:
   itad-api:
