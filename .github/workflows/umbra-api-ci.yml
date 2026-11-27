@@ -25,10 +25,10 @@ jobs:
         working-directory: umbra-api
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Configurar JDK 25
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: '25'
@@ -39,27 +39,50 @@ jobs:
 
       - name: Publicar relatorio do JaCoCo
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: jacoco-umbra-api
           path: umbra-api/target/site/jacoco/
           if-no-files-found: warn
+          retention-days: 14
 
       - name: Publicar contrato OpenAPI
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: openapi-umbra-api
           path: umbra-api/target/openapi.json
           if-no-files-found: warn
+          retention-days: 14
 
       - name: Publicar relatorio do surefire
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: surefire-umbra-api
           path: umbra-api/target/surefire-reports/
           if-no-files-found: warn
+          retention-days: 14
+
+      - name: Resumo dos testes e da cobertura
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo "## Testes"
+            if ls target/surefire-reports/TEST-*.xml > /dev/null 2>&1; then
+              grep -h -o '<testsuite [^>]*>' target/surefire-reports/TEST-*.xml | awk '
+                { for (i = 1; i <= NF; i++) if (match($i, /^(tests|failures|errors|skipped)="[0-9]+"/)) { split($i, par, "\""); total[substr($i, 1, index($i, "=") - 1)] += par[2] } }
+                END { printf "%d testes, %d falhas, %d erros, %d pulados.\n", total["tests"], total["failures"], total["errors"], total["skipped"] }'
+            else
+              echo "Sem relatorio de testes."
+            fi
+            echo "## Cobertura de linha (piso de 80%)"
+            if [ -f target/site/jacoco/jacoco.csv ]; then
+              awk -F, 'NR > 1 { perdidas += $8; cobertas += $9 } END { printf "%.2f%% (%d de %d linhas).\n", 100 * cobertas / (perdidas + cobertas), cobertas, perdidas + cobertas }' target/site/jacoco/jacoco.csv
+            else
+              echo "Sem relatorio do JaCoCo."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   imagem:
     needs: verify
@@ -73,7 +96,7 @@ jobs:
       PUBLICAR: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Calcular a tag do commit
         id: tag
