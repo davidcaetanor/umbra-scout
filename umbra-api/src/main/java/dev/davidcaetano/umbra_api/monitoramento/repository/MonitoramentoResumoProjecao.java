@@ -20,6 +20,10 @@ public interface MonitoramentoResumoProjecao {
 
     boolean isAparentementeDescontinuado();
 
+    Instant getUltimoAvisoEm();
+
+    Long getPrecoAvisadoCentavos();
+
     String getLoja();
 
     String getUrl();

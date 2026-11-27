@@ -33,6 +33,8 @@ function monitoramento(parcial: Partial<MonitoramentoResponse> = {}): Monitorame
     distanciaDoAlvoCentavos: -1010,
     alvoAtingido: true,
     aparentementeDescontinuado: false,
+    ultimoAvisoEm: null,
+    precoAvisadoCentavos: null,
     ...parcial,
   };
 }

@@ -25,6 +25,7 @@ public interface MonitoramentoRepository extends Repository<MonitoramentoEntity,
     String RESUMO = """
             SELECT mo.id, mo.produto_id AS produtoId, p.nome, p.imagem_url AS imagemUrl,
                    mo.preco_alvo_centavos AS precoAlvoCentavos, mo.ativo, mo.criado_em AS criadoEm,
+                   mo.ultimo_aviso_em AS ultimoAvisoEm, mo.preco_avisado_centavos AS precoAvisadoCentavos,
                    """ + FORA_DE_VENDA + """
                     AS aparentementeDescontinuado,
                    l.nome AS loja, m.url, m.valor_centavos AS valorCentavos,

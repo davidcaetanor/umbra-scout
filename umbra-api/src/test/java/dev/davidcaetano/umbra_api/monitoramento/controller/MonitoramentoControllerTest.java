@@ -386,6 +386,30 @@ class MonitoramentoControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void listar_deveTrazerOUltimoAvisoEOPrecoAvisado() throws Exception {
+        Long usuario = inserirUsuario("avisado@umbra.dev");
+        Long monitoramento = criar(usuario, inserirProduto("Avisado"), 1000);
+        jdbc.update("""
+                UPDATE monitoramento SET ultimo_aviso_em = TIMESTAMPTZ '2026-11-27 18:30:00+00', preco_avisado_centavos = 900
+                 WHERE id = ?
+                """, monitoramento);
+
+        como(usuario, get("/monitoramentos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[0].ultimoAvisoEm").value("2026-11-27T18:30:00Z"))
+                .andExpect(jsonPath("$.conteudo[0].precoAvisadoCentavos").value(900));
+    }
+
+    @Test
+    void criar_deveNascerSemAviso() throws Exception {
+        como(inserirUsuario("semaviso@umbra.dev"),
+                post("/monitoramentos").content(corpoDeCriacao(inserirProduto("Sem Aviso"), 1000)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ultimoAvisoEm").value(nullValue()))
+                .andExpect(jsonPath("$.precoAvisadoCentavos").value(nullValue()));
+    }
+
+    @Test
     void alterar_mesmoAlvoOuPausaNaoDevemReabrirOAviso() throws Exception {
         Long usuario = inserirUsuario("naoreabre@umbra.dev");
         Long monitoramento = criar(usuario, inserirProduto("Nao Reabre"), 1000);
