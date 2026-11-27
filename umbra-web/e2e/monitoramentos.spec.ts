@@ -34,6 +34,8 @@ function monitoramento(id: number, nome: string, alvo: number, preco: number, pa
     distanciaDoAlvoCentavos: preco - alvo,
     alvoAtingido: preco <= alvo,
     aparentementeDescontinuado: false,
+    ultimoAvisoEm: preco <= alvo ? '2026-11-27T18:30:00Z' : null,
+    precoAvisadoCentavos: preco <= alvo ? preco : null,
     ...parcial,
   };
 }
