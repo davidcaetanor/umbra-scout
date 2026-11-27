@@ -18,7 +18,7 @@ test.describe('RNF-06, roteiro de teclado', () => {
     await expect(salto).toBeInViewport();
 
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/#falha-proposital$/);
+    await expect(page).toHaveURL(/#conteudo$/);
   });
 
   test('a ordem do foco segue a ordem visual do cabeçalho', async ({ page }) => {
