@@ -24,6 +24,7 @@ class SelecaoDoLoteTest {
         assertThat(lote.avisosEnviados()).containsExactly(10L);
         assertThat(lote.avisosDescartados()).isEmpty();
         assertThat(lote.restantes()).isZero();
+        assertThat(lote.vazio()).isFalse();
     }
 
     @Test
