@@ -42,6 +42,9 @@ public class MonitoramentoEntity {
     @Column(insertable = false, updatable = false)
     private OffsetDateTime ultimoAvisoEm;
 
+    @Column(insertable = false, updatable = false)
+    private Long precoAvisadoCentavos;
+
     @Column(nullable = false, updatable = false)
     private OffsetDateTime criadoEm;
 
