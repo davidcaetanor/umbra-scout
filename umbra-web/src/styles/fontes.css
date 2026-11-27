@@ -72,10 +72,19 @@
 
 @font-face {
   font-family: 'Fraunces Reserva';
-  src: local('Georgia'), local('Gelasio');
+  src: local('Georgia');
   size-adjust: 107%;
   ascent-override: 91.4%;
   descent-override: 23.83%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Fraunces Reserva Livre';
+  src: local('Gelasio Regular'), local('Gelasio-Regular');
+  size-adjust: 97.82%;
+  ascent-override: 99.98%;
+  descent-override: 26.07%;
   line-gap-override: 0%;
 }
 

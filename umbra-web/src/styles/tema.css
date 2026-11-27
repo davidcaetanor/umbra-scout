@@ -58,7 +58,7 @@
 
 @theme {
   --font-*: initial;
-  --font-titulo: 'Fraunces Variable', 'Fraunces Reserva', Georgia, serif;
+  --font-titulo: 'Fraunces Variable', 'Fraunces Reserva', 'Fraunces Reserva Livre', Georgia, serif;
   --font-titulo--font-variation-settings: 'wght' 560;
   --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Reserva', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', 'IBM Plex Mono Reserva', ui-monospace, monospace;
