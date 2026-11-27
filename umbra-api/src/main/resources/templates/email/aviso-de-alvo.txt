@@ -1,0 +1,16 @@
+Umbra avisa: [(${titulo})]
+[# th:each="item : ${itens}"]
+[(${item.nome()})]
+[(${item.preco()})] na [(${item.loja()})]
+Alvo [(${item.alvo()})][# th:if="${item.outrasLojas() == 1}"]
+Mais 1 loja abaixo do alvo[/][# th:if="${item.outrasLojas() > 1}"]
+Mais [(${item.outrasLojas()})] lojas abaixo do alvo[/][# th:if="${item.baixouDeNovo()}"]
+Baixou de novo[/]
+[(${item.url()})]
+[/][# th:if="${restantes > 0}"]
+E mais [(${restantes})] em Meus monitoramentos
+[/]
+Ver em Meus monitoramentos: [(${urlMonitoramentos})]
+
+Preços conferidos às [(${horario})] e podem mudar na loja.
+Você recebe porque monitora estes produtos. Gerencie seus avisos em [(${urlMonitoramentos})]

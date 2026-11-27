@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title th:text="${titulo}">Alvos atingidos</title>
+<style>
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .fundo { background-color: #0e1014 !important; }
+    .cartao { background-color: #15181e !important; }
+    .texto { color: #eceef2 !important; }
+    .apoio { color: #99a0ae !important; }
+    .preco { color: #e2a85c !important; }
+    .acento { color: #9b86d4 !important; }
+    .filete { border-color: #292e38 !important; }
+  }
+</style>
+</head>
+<body class="fundo" style="margin:0;padding:0;background-color:#f2f3f5;">
+<div style="display:none;max-height:0;overflow:hidden;" th:text="${previa}">Prévia</div>
+<table role="presentation" class="fundo" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f3f5;">
+  <tr>
+    <td align="center" style="padding:16px 8px;">
+      <table role="presentation" class="cartao" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:600px;background-color:#ffffff;border-radius:12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <tr>
+          <td style="padding:24px 20px 16px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="64" valign="middle" style="padding-right:16px;">
+                  <img th:src="${urlMascote}" src="" width="64" height="64" alt="" style="display:block;width:64px;height:64px;border:0;">
+                </td>
+                <td valign="middle">
+                  <p class="acento" style="margin:0;font-size:13px;line-height:20px;font-weight:600;color:#5b45a8;">Umbra avisa</p>
+                  <h1 class="texto" style="margin:0;font-size:20px;line-height:28px;font-weight:700;color:#1d2129;" th:text="${titulo}">Alvos atingidos</h1>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr th:each="item : ${itens}">
+          <td class="filete" style="padding:16px 0;margin:0 20px;border-top:1px solid #e4e6ea;">
+            <div style="padding:0 20px;">
+              <a th:href="${item.url()}" href="" class="texto" style="font-size:16px;line-height:24px;font-weight:700;color:#1d2129;text-decoration:underline;" th:text="${item.nome()}">Produto</a>
+              <p class="texto" style="margin:0;font-size:16px;line-height:24px;color:#1d2129;"><strong class="preco" style="color:#8a5a12;" th:text="${item.preco()}">R$ 0,00</strong> na <span th:text="${item.loja()}">loja</span></p>
+              <p class="apoio" style="margin:0;font-size:14px;line-height:20px;color:#5b6270;">Alvo <span th:text="${item.alvo()}">R$ 0,00</span></p>
+              <p th:if="${item.outrasLojas() == 1}" class="apoio" style="margin:0;font-size:14px;line-height:20px;color:#5b6270;">Mais 1 loja abaixo do alvo</p>
+              <p th:if="${item.outrasLojas() > 1}" class="apoio" style="margin:0;font-size:14px;line-height:20px;color:#5b6270;" th:text="|Mais ${item.outrasLojas()} lojas abaixo do alvo|">Mais lojas abaixo do alvo</p>
+              <p th:if="${item.baixouDeNovo()}" class="acento" style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:#5b45a8;">Baixou de novo</p>
+            </div>
+          </td>
+        </tr>
+        <tr th:if="${restantes > 0}">
+          <td class="apoio" style="padding:0 20px 8px 20px;font-size:14px;line-height:20px;color:#5b6270;" th:text="${restantes == 1} ? 'E mais 1 alvo em Meus monitoramentos' : |E mais ${restantes} alvos em Meus monitoramentos|">E mais alvos</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 20px 16px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="border-radius:8px;background-color:#e2a85c;">
+                  <a th:href="${urlMonitoramentos}" href="" style="display:block;padding:12px;font-size:16px;line-height:24px;font-weight:700;color:#0e1014;text-decoration:none;border-radius:8px;">Ver em Meus monitoramentos</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td class="filete apoio" style="padding:16px 20px 24px 20px;border-top:1px solid #e4e6ea;font-size:13px;line-height:20px;color:#5b6270;">
+            Preços conferidos às <span th:text="${horario}">00:00</span> e podem mudar na loja.
+            Você recebe porque monitora estes produtos. <a th:href="${urlMonitoramentos}" href="" class="acento" style="color:#5b45a8;">Gerencie seus avisos</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
