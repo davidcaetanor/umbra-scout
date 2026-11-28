@@ -44,7 +44,7 @@
         <tr th:each="item : ${itens}">
           <td style="padding:0 20px;">
             <div class="filete" style="padding:16px 0;border-top:1px solid #e4e6ea;">
-              <a th:href="${item.url()}" href="" class="texto" style="font-size:16px;line-height:24px;font-weight:700;color:#1d2129;text-decoration:underline;" th:text="${item.nome()}">Produto</a>
+              <a th:href="${item.url()}" href="" class="texto" style="display:block;font-size:16px;line-height:24px;font-weight:700;color:#1d2129;text-decoration:underline;overflow-wrap:anywhere;word-break:break-word;" th:text="${item.nome()}">Produto</a>
               <p class="texto" style="margin:0;font-size:16px;line-height:24px;color:#1d2129;"><strong class="preco" style="color:#8a5a12;" th:text="${item.preco()}">R$ 0,00</strong> na <span th:text="${item.loja()}">loja</span></p>
               <p class="apoio" style="margin:0;font-size:14px;line-height:20px;color:#5b6270;">Alvo <span th:text="${item.alvo()}">R$ 0,00</span></p>
               <p th:if="${item.outrasLojas() == 1}" class="apoio" style="margin:0;font-size:14px;line-height:20px;color:#5b6270;">Mais 1 loja abaixo do alvo</p>

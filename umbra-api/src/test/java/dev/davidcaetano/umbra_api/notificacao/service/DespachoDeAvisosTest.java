@@ -167,6 +167,18 @@ class DespachoDeAvisosTest extends IntegrationTestBase {
         assertThat(corpo).doesNotContain("<script>x</script>").contains("&lt;script&gt;");
     }
 
+    @Test
+    void deveAbreviarNomeMuitoLongo() throws Exception {
+        long usuario = usuarioGoogle();
+        String longo = "Placa de Video RTX 5070 " + "X".repeat(200);
+        aviso(monitoramento(usuario, produtoComPreco(longo, "STEAM", 1000), 2000), "ENTRADA", agora());
+
+        despacho.despachar();
+
+        String corpo = html(unicoEmailPara(usuario));
+        assertThat(corpo).contains("Placa de Video RTX 5070 XXX").contains("X...").doesNotContain("X".repeat(90));
+    }
+
     private MimeMessage unicoEmailPara(long usuario) {
         List<MimeMessage> emails = emailsPara(usuario);
         assertThat(emails).hasSize(1);

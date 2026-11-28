@@ -22,6 +22,8 @@ public class RedacaoDoEmailDeAviso {
     private static final DateTimeFormatter HORARIO = DateTimeFormatter.ofPattern("HH:mm");
     private static final String MODELO_HTML = "aviso-de-alvo.html";
     private static final String MODELO_TEXTO = "aviso-de-alvo.txt";
+    private static final int TETO_DO_NOME = 90;
+    private static final String RETICENCIAS = "...";
 
     private final ITemplateEngine motor;
     private final String urlDoFront;
@@ -47,7 +49,7 @@ public class RedacaoDoEmailDeAviso {
     }
 
     private LinhaDoEmail paraLinha(ItemDoEmail item) {
-        return new LinhaDoEmail(item.nome(), urlDoFront + "/catalogo/" + item.produtoId(), reais(item.precoCentavos()),
+        return new LinhaDoEmail(abreviar(item.nome()), urlDoFront + "/catalogo/" + item.produtoId(), reais(item.precoCentavos()),
                 item.loja(), reais(item.precoAlvoCentavos()), item.outrasLojas(), item.baixouDeNovo());
     }
 
@@ -57,9 +59,18 @@ public class RedacaoDoEmailDeAviso {
 
     private static String previa(LoteDoEmail lote) {
         ItemDoEmail primeiro = lote.itens().getFirst();
-        String previa = primeiro.nome() + " por " + reais(primeiro.precoCentavos()) + " na " + primeiro.loja();
+        String previa = abreviar(primeiro.nome()) + " por " + reais(primeiro.precoCentavos()) + " na " + primeiro.loja();
         int outros = lote.totalDeAlvos() - 1;
         return outros == 0 ? previa : previa + ", e mais " + outros;
+    }
+
+    private static String abreviar(String nome) {
+        String limpo = nome.strip();
+        if (limpo.codePointCount(0, limpo.length()) <= TETO_DO_NOME) {
+            return limpo;
+        }
+        int corte = limpo.offsetByCodePoints(0, TETO_DO_NOME - RETICENCIAS.length());
+        return limpo.substring(0, corte).stripTrailing() + RETICENCIAS;
     }
 
     private static String reais(long centavos) {
