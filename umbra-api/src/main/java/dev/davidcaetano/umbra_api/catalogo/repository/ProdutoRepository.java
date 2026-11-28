@@ -25,6 +25,7 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
               FROM produto p
               LEFT JOIN mv_vitrine_ofertas m ON m.produto_id = p.id
               LEFT JOIN loja l ON l.id = m.loja_id
+              LEFT JOIN qualidade_jogo q ON q.produto_id = p.id
             """;
 
     String OFERTA_DA_LOJA = """
@@ -40,7 +41,23 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                        AND NOT (v.expira_em IS NOT NULL AND v.expira_em <= now() AND o.verificado_em < v.expira_em)
                      ORDER BY o.produto_id, v.valor_centavos, o.id) m ON m.produto_id = p.id
               JOIN loja l ON l.id = m.loja_id
+              LEFT JOIN qualidade_jogo q ON q.produto_id = p.id
             """;
+
+    String PORTAO_DE_QUALIDADE = """
+            COALESCE((q.steam_avaliacoes >= CAST(:#{#regua.steamAvaliacoesMinimas} AS INTEGER)
+                      AND q.steam_nota >= CAST(:#{#regua.steamNotaMinima} AS INTEGER))
+                     OR q.critica_nota >= CAST(:#{#regua.criticaNotaMinima} AS INTEGER), FALSE)""";
+
+    String NOTA_DE_QUALIDADE = """
+            CASE WHEN q.steam_avaliacoes > 0 AND q.steam_nota IS NOT NULL THEN
+                   (q.steam_avaliacoes * q.steam_nota / 100.0
+                      + CAST(:#{#regua.steamAvaliacoesMinimas} AS DOUBLE PRECISION)
+                        * CAST(:#{#regua.mediaDoCatalogo} AS DOUBLE PRECISION))
+                   / (q.steam_avaliacoes + CAST(:#{#regua.steamAvaliacoesMinimas} AS DOUBLE PRECISION))
+                 WHEN q.critica_nota IS NOT NULL THEN q.critica_nota / 100.0
+                 ELSE CAST(:#{#regua.pisoDeQualidade} AS DOUBLE PRECISION)
+            END""";
 
     String FILTRO_DO_CATALOGO = """
              WHERE p.ativo
@@ -59,7 +76,9 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
              ORDER BY
                CASE WHEN CAST(:ordenacao AS TEXT) = 'melhoresOfertas' THEN
                       row_number() OVER (PARTITION BY p.tipo ORDER BY
-                      CASE WHEN p.tipo = 'HARDWARE' THEN
+                      CASE WHEN p.tipo = 'JOGO' AND NOT (""" + PORTAO_DE_QUALIDADE + """
+                           ) THEN 1 ELSE 0 END,
+                      (CASE WHEN p.tipo = 'HARDWARE' THEN
                              CAST(:#{#regua.pesoEconomiaHardware} AS DOUBLE PRECISION)
                                * ln(1 + least(m.valor_original_centavos - m.valor_centavos,
                                               CAST(:#{#regua.tetoEconomiaHardwareCentavos} AS BIGINT)))
@@ -73,7 +92,9 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
                       END
                     + CASE WHEN p.tipo = 'HARDWARE' THEN CAST(:#{#regua.pesoMinimoHardware()} AS DOUBLE PRECISION)
                            ELSE CAST(:#{#regua.pesoMinimo()} AS DOUBLE PRECISION) END
-                        * COALESCE(m.minimo_centavos / NULLIF(CAST(m.valor_centavos AS DOUBLE PRECISION), 0), 1)
+                        * COALESCE(m.minimo_centavos / NULLIF(CAST(m.valor_centavos AS DOUBLE PRECISION), 0), 1))
+                      * CASE WHEN p.tipo = 'JOGO' THEN (""" + NOTA_DE_QUALIDADE + """
+                             ) ELSE 1 END
                         DESC NULLS LAST, p.id)
                END,
                CASE WHEN CAST(:ordenacao AS TEXT) = 'melhoresOfertas' THEN CASE WHEN p.tipo = 'JOGO' THEN 0 ELSE 1 END END,
@@ -91,6 +112,15 @@ public interface ProdutoRepository extends JpaRepository<ProdutoEntity, Long> {
     @Query(value = "SELECT CAST(greatest(reltuples, 0) AS BIGINT) FROM pg_class WHERE oid = 'preco'::regclass",
             nativeQuery = true)
     long estimarPrecosDoHistorico();
+
+    @Query(value = "SELECT p.id AS produtoId, q.publicador AS publicador, (" + PORTAO_DE_QUALIDADE + """
+                     ) AS qualificado
+              FROM produto p
+              LEFT JOIN qualidade_jogo q ON q.produto_id = p.id
+             WHERE p.id IN (:ids)
+            """, nativeQuery = true)
+    List<QualidadeDoCandidatoProjecao> qualidadeDosCandidatos(@Param("ids") Collection<Long> ids,
+                                                             @Param("regua") ReguaDeOfertas regua);
 
     List<ProdutoEntity> findByChaveItadIn(Collection<String> chavesItad);
 

@@ -4,7 +4,12 @@ public record ReguaDeOfertas(double pesoEconomia,
                              double logaritmoDaReferencia,
                              double pesoEconomiaHardware,
                              double pesoPercentualHardware,
-                             long tetoEconomiaHardwareCentavos) {
+                             long tetoEconomiaHardwareCentavos,
+                             int steamAvaliacoesMinimas,
+                             int steamNotaMinima,
+                             int criticaNotaMinima,
+                             double mediaDoCatalogo,
+                             double pisoDeQualidade) {
 
     public double pesoMinimo() {
         return 1.0 - pesoEconomia;

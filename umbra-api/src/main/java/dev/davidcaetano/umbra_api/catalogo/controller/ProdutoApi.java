@@ -32,7 +32,8 @@ public interface ProdutoApi {
                     + "`categoria` vale só para hardware: com `tipo=JOGO` responde 400. "
                     + "`maiorDesconto` e `descontoMin` valem só com `tipo=JOGO`; "
                     + "`melhoresOfertas` vale para jogos e hardware e traz só o que tem desconto, pela economia em reais e pela "
-                    + "proximidade do mínimo histórico. Com `loja`, preço e ordem são os da oferta nessa loja.")
+                    + "proximidade do mínimo histórico; nos jogos, pesada pelas avaliações, e quem não passa o piso de "
+                    + "qualidade vem no fim. Com `loja`, preço e ordem são os da oferta nessa loja.")
     @Parameter(name = "page", in = ParameterIn.QUERY, description = "Página, a partir de 0.",
             schema = @Schema(type = "integer", format = "int32", minimum = "0", defaultValue = "0"))
     @Parameter(name = "size", in = ParameterIn.QUERY, description = "Itens por página; acima de 20 vira 20.",
@@ -45,8 +46,9 @@ public interface ProdutoApi {
                                  @Parameter(hidden = true) HttpServletRequest requisicao);
 
     @Operation(operationId = "destaquesDoCatalogo", summary = "Destaques Umbra",
-            description = "Jogos com a maior economia, pela mesma pontuação de `melhoresOfertas`, "
-                    + "com uma edição por jogo. Recalculado no máximo a cada 10 minutos.")
+            description = "Jogos com a maior economia, pela mesma pontuação de `melhoresOfertas`, só os que passam o "
+                    + "piso de qualidade, com uma edição por jogo e um jogo por publicador. "
+                    + "Recalculado no máximo a cada 10 minutos.")
     @ApiResponse(responseCode = "200", description = "Lista curta, já ordenada.")
     @ApiResponse(responseCode = "503", ref = RespostaDeErro.REF_SERVICO_INDISPONIVEL)
     DestaquesResponse destaques();

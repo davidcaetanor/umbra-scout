@@ -1013,7 +1013,7 @@
     },
     "/produtos" : {
       "get" : {
-        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. A busca externa é só de jogos e respeita o filtro: com `tipo=HARDWARE` ou `categoria`, o ITAD não é consultado e `externos` vem vazio; `loja`, `precoMin`, `precoMax` e `descontoMin` valem também para os externos, com o preço da loja quando ela é informada. `categoria` vale só para hardware: com `tipo=JOGO` responde 400. `maiorDesconto` e `descontoMin` valem só com `tipo=JOGO`; `melhoresOfertas` vale para jogos e hardware e traz só o que tem desconto, pela economia em reais e pela proximidade do mínimo histórico. Com `loja`, preço e ordem são os da oferta nessa loja.",
+        "description" : "Ordem fixa por `ordenacao`, sempre com `id` de desempate; `sort` não é aceito. Com `incluirExterno`, a primeira página traz em `externos` até 5 jogos achados no ITAD que ainda não estão no catálogo; nas demais páginas `externos` vem vazio. A busca externa é só de jogos e respeita o filtro: com `tipo=HARDWARE` ou `categoria`, o ITAD não é consultado e `externos` vem vazio; `loja`, `precoMin`, `precoMax` e `descontoMin` valem também para os externos, com o preço da loja quando ela é informada. `categoria` vale só para hardware: com `tipo=JOGO` responde 400. `maiorDesconto` e `descontoMin` valem só com `tipo=JOGO`; `melhoresOfertas` vale para jogos e hardware e traz só o que tem desconto, pela economia em reais e pela proximidade do mínimo histórico; nos jogos, pesada pelas avaliações, e quem não passa o piso de qualidade vem no fim. Com `loja`, preço e ordem são os da oferta nessa loja.",
         "operationId" : "buscarProdutos",
         "parameters" : [ {
           "in" : "query",
@@ -1150,7 +1150,7 @@
     },
     "/produtos/destaques" : {
       "get" : {
-        "description" : "Jogos com a maior economia, pela mesma pontuação de `melhoresOfertas`, com uma edição por jogo. Recalculado no máximo a cada 10 minutos.",
+        "description" : "Jogos com a maior economia, pela mesma pontuação de `melhoresOfertas`, só os que passam o piso de qualidade, com uma edição por jogo e um jogo por publicador. Recalculado no máximo a cada 10 minutos.",
         "operationId" : "destaquesDoCatalogo",
         "responses" : {
           "200" : {
