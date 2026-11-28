@@ -107,6 +107,57 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     }
 
     @Test
+    void jogoQueNaoPassaOPortao_vaiParaOFimSemSumirMesmoComEconomiaMaior() throws Exception {
+        long inflado = jogoComPreco("t47-q1 Inflado", "STEAM", 2700, 53999, 95);
+        qualidade(inflado, 35, 20, null, "Hede");
+        long bom = jogoComPreco("t47-q1 Bom", "STEAM", 2000, 5000, 60);
+        qualidade(bom, 96, 489000, 87, "Team Cherry");
+        long semQualidade = jogoComPreco("t47-q1 Sem consulta", "STEAM", 1000, 40000, 97);
+
+        List<Long> ordem = ids(buscar("t47-q1", "melhoresOfertas"));
+
+        assertThat(ordem).hasSize(3).startsWith(bom);
+        assertThat(ordem.subList(1, 3)).containsExactlyInAnyOrder(semQualidade, inflado);
+    }
+
+    @Test
+    void comAMesmaOferta_muitasAvaliacoesBoasVencemPoucasPerfeitas() throws Exception {
+        long poucasPerfeitas = jogoComPreco("t47-q2 Poucas perfeitas", "STEAM", 2000, 5000, 60);
+        qualidade(poucasPerfeitas, 100, 600, null, "A");
+        long muitasBoas = jogoComPreco("t47-q2 Muitas boas", "STEAM", 2000, 5000, 60);
+        qualidade(muitasBoas, 96, 489000, null, "B");
+
+        assertThat(ids(buscar("t47-q2", "melhoresOfertas"))).containsExactly(muitasBoas, poucasPerfeitas);
+    }
+
+    @Test
+    void portao_aceitaOLimiteExatoDaSteamOuSoACritica() throws Exception {
+        long noLimite = jogoComPreco("t47-q3 No limite", "STEAM", 2000, 5000, 60);
+        qualidade(noLimite, 70, 500, null, "A");
+        long soCritica = jogoComPreco("t47-q3 So critica", "STEAM", 2000, 5000, 60);
+        qualidade(soCritica, null, null, 70, "B");
+        long umaAvaliacaoAMenos = jogoComPreco("t47-q3 Uma a menos", "STEAM", 2100, 5000, 58);
+        qualidade(umaAvaliacaoAMenos, 70, 499, 69, "C");
+        long umPontoAMenos = jogoComPreco("t47-q3 Um ponto a menos", "STEAM", 2100, 5000, 58);
+        qualidade(umPontoAMenos, 69, 500, null, "D");
+
+        List<Long> ordem = ids(buscar("t47-q3", "melhoresOfertas"));
+
+        assertThat(ordem.subList(0, 2)).containsExactlyInAnyOrder(noLimite, soCritica);
+        assertThat(ordem.subList(2, 4)).containsExactlyInAnyOrder(umaAvaliacaoAMenos, umPontoAMenos);
+    }
+
+    @Test
+    void maiorDesconto_naoUsaQualidade() throws Exception {
+        long inflado = jogoComPreco("t47-q4 Inflado", "STEAM", 2700, 53999, 95);
+        qualidade(inflado, 35, 20, null, "Hede");
+        long bom = jogoComPreco("t47-q4 Bom", "STEAM", 2000, 5000, 60);
+        qualidade(bom, 96, 489000, 87, "Team Cherry");
+
+        assertThat(ids(buscar("t47-q4", "maiorDesconto"))).containsExactly(inflado, bom);
+    }
+
+    @Test
     void maiorDesconto_deveOrdenarPeloPercentual() throws Exception {
         long vinte = jogoComPreco("t44b-b1 Vinte", "STEAM", 24000, 30000, 20);
         long noventa = jogoComPreco("t44b-b1 Noventa", "STEAM", 500, 5000, 90);
@@ -231,14 +282,21 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     @Test
     void destaques_devemTrazerUmaEdicaoPorJogoEAMelhorDelas() throws Exception {
         long ultimate = jogoComPreco("T44B Zeta Saga: Ultimate Edition", "STEAM", 10000, 9_000_000, 99);
-        jogoComPreco("T44B Zeta Saga Deluxe Edition", "STEAM", 10000, 8_000_000, 99);
-        jogoComPreco("T44B Zeta Saga", "STEAM", 10000, 7_000_000, 99);
+        qualidade(ultimate, 90, 10000, null, "Zeta Studio");
+        qualidade(jogoComPreco("T44B Zeta Saga Deluxe Edition", "STEAM", 10000, 8_000_000, 99), 90, 10000, null,
+                "Zeta Studio");
+        qualidade(jogoComPreco("T44B Zeta Saga", "STEAM", 10000, 7_000_000, 99), 90, 10000, null, "Zeta Studio");
         long outroJogo = jogoComPreco("T44B Outro Jogo", "EPIC", 10000, 6_000_000, 99);
+        qualidade(outroJogo, 90, 10000, null, "Outro Estudio");
+        long mesmoPublicador = jogoComPreco("T44B Mesmo publicador", "EPIC", 10000, 5_000_000, 99);
+        qualidade(mesmoPublicador, 90, 10000, null, "Outro Estudio");
+        long semConsulta = jogoComPreco("T44B Sem consulta", "EPIC", 10000, 9_900_000, 99);
 
         String json = conteudoDe(get("/produtos/destaques"));
         List<Long> destaques = ids(json);
 
-        assertThat(destaques).hasSizeLessThanOrEqualTo(8).startsWith(ultimate, outroJogo);
+        assertThat(destaques).hasSizeLessThanOrEqualTo(8).startsWith(ultimate, outroJogo)
+                .doesNotContain(mesmoPublicador, semConsulta);
         assertThat(JsonPath.<List<String>>read(json, "$.conteudo[*].nome"))
                 .filteredOn(nome -> nome.startsWith("T44B Zeta"))
                 .containsExactly("T44B Zeta Saga: Ultimate Edition");
@@ -265,6 +323,15 @@ class MelhoresOfertasControllerTest extends IntegrationTestBase {
     private static List<Long> ids(String json) {
         List<Number> ids = JsonPath.read(json, "$.conteudo[*].id");
         return ids.stream().map(Number::longValue).toList();
+    }
+
+    private void qualidade(long produtoId, Integer steamNota, Integer steamAvaliacoes, Integer critica,
+                           String publicador) {
+        jdbc.update("""
+                INSERT INTO qualidade_jogo (produto_id, steam_nota, steam_avaliacoes, critica_nota, publicador,
+                                            consultada_em)
+                VALUES (?, ?, ?, ?, ?, now())
+                """, produtoId, steamNota, steamAvaliacoes, critica, publicador);
     }
 
     private long jogoComPreco(String nome, String loja, long valor, long original, int desconto) {

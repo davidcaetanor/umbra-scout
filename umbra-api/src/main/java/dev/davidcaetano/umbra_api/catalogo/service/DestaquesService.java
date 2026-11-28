@@ -5,12 +5,14 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.DestaquesResponse;
 import dev.davidcaetano.umbra_api.catalogo.dto.response.ProdutoResumoResponse;
 import dev.davidcaetano.umbra_api.catalogo.properties.OfertasProperties;
+import dev.davidcaetano.umbra_api.catalogo.repository.QualidadeDoCandidatoProjecao;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class DestaquesService {
@@ -18,12 +20,18 @@ public class DestaquesService {
     private static final String CHAVE_UNICA = "destaques";
 
     private final ProdutoService produtoService;
+    private final ConsultaDoCatalogo consultaDoCatalogo;
     private final OfertasProperties properties;
+    private final CuradoriaDosDestaques curadoria;
     private final Cache<String, DestaquesResponse> cache;
 
-    public DestaquesService(ProdutoService produtoService, OfertasProperties properties) {
+    public DestaquesService(ProdutoService produtoService, ConsultaDoCatalogo consultaDoCatalogo,
+                            OfertasProperties properties) {
         this.produtoService = produtoService;
+        this.consultaDoCatalogo = consultaDoCatalogo;
         this.properties = properties;
+        this.curadoria = new CuradoriaDosDestaques(properties.destaques(),
+                properties.qualidade().destaquesPorPublicador());
         this.cache = Caffeine.newBuilder()
                 .expireAfterWrite(properties.validadeDosDestaques())
                 .maximumSize(1)
@@ -40,11 +48,23 @@ public class DestaquesService {
                         PageRequest.of(0, properties.candidatosDosDestaques()), null)
                 .conteudo();
 
-        Set<String> jogosVistos = new HashSet<>();
-        List<ProdutoResumoResponse> umaEdicaoPorJogo = candidatos.stream()
-                .filter(produto -> jogosVistos.add(ChaveDoJogo.de(produto.nome())))
-                .limit(properties.destaques())
+        Map<Long, QualidadeDoCandidatoProjecao> qualidade = consultaDoCatalogo
+                .qualidadeDosCandidatos(candidatos.stream().map(ProdutoResumoResponse::id).toList()).stream()
+                .collect(Collectors.toMap(QualidadeDoCandidatoProjecao::getProdutoId, Function.identity()));
+
+        List<CandidatoADestaque> emOrdem = candidatos.stream()
+                .map(produto -> paraCandidato(produto, qualidade.get(produto.id())))
                 .toList();
-        return new DestaquesResponse(umaEdicaoPorJogo);
+        Map<Long, ProdutoResumoResponse> porId = candidatos.stream()
+                .collect(Collectors.toMap(ProdutoResumoResponse::id, Function.identity()));
+
+        return new DestaquesResponse(curadoria.escolher(emOrdem).stream().map(porId::get).toList());
+    }
+
+    private static CandidatoADestaque paraCandidato(ProdutoResumoResponse produto,
+                                                    QualidadeDoCandidatoProjecao qualidade) {
+        return new CandidatoADestaque(produto.id(), ChaveDoJogo.de(produto.nome()),
+                qualidade == null ? null : qualidade.getPublicador(),
+                qualidade != null && qualidade.isQualificado());
     }
 }

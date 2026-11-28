@@ -131,6 +131,13 @@ umbra:
       peso-economia: 0.4
       peso-percentual: 0.3
       teto-economia-centavos: 50000
+    qualidade:
+      steam-avaliacoes-minimas: 500
+      steam-nota-minima: 70
+      critica-nota-minima: 70
+      media-do-catalogo: 0.75
+      piso: 0.5
+      destaques-por-publicador: 1
   monitoramento:
     dias-para-descontinuado: 180
     teto-por-usuario: 100
