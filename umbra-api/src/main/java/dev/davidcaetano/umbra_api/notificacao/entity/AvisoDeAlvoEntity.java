@@ -2,6 +2,7 @@ package dev.davidcaetano.umbra_api.notificacao.entity;
 
 import dev.davidcaetano.umbra_api.notificacao.Avisar;
 import dev.davidcaetano.umbra_api.notificacao.MotivoDoAviso;
+import dev.davidcaetano.umbra_api.notificacao.SituacaoDoAviso;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -45,6 +46,13 @@ public class AvisoDeAlvoEntity {
     @Column(nullable = false, updatable = false)
     private OffsetDateTime registradoEm;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false)
+    private SituacaoDoAviso situacao;
+
+    @Column(nullable = false, updatable = false)
+    private int tentativas;
+
     @ElementCollection
     @CollectionTable(name = "aviso_de_alvo_loja", joinColumns = @JoinColumn(name = "aviso_id"))
     private List<LojaDoAviso> lojas = new ArrayList<>();
@@ -57,6 +65,7 @@ public class AvisoDeAlvoEntity {
         aviso.motivo = decisao.motivo();
         aviso.melhorPrecoCentavos = decisao.melhorPrecoCentavos();
         aviso.registradoEm = Objects.requireNonNull(registradoEm, "registradoEm é obrigatório");
+        aviso.situacao = SituacaoDoAviso.PENDENTE;
         decisao.cruzaram().forEach(oferta -> aviso.lojas.add(new LojaDoAviso(oferta.ofertaId(), oferta.valorCentavos())));
         return aviso;
     }

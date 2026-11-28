@@ -11,6 +11,8 @@ import java.time.Duration;
 public record NotificacaoProperties(
         boolean avaliacaoHabilitada,
 
+        boolean envioHabilitado,
+
         @NotNull(message = "umbra.notificacao.teto-entre-avisos é obrigatório")
         Duration tetoEntreAvisos) {
 }
